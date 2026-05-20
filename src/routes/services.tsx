@@ -59,11 +59,7 @@ function ServicesPage() {
     {
       key: "refs",
       header: "被引用",
-      cell: (s) => {
-        const refs = xr.serviceUsedBy.get(s.name) ?? [];
-        if (refs.length === 0) return <Badge tone="warn">未引用</Badge>;
-        return <span className="text-xs">{refs.length} 处</span>;
-      },
+      cell: (s) => <RefsPreview name={s.name} kind="service" />,
       search: (s) => String((xr.serviceUsedBy.get(s.name) ?? []).length),
     },
     {
