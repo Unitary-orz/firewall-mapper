@@ -2,6 +2,8 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useConfigStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useShowLineNumbers } from "@/lib/uiPrefs";
 
 const nav = [
   { to: "/", label: "概览" },
@@ -18,6 +20,7 @@ const nav = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { cfg, fileName, clear } = useConfigStore();
   const loc = useLocation();
+  const [showLineNo, setShowLineNo] = useShowLineNumbers();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -45,7 +48,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <label
+              className="flex items-center gap-1.5 cursor-pointer select-none"
+              title="仅用于追溯原始配置文本，平时无需打开"
+            >
+              <span>行号</span>
+              <Switch checked={showLineNo} onCheckedChange={setShowLineNo} />
+            </label>
             {cfg ? (
               <>
                 <span className="rounded bg-secondary px-2 py-1 font-mono">

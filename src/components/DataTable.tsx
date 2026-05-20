@@ -1,18 +1,14 @@
-import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMemo, useState, type ReactNode } from "react";
+import { useShowLineNumbers } from "@/lib/uiPrefs";
 
-export function LineLink({ line, children }: { line?: number; children?: ReactNode }) {
+export function LineLink({ line }: { line?: number }) {
+  const [show] = useShowLineNumbers();
+  if (!show) return null;
   if (!line) return <span className="text-muted-foreground">—</span>;
   return (
-    <Link
-      to="/raw"
-      search={{ line }}
-      className="font-mono text-xs text-primary hover:underline"
-    >
-      {children ?? `L${line}`}
-    </Link>
+    <span className="font-mono text-xs text-muted-foreground">L{line}</span>
   );
 }
 
@@ -45,11 +41,12 @@ export interface Column<T> {
   cell: (row: T) => ReactNode;
   search?: (row: T) => string;
   className?: string;
+  hiddenWhenNoLineNo?: boolean;
 }
 
 export function DataTable<T>({
   rows,
-  columns,
+  columns: allColumns,
   filename = "export.csv",
   emptyText = "无数据",
   pageSize = 50,
@@ -62,6 +59,11 @@ export function DataTable<T>({
 }) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
+  const [showLineNo] = useShowLineNumbers();
+  const columns = useMemo(
+    () => allColumns.filter((c) => showLineNo || !c.hiddenWhenNoLineNo),
+    [allColumns, showLineNo]
+  );
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();

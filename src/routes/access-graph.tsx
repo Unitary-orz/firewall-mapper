@@ -3,6 +3,7 @@ import { useConfigStore } from "@/lib/store";
 import type { NatRule, PolicyRule } from "@/lib/parser/types";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, LineLink } from "@/components/DataTable";
+import { useShowLineNumbers } from "@/lib/uiPrefs";
 import { useMemo, useState } from "react";
 import type { ParsedConfig } from "@/lib/parser/types";
 import {
@@ -72,6 +73,8 @@ function AccessGraphPage() {
   const { cfg } = useConfigStore();
   const [src, setSrc] = useState<string>("any");
   const [dst, setDst] = useState<string>("any");
+  const [showLineNo] = useShowLineNumbers();
+
 
   const allNames = useMemo(() => {
     if (!cfg) return [] as string[];
@@ -181,7 +184,7 @@ function AccessGraphPage() {
                 <th className="px-3 py-2 text-left">目的</th>
                 <th className="px-3 py-2 text-left">服务</th>
                 <th className="px-3 py-2 text-left">调度</th>
-                <th className="px-3 py-2 text-left">行号</th>
+                {showLineNo && <th className="px-3 py-2 text-left">行号</th>}
               </tr>
             </thead>
             <tbody>
@@ -197,9 +200,11 @@ function AccessGraphPage() {
                   <td className="px-3 py-1.5 font-mono text-xs">{p.dstAddr}</td>
                   <td className="px-3 py-1.5 font-mono text-xs">{p.service}</td>
                   <td className="px-3 py-1.5 text-xs">{p.schedule}</td>
-                  <td className="px-3 py-1.5">
-                    <LineLink line={p.lineNo} />
-                  </td>
+                  {showLineNo && (
+                    <td className="px-3 py-1.5">
+                      <LineLink line={p.lineNo} />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -220,7 +225,7 @@ function AccessGraphPage() {
                 <th className="px-3 py-2 text-left">原目的/端口</th>
                 <th className="px-3 py-2 text-left">→ 转换为</th>
                 <th className="px-3 py-2 text-left">描述</th>
-                <th className="px-3 py-2 text-left">行号</th>
+                {showLineNo && <th className="px-3 py-2 text-left">行号</th>}
               </tr>
             </thead>
             <tbody>
@@ -238,9 +243,11 @@ function AccessGraphPage() {
                   <td className="px-3 py-1.5 text-xs text-muted-foreground">
                     {r.description ?? "—"}
                   </td>
-                  <td className="px-3 py-1.5">
-                    <LineLink line={r.lineNo} />
-                  </td>
+                  {showLineNo && (
+                    <td className="px-3 py-1.5">
+                      <LineLink line={r.lineNo} />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
