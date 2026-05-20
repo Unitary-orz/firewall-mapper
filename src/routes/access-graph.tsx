@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useConfigStore } from "@/lib/store";
+import type { NatRule, PolicyRule } from "@/lib/parser/types";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, LineLink } from "@/components/DataTable";
 import { useMemo, useState } from "react";
@@ -267,16 +268,8 @@ function ChainView({
 }: {
   src: string;
   dst: string;
-  policies: ReturnType<typeof useConfigStore>["cfg"] extends infer C
-    ? C extends { policies: infer P }
-      ? P
-      : never
-    : never;
-  nats: ReturnType<typeof useConfigStore>["cfg"] extends infer C
-    ? C extends { natRules: infer N }
-      ? N
-      : never
-    : never;
+  policies: PolicyRule[];
+  nats: NatRule[];
 }) {
   // 中间节点：从 NAT 的 translatedPool 与策略的 dstAddr 中识别
   const inter = new Set<string>();
@@ -293,10 +286,10 @@ function ChainView({
     <div className="flex flex-wrap items-center gap-3">
       <ChainNode label="源" name={src} tone="src" />
       {[...inter].map((it) => (
-        <>
+        <span key={it} className="flex items-center gap-3">
           <ArrowRight className="h-5 w-5 text-muted-foreground" />
-          <ChainNode key={it} label="中间节点" name={it} tone="mid" />
-        </>
+          <ChainNode label="中间节点" name={it} tone="mid" />
+        </span>
       ))}
       <ArrowRight className="h-5 w-5 text-muted-foreground" />
       <ChainNode label="目的" name={dst} tone="dst" />
