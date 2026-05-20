@@ -121,9 +121,7 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
               <span className="font-mono text-amber-600">仅 {p.schedule}</span>
             </span>
           )}
-          {p.id && (
-            <span className="ml-auto font-mono">#{p.id}</span>
-          )}
+          {p.id && <span className="ml-auto font-mono">#{p.id}</span>}
         </div>
       )}
     </div>
