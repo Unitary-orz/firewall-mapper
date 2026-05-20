@@ -51,14 +51,7 @@ function expandAddressNames(name: string, cfg: ParsedConfig): Set<string> {
   return out;
 }
 
-function expandServiceNames(name: string, cfg: ParsedConfig): Set<string> {
-  const out = new Set<string>([name]);
-  if (name === "any") return out;
-  cfg.serviceGroups.forEach((g) => {
-    if (g.members.includes(name)) out.add(g.name);
-  });
-  return out;
-}
+
 
 function classifyDst(name: string): string | undefined {
   const lower = name.toLowerCase();
