@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useConfigStore } from "@/lib/store";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, DataTable, LineLink, type Column } from "@/components/DataTable";
+import { ObjectName } from "@/components/ObjectPreview";
 
 export const Route = createFileRoute("/policies")({
   head: () => ({
