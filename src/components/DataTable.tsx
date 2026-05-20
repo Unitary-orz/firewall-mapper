@@ -59,6 +59,11 @@ export function DataTable<T>({
 }) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
+  const [showLineNo] = useShowLineNumbers();
+  const columns = useMemo(
+    () => allColumns.filter((c) => showLineNo || !c.hiddenWhenNoLineNo),
+    [allColumns, showLineNo]
+  );
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
