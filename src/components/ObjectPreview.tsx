@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Badge } from "@/components/DataTable";
 import { useConfigStore } from "@/lib/store";
+import { L, DescQuote } from "@/components/previewAtoms";
 import type {
   AddressGroup,
   AddressObject,
