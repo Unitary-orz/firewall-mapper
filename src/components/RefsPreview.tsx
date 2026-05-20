@@ -157,7 +157,7 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
       {hasMeta && (
         <div className="flex items-baseline gap-x-3 gap-y-0.5 flex-wrap text-[11px] text-muted-foreground pl-0.5">
           {n.description && (
-            <span className="line-clamp-2 break-all min-w-0">
+            <span className="line-clamp-2 break-all min-w-0 border-l-2 border-border pl-2 italic">
               {n.description}
             </span>
           )}
