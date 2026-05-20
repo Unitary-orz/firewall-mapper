@@ -26,7 +26,6 @@ function useEnrich() {
           title: `策略 #${p.id}`,
           action: p.action,
           sub: `${p.srcZone}→${p.dstZone} · ${p.srcAddr} → ${p.dstAddr} : ${p.service}`,
-          desc: p.description,
         };
     }
     if (r.by === "nat") {
