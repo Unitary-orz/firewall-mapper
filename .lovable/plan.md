@@ -1,49 +1,55 @@
 ## 目标
 
-让所有悬停预览（ObjectName）只呈现"对象自身是什么"，不再混入引用关系和行号编号。引用关系仍可在对象列表页的「引用」列（RefsPreview）查看，职责清晰分离。
+在悬停预览卡里把"对象名 + 类型徽标"并排到同一行；类型文案更明确，能区分"对象 / 组 / NAT 池 / 未定义"；**字面量（IP、端口、any 通配）不再显示类型徽标**——因为它们本来就不是对象，挂个徽标反而是噪音。
 
-## 改动范围
+## 改动
 
-仅修改 `src/components/ObjectPreview.tsx`，不动其他页面。
+仅 `src/components/ObjectPreview.tsx`。
 
-### 1. ObjectName 悬停卡内容精简
+### 1. 类型标签文案
 
-保留：
-- 对象名（标题）
-- 类型徽标（地址 / 地址组 / 服务 / 服务组 / NAT 池 / 字面 IP / 字面端口 / 通配 / 未定义）
-- 描述（如有）
-- 字面量说明（"通配（不限制）"等）
-- 地址条目（kind + value）
-- 服务条目（protocol/dst/src）
-- NAT 池地址范围
-- 组成员列表（见下）
-- 未定义时的提示文案
+更新 `kindLabel`：
 
-移除：
-- "L1234" 行号链接（标题区那一处）
-- `<References>` 整段"被引用 N 处"块及其调用
-- 同时删除 `References` 组件本身（不再使用）
+| kind | 旧 | 新 |
+|---|---|---|
+| address | 地址 | 地址对象 |
+| address-group | 地址组 | 地址组 |
+| service | 服务 | 服务对象 |
+| service-group | 服务组 | 服务组 |
+| nat-pool | NAT 池 | NAT 池 |
+| unknown | 未定义 | 未定义引用 |
+| literal-ip / literal-port / literal-any | — | **不显示徽标** |
 
-### 2. 组成员行（MemberRow）精简
+### 2. 标题区：名称与徽标并排
 
-保留：
-- 类型标签
-- 成员名（仍是 ObjectName，可继续下钻查看自身详情）
-- 关键摘要（IP/端口列表 或 "N 成员"）
-- 描述
+旧结构：标题与徽标分两行。
 
-移除：
-- "引用 N" 徽标
-- "未引用" 徽标
-- 相应地不再读取 `xr.addressUsedBy / serviceUsedBy`
+新结构：
 
-### 3. 其他页面
+```tsx
+<div className="flex items-center gap-2 flex-wrap">
+  <span className="text-sm font-semibold break-all">{r.name}</span>
+  {!isLiteral && (
+    <Badge tone={r.kind === "unknown" ? "danger" : "default"}>
+      {kindLabel[r.kind]}
+    </Badge>
+  )}
+</div>
+```
 
-- `objects.tsx` / `services.tsx` 的「引用」列继续用 `RefsPreview`，不变 —— 这是引用信息的唯一入口。
-- `policies.tsx` / `nat.tsx` 中的 `ObjectName` 自动受益，无需改动。
+字面量 (`isLiteral === true`) 不渲染徽标，只保留下方原有的 `r.literal` 说明文字（"通配（不限制）" / "字面 IP / 网段" / "字面端口"）来承担类型信息。
 
-## 验证
+### 3. 组成员行（MemberRow）
 
-- 悬停策略页的源/目的/服务：弹窗里看不到任何 "L数字"，也看不到"被引用 X 处"。
-- 悬停 NAT 页的池名：弹窗显示地址范围 + 描述，无行号、无引用。
-- 对象/服务页的「引用」列仍能展开完整引用列表（含行号跳转），与预览职责分离。
+`kindTag` 文案同步成"地址对象 / 地址组 / 服务对象 / 服务组 / 未定义引用"，与主预览一致。MemberRow 本身不出现字面量场景（成员必须是已定义对象），所以保持显示徽标即可。
+
+## 不动的部分
+
+- 不引入新组件 / 依赖。
+- `RefsPreview`、表格行号、其它路由文件、解析器、store 全部不动。
+
+## 验收
+
+1. 悬停地址对象 / 地址组 / 服务对象 / 服务组 / NAT 池：弹窗第一行是"名字 + 类型徽标"，类型徽标紧贴名字右侧。
+2. 悬停 `any`、`192.168.1.0/24`、`8080-8090` 等字面量：弹窗里**没有徽标**，只显示名字和下方一行灰色说明文字。
+3. 悬停未在配置里定义的名字：第一行显示"名字 + 红色'未定义引用'徽标"。
