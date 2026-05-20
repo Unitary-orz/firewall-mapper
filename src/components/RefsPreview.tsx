@@ -61,15 +61,6 @@ function cmpId(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
-/** Field label — small uppercase muted text */
-function L({ children }: { children: ReactNode }) {
-  return (
-    <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70 mr-0.5 font-sans">
-      {children}
-    </span>
-  );
-}
-
 /** Highlight: bold/primary if value equals the previewed object name */
 function H({ hit, value }: { hit: string; value: string }) {
   const v = value || "—";
