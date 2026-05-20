@@ -292,21 +292,30 @@ export function ObjectName({
   className?: string;
 }) {
   const r = useResolve(name);
-  const isAny = !name || name === "any";
+  const isEmpty = !name;
 
-  if (isAny) {
+  if (isEmpty) {
     return (
       <span className={`font-mono text-xs text-muted-foreground ${className}`}>
-        {name || "—"}
+        —
       </span>
     );
   }
 
+  const isLiteral =
+    r.kind === "literal-any" ||
+    r.kind === "literal-ip" ||
+    r.kind === "literal-port";
+
+  const colorCls = isLiteral
+    ? "text-muted-foreground"
+    : r.kind === "unknown"
+      ? "text-destructive"
+      : "text-primary";
+
   const trigger = (
     <span
-      className={`font-mono text-xs cursor-help underline decoration-dotted underline-offset-2 ${
-        r.kind === "unknown" ? "text-destructive" : "text-primary"
-      } ${className}`}
+      className={`font-mono text-xs cursor-help underline decoration-dotted underline-offset-2 ${colorCls} ${className}`}
     >
       {name}
     </span>
@@ -317,33 +326,43 @@ export function ObjectName({
       <HoverCardTrigger asChild>{trigger}</HoverCardTrigger>
       <HoverCardContent className="w-96 max-h-96 overflow-auto" align="start">
         <div className="space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="text-sm font-semibold">{r.name}</div>
-              <div className="text-xs text-muted-foreground">
-                <Badge tone={r.kind === "unknown" ? "danger" : "default"}>
-                  {kindLabel[r.kind]}
-                </Badge>
-                {r.lineNo && (
-                  <>
-                    {" · "}
-                    <Link
-                      to="/raw"
-                      search={{ line: r.lineNo }}
-                      className="text-primary hover:underline"
-                    >
-                      L{r.lineNo}
-                    </Link>
-                  </>
-                )}
-              </div>
+          <div>
+            <div className="text-sm font-semibold">{r.name}</div>
+            <div className="text-xs text-muted-foreground">
+              <Badge
+                tone={
+                  r.kind === "unknown"
+                    ? "danger"
+                    : isLiteral
+                      ? "muted"
+                      : "default"
+                }
+              >
+                {kindLabel[r.kind]}
+              </Badge>
+              {r.lineNo && (
+                <>
+                  {" · "}
+                  <Link
+                    to="/raw"
+                    search={{ line: r.lineNo }}
+                    className="text-primary hover:underline"
+                  >
+                    L{r.lineNo}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
+          {r.literal && (
+            <div className="text-xs text-muted-foreground">{r.literal}</div>
+          )}
           {r.description && (
             <div className="text-xs text-muted-foreground">{r.description}</div>
           )}
           {r.addr && <AddressEntries a={r.addr} />}
           {r.svc && <ServiceEntries s={r.svc} />}
+          {r.pool && <PoolDetail p={r.pool} />}
           {r.addrGroup && (
             <div>
               <div className="text-xs font-medium text-muted-foreground mb-1">
@@ -365,7 +384,7 @@ export function ObjectName({
               在配置中找不到该名称的定义，可能引用了已删除的对象。
             </div>
           )}
-          <References name={r.name} kind={r.kind} />
+          <References resolved={r} />
         </div>
       </HoverCardContent>
     </HoverCard>
