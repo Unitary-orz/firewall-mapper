@@ -3,6 +3,7 @@ import { useConfigStore } from "@/lib/store";
 import type { NatRule, PolicyRule } from "@/lib/parser/types";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, LineLink } from "@/components/DataTable";
+import { useShowLineNumbers } from "@/lib/uiPrefs";
 import { useMemo, useState } from "react";
 import type { ParsedConfig } from "@/lib/parser/types";
 import {
