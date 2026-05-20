@@ -144,7 +144,7 @@ function ServiceEntries({ s }: { s: ServiceObject }) {
 }
 
 function MemberRow({ m }: { m: string }) {
-  const { cfg, xr } = useConfigStore();
+  const { cfg } = useConfigStore();
   if (!cfg) return null;
   const a = cfg.addresses.find((x) => x.name === m);
   const ag = cfg.addressGroups.find((x) => x.name === m);
@@ -177,10 +177,6 @@ function MemberRow({ m }: { m: string }) {
   }
 
   const desc = a?.description ?? ag?.description ?? s?.description ?? sg?.description;
-  const refCount =
-    (s || sg
-      ? xr?.serviceUsedBy.get(m)?.length
-      : xr?.addressUsedBy.get(m)?.length) ?? 0;
   const unresolved = !a && !ag && !s && !sg;
 
   return (
@@ -190,15 +186,11 @@ function MemberRow({ m }: { m: string }) {
       {summary && (
         <span className="font-mono text-muted-foreground break-all">{summary}</span>
       )}
-      {refCount > 0 ? (
-        <Badge tone="default">引用 {refCount}</Badge>
-      ) : !unresolved ? (
-        <Badge tone="warn">未引用</Badge>
-      ) : null}
       {desc && <span className="text-muted-foreground italic">{desc}</span>}
     </li>
   );
 }
+
 
 function GroupMembers({ members }: { members: string[] }) {
   if (members.length === 0)
