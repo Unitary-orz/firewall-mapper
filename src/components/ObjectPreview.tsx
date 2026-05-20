@@ -270,18 +270,6 @@ export function ObjectName({
               >
                 {kindLabel[r.kind]}
               </Badge>
-              {r.lineNo && (
-                <>
-                  {" · "}
-                  <Link
-                    to="/raw"
-                    search={{ line: r.lineNo }}
-                    className="text-primary hover:underline"
-                  >
-                    L{r.lineNo}
-                  </Link>
-                </>
-              )}
             </div>
           </div>
           {r.literal && (
@@ -314,7 +302,6 @@ export function ObjectName({
               在配置中找不到该名称的定义，可能引用了已删除的对象。
             </div>
           )}
-          <References resolved={r} />
         </div>
       </HoverCardContent>
     </HoverCard>
