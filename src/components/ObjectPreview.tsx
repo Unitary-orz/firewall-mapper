@@ -194,13 +194,21 @@ function MemberRow({ m }: { m: string }) {
   const unresolved = !a && !ag && !s && !sg;
 
   return (
-    <li className="text-xs flex items-start gap-2 flex-wrap">
-      <Badge tone={unresolved ? "danger" : "muted"}>{kindTag}</Badge>
-      <ObjectName name={m} />
-      {summary && (
-        <span className="font-mono text-muted-foreground break-all">{summary}</span>
-      )}
-      {desc && <span className="text-muted-foreground italic">{desc}</span>}
+    <li className="py-1.5 px-2 space-y-0.5">
+      <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-x-2 text-xs min-w-0 flex-1 truncate">
+          <ObjectName name={m} />
+          {summary && (
+            <span className="font-mono text-muted-foreground break-all truncate min-w-0">
+              {summary}
+            </span>
+          )}
+        </div>
+        <span className="shrink-0">
+          <Badge tone={unresolved ? "danger" : "muted"}>{kindTag}</Badge>
+        </span>
+      </div>
+      {desc && <DescQuote className="text-[11px] line-clamp-2">{desc}</DescQuote>}
     </li>
   );
 }
@@ -209,24 +217,42 @@ function MemberRow({ m }: { m: string }) {
 function GroupMembers({ members }: { members: string[] }) {
   if (members.length === 0)
     return <div className="text-xs text-muted-foreground">（空）</div>;
+  const max = 30;
+  const shown = members.slice(0, max);
+  const rest = members.length - shown.length;
   return (
-    <ul className="space-y-1">
-      {members.map((m, i) => (
+    <ul className="divide-y divide-border/40 rounded-md border border-border/40">
+      {shown.map((m, i) => (
         <MemberRow key={i} m={m} />
       ))}
+      {rest > 0 && (
+        <li className="text-xs text-muted-foreground py-1.5 px-2">
+          …还有 {rest} 个
+        </li>
+      )}
     </ul>
   );
 }
 
 
 function PoolDetail({ p }: { p: NatPool }) {
+  const hasTo = p.addressTo && p.addressTo !== p.addressFrom;
   return (
-    <div className="font-mono text-xs">
-      {p.addressFrom ?? "—"}
-      {p.addressTo && p.addressTo !== p.addressFrom ? ` ~ ${p.addressTo}` : ""}
+    <div className="flex items-baseline gap-x-3 flex-wrap font-mono text-xs">
+      <span className="flex items-baseline gap-1">
+        <L>起始</L>
+        <span className="text-foreground">{p.addressFrom ?? "—"}</span>
+      </span>
+      {hasTo && (
+        <span className="flex items-baseline gap-1">
+          <L>结束</L>
+          <span className="text-foreground">{p.addressTo}</span>
+        </span>
+      )}
     </div>
   );
 }
+
 
 export function ObjectName({
   name,
