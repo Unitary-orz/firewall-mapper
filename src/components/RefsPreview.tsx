@@ -23,16 +23,14 @@ function useEnrich() {
       const p = cfg.policies.find((x) => x.id === r.id);
       if (p)
         return {
-          title: `策略 #${p.id}`,
           action: p.action,
-          sub: `${p.srcZone}→${p.dstZone} · ${p.srcAddr} → ${p.dstAddr} : ${p.service}`,
+          sub: `${p.srcZone}→${p.dstZone}  ${p.srcAddr} → ${p.dstAddr} : ${p.service}`,
         };
     }
     if (r.by === "nat") {
       const n = cfg.natRules.find((x) => x.id === r.id);
       if (n)
         return {
-          title: `NAT #${n.id}`,
           action: n.kind,
           sub:
             n.kind === "destination"
@@ -45,8 +43,7 @@ function useEnrich() {
       const g = cfg.addressGroups.find((x) => x.name === r.id);
       if (g)
         return {
-          title: `地址组 ${g.name}`,
-          sub: `${g.members.length} 个成员`,
+          sub: `${g.name}（${g.members.length} 成员）`,
           desc: g.description,
         };
     }
@@ -54,12 +51,11 @@ function useEnrich() {
       const g = cfg.serviceGroups.find((x) => x.name === r.id);
       if (g)
         return {
-          title: `服务组 ${g.name}`,
-          sub: `${g.members.length} 个成员`,
+          sub: `${g.name}（${g.members.length} 成员）`,
           desc: g.description,
         };
     }
-    return { title: r.detail, sub: "" };
+    return { sub: r.detail };
   };
 }
 
