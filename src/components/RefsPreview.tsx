@@ -103,7 +103,7 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
             <H hit={hit} value={p.service} />
           </span>
         </div>
-        <Badge tone={actionTone} className="shrink-0">{action}</Badge>
+        <span className="shrink-0"><Badge tone={actionTone}>{action}</Badge></span>
       </div>
       {hasMeta && (
         <div className="flex items-baseline gap-x-3 gap-y-0.5 flex-wrap text-[11px] text-muted-foreground pl-0.5">
