@@ -243,9 +243,11 @@ function AccessGraphPage() {
                   <td className="px-3 py-1.5 text-xs text-muted-foreground">
                     {r.description ?? "—"}
                   </td>
-                  <td className="px-3 py-1.5">
-                    <LineLink line={r.lineNo} />
-                  </td>
+                  {showLineNo && (
+                    <td className="px-3 py-1.5">
+                      <LineLink line={r.lineNo} />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
