@@ -3,6 +3,7 @@ import { useConfigStore } from "@/lib/store";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, DataTable, LineLink, type Column } from "@/components/DataTable";
 import { ObjectName } from "@/components/ObjectPreview";
+import { RefsPreview } from "@/components/RefsPreview";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/services")({
@@ -58,11 +59,7 @@ function ServicesPage() {
     {
       key: "refs",
       header: "被引用",
-      cell: (s) => {
-        const refs = xr.serviceUsedBy.get(s.name) ?? [];
-        if (refs.length === 0) return <Badge tone="warn">未引用</Badge>;
-        return <span className="text-xs">{refs.length} 处</span>;
-      },
+      cell: (s) => <RefsPreview name={s.name} kind="service" />,
       search: (s) => String((xr.serviceUsedBy.get(s.name) ?? []).length),
     },
     {
@@ -105,11 +102,7 @@ function ServicesPage() {
     {
       key: "refs",
       header: "被引用",
-      cell: (g) => {
-        const refs = xr.serviceUsedBy.get(g.name) ?? [];
-        if (refs.length === 0) return <Badge tone="warn">未引用</Badge>;
-        return <span className="text-xs">{refs.length} 处</span>;
-      },
+      cell: (g) => <RefsPreview name={g.name} kind="service" />,
       search: (g) => String((xr.serviceUsedBy.get(g.name) ?? []).length),
     },
     {

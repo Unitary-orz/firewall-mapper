@@ -3,6 +3,7 @@ import { useConfigStore } from "@/lib/store";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, DataTable, LineLink, type Column } from "@/components/DataTable";
 import { ObjectName } from "@/components/ObjectPreview";
+import { RefsPreview } from "@/components/RefsPreview";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/objects")({
@@ -56,17 +57,7 @@ function ObjectsPage() {
     {
       key: "refs",
       header: "被引用",
-      cell: (a) => {
-        const refs = xr.addressUsedBy.get(a.name) ?? [];
-        if (refs.length === 0)
-          return <Badge tone="warn">未引用</Badge>;
-        return (
-          <span className="text-xs">
-            {refs.length} 处（
-            {[...new Set(refs.map((r) => r.by))].join(", ")}）
-          </span>
-        );
-      },
+      cell: (a) => <RefsPreview name={a.name} kind="address" />,
       search: (a) =>
         String((xr.addressUsedBy.get(a.name) ?? []).length),
     },
@@ -110,11 +101,7 @@ function ObjectsPage() {
     {
       key: "refs",
       header: "被引用",
-      cell: (g) => {
-        const refs = xr.addressUsedBy.get(g.name) ?? [];
-        if (refs.length === 0) return <Badge tone="warn">未引用</Badge>;
-        return <span className="text-xs">{refs.length} 处</span>;
-      },
+      cell: (g) => <RefsPreview name={g.name} kind="address" />,
       search: (g) =>
         String((xr.addressUsedBy.get(g.name) ?? []).length),
     },
