@@ -200,9 +200,11 @@ function AccessGraphPage() {
                   <td className="px-3 py-1.5 font-mono text-xs">{p.dstAddr}</td>
                   <td className="px-3 py-1.5 font-mono text-xs">{p.service}</td>
                   <td className="px-3 py-1.5 text-xs">{p.schedule}</td>
-                  <td className="px-3 py-1.5">
-                    <LineLink line={p.lineNo} />
-                  </td>
+                  {showLineNo && (
+                    <td className="px-3 py-1.5">
+                      <LineLink line={p.lineNo} />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
