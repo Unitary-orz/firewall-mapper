@@ -41,6 +41,7 @@ export interface Column<T> {
   cell: (row: T) => ReactNode;
   search?: (row: T) => string;
   className?: string;
+  hiddenWhenNoLineNo?: boolean;
 }
 
 export function DataTable<T>({
