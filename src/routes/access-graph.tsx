@@ -89,11 +89,9 @@ function AccessGraphPage() {
   }, [cfg]);
 
   const matched = useMemo(() => {
-    if (!cfg) return { policies: [], nats: [] };
+    if (!cfg) return { policies: [] as PolicyRule[], nats: [] as NatRule[] };
     const srcSet = expandAddressNames(src, cfg);
     const dstSet = expandAddressNames(dst, cfg);
-    const matchAddr = (rule: string, set: Set<string>) =>
-      rule === "any" || src === "any" || dst === "any" || set.has(rule);
     const policies = cfg.policies.filter(
       (p) =>
         (src === "any" || p.srcAddr === "any" || srcSet.has(p.srcAddr)) &&
