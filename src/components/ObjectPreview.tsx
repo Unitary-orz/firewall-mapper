@@ -204,68 +204,6 @@ function GroupMembers({ members }: { members: string[] }) {
   );
 }
 
-function References({ resolved }: { resolved: Resolved }) {
-  const { xr, cfg } = useConfigStore();
-  const { kind, name } = resolved;
-  if (
-    kind === "literal-any" ||
-    kind === "literal-ip" ||
-    kind === "literal-port" ||
-    kind === "unknown"
-  )
-    return null;
-
-  let refs =
-    kind === "service" || kind === "service-group"
-      ? xr?.serviceUsedBy.get(name) ?? []
-      : xr?.addressUsedBy.get(name) ?? [];
-
-  // NAT 池：扫描 natRules.translatedPool
-  if (kind === "nat-pool" && cfg) {
-    refs = cfg.natRules
-      .filter((r) => r.translatedPool === name)
-      .map((r) => ({
-        by: "nat" as const,
-        id: r.id,
-        lineNo: r.lineNo,
-        detail: `NAT #${r.id} ${r.kind}`,
-      }));
-  }
-
-  if (refs.length === 0)
-    return (
-      <div className="mt-2 text-xs">
-        <Badge tone="warn">未被引用</Badge>
-      </div>
-    );
-  const shown = refs.slice(0, 8);
-  return (
-    <div className="mt-2 space-y-1">
-      <div className="text-xs font-medium text-muted-foreground">
-        被引用 {refs.length} 处
-      </div>
-      <ul className="space-y-0.5">
-        {shown.map((r, i) => (
-          <li key={i} className="text-xs">
-            <Link
-              to="/raw"
-              search={{ line: r.lineNo }}
-              className="text-primary hover:underline"
-            >
-              L{r.lineNo}
-            </Link>{" "}
-            <span className="text-muted-foreground">{r.detail}</span>
-          </li>
-        ))}
-        {refs.length > shown.length && (
-          <li className="text-xs text-muted-foreground">
-            …还有 {refs.length - shown.length} 处
-          </li>
-        )}
-      </ul>
-    </div>
-  );
-}
 
 function PoolDetail({ p }: { p: NatPool }) {
   return (
