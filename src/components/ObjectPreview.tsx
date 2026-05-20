@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Badge } from "@/components/DataTable";
 import { useConfigStore } from "@/lib/store";
+import { L, DescQuote } from "@/components/previewAtoms";
 import type {
   AddressGroup,
   AddressObject,
@@ -117,8 +118,9 @@ function AddressEntries({ a }: { a: AddressObject }) {
         <span className="text-muted-foreground">（空）</span>
       ) : (
         a.entries.map((e, i) => (
-          <div key={i}>
-            <Badge tone="muted">{e.kind}</Badge> {e.value}
+          <div key={i} className="flex items-baseline gap-1">
+            <L>{e.kind}</L>
+            <span className="text-foreground break-all">{e.value}</span>
           </div>
         ))
       )}
@@ -133,9 +135,21 @@ function ServiceEntries({ s }: { s: ServiceObject }) {
         <span className="text-muted-foreground">（空）</span>
       ) : (
         s.entries.map((e, i) => (
-          <div key={i}>
-            <Badge tone="muted">{e.protocol}</Badge> dst {e.destPort ?? "any"}
-            {e.sourcePort ? ` · src ${e.sourcePort}` : ""}
+          <div key={i} className="flex items-baseline gap-x-2 flex-wrap">
+            <span className="flex items-baseline gap-1">
+              <L>协议</L>
+              <span className="text-foreground">{e.protocol}</span>
+            </span>
+            <span className="flex items-baseline gap-1">
+              <L>目的</L>
+              <span className="text-foreground">{e.destPort ?? "any"}</span>
+            </span>
+            {e.sourcePort && (
+              <span className="flex items-baseline gap-1">
+                <L>源</L>
+                <span className="text-foreground">{e.sourcePort}</span>
+              </span>
+            )}
           </div>
         ))
       )}
@@ -180,13 +194,21 @@ function MemberRow({ m }: { m: string }) {
   const unresolved = !a && !ag && !s && !sg;
 
   return (
-    <li className="text-xs flex items-start gap-2 flex-wrap">
-      <Badge tone={unresolved ? "danger" : "muted"}>{kindTag}</Badge>
-      <ObjectName name={m} />
-      {summary && (
-        <span className="font-mono text-muted-foreground break-all">{summary}</span>
-      )}
-      {desc && <span className="text-muted-foreground italic">{desc}</span>}
+    <li className="py-1.5 px-2 space-y-0.5">
+      <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-x-2 text-xs min-w-0 flex-1 truncate">
+          <ObjectName name={m} />
+          {summary && (
+            <span className="font-mono text-muted-foreground break-all truncate min-w-0">
+              {summary}
+            </span>
+          )}
+        </div>
+        <span className="shrink-0">
+          <Badge tone={unresolved ? "danger" : "muted"}>{kindTag}</Badge>
+        </span>
+      </div>
+      {desc && <DescQuote className="text-[11px] line-clamp-2">{desc}</DescQuote>}
     </li>
   );
 }
@@ -195,24 +217,42 @@ function MemberRow({ m }: { m: string }) {
 function GroupMembers({ members }: { members: string[] }) {
   if (members.length === 0)
     return <div className="text-xs text-muted-foreground">（空）</div>;
+  const max = 30;
+  const shown = members.slice(0, max);
+  const rest = members.length - shown.length;
   return (
-    <ul className="space-y-1">
-      {members.map((m, i) => (
+    <ul className="divide-y divide-border/40 rounded-md border border-border/40">
+      {shown.map((m, i) => (
         <MemberRow key={i} m={m} />
       ))}
+      {rest > 0 && (
+        <li className="text-xs text-muted-foreground py-1.5 px-2">
+          …还有 {rest} 个
+        </li>
+      )}
     </ul>
   );
 }
 
 
 function PoolDetail({ p }: { p: NatPool }) {
+  const hasTo = p.addressTo && p.addressTo !== p.addressFrom;
   return (
-    <div className="font-mono text-xs">
-      {p.addressFrom ?? "—"}
-      {p.addressTo && p.addressTo !== p.addressFrom ? ` ~ ${p.addressTo}` : ""}
+    <div className="flex items-baseline gap-x-3 flex-wrap font-mono text-xs">
+      <span className="flex items-baseline gap-1">
+        <L>起始</L>
+        <span className="text-foreground">{p.addressFrom ?? "—"}</span>
+      </span>
+      {hasTo && (
+        <span className="flex items-baseline gap-1">
+          <L>结束</L>
+          <span className="text-foreground">{p.addressTo}</span>
+        </span>
+      )}
     </div>
   );
 }
+
 
 export function ObjectName({
   name,
@@ -256,20 +296,22 @@ export function ObjectName({
       <HoverCardTrigger asChild>{trigger}</HoverCardTrigger>
       <HoverCardContent className="w-96 max-h-96 overflow-auto" align="start">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold break-all">{r.name}</span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold break-all min-w-0 flex-1">
+              {r.name}
+            </span>
             {!isLiteral && (
-              <Badge tone={r.kind === "unknown" ? "danger" : "default"}>
-                {kindLabel[r.kind]}
-              </Badge>
+              <span className="shrink-0">
+                <Badge tone={r.kind === "unknown" ? "danger" : "default"}>
+                  {kindLabel[r.kind]}
+                </Badge>
+              </span>
             )}
           </div>
           {r.literal && (
             <div className="text-xs text-muted-foreground">{r.literal}</div>
           )}
-          {r.description && (
-            <div className="text-xs text-muted-foreground">{r.description}</div>
-          )}
+          {r.description && <DescQuote>{r.description}</DescQuote>}
           {r.addr && <AddressEntries a={r.addr} />}
           {r.svc && <ServiceEntries s={r.svc} />}
           {r.pool && <PoolDetail p={r.pool} />}

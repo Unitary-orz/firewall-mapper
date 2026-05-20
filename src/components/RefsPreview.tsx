@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import {
   HoverCard,
   HoverCardContent,
@@ -7,6 +7,7 @@ import {
 import { Badge } from "@/components/DataTable";
 import { useConfigStore } from "@/lib/store";
 import type { RefUsage } from "@/lib/parser";
+import { L, DescQuote } from "@/components/previewAtoms";
 import type { NatRule, PolicyRule } from "@/lib/parser/types";
 
 const byLabel: Record<RefUsage["by"], string> = {
@@ -58,15 +59,6 @@ function cmpId(a: string, b: string): number {
   const nb = Number(b);
   if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
   return a.localeCompare(b);
-}
-
-/** Field label — small uppercase muted text */
-function L({ children }: { children: ReactNode }) {
-  return (
-    <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70 mr-0.5 font-sans">
-      {children}
-    </span>
-  );
 }
 
 /** Highlight: bold/primary if value equals the previewed object name */
@@ -157,9 +149,9 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
       {hasMeta && (
         <div className="flex items-baseline gap-x-3 gap-y-0.5 flex-wrap text-[11px] text-muted-foreground pl-0.5">
           {n.description && (
-            <span className="line-clamp-2 break-all min-w-0 border-l-2 border-border pl-2 italic">
+            <DescQuote as="span" className="line-clamp-2 min-w-0 text-[11px]">
               {n.description}
-            </span>
+            </DescQuote>
           )}
           {n.disabled && <span className="text-amber-600">已禁用</span>}
           {n.log && <span>log</span>}
@@ -193,9 +185,7 @@ function GroupLine({
         </span>
       </div>
       {description && (
-        <div className="text-[11px] text-muted-foreground line-clamp-2 break-all border-l-2 border-border pl-2 italic">
-          {description}
-        </div>
+        <DescQuote className="text-[11px] line-clamp-2">{description}</DescQuote>
       )}
     </div>
   );
