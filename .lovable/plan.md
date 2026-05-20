@@ -1,87 +1,65 @@
-## 目标
+## 对象预览（ObjectPreview）优化
 
-优化 `RefsPreview` 中每条策略 / NAT 引用的视觉层级：
+参考 RefsPreview 已落地的样式语言（小号 uppercase 标签 L()、引用样式描述、tone 化 Badge、紧凑两排布局），把对象 Hover 卡片做一致化优化。
 
-1. 主信息（src→dst / 服务 / 动作）保持显眼，**次要元数据（区域、调度、描述、#id、log/disabled 等）下沉到第二行，用更弱样式呈现**。
-2. **适当加入字段标题（label）**，如 `源`、`目的`、`服务`、`原始`、`转换为`、`区域`、`调度` 等，提高列表可读性，避免裸值堆叠产生歧义。
+### 现状问题
 
-## 改动点（仅 `src/components/RefsPreview.tsx`）
+1. **卡片头部**：仅 `名称 + Badge(kindLabel)`，描述用单独一行普通灰字，缺少和 RefsPreview 一致的"引用样式"（左边框 + italic）。
+2. **AddressEntries / ServiceEntries**：每行以 `Badge(kind/protocol)` 起头，颜色一律 muted，视觉密度高、缺少字段标签，端口/源端口靠空格拼接，可读性一般。
+3. **MemberRow**：
+   - `Badge(kindTag)` + 名称 + 长 summary + 描述全部挤在一行 `flex-wrap`，描述断行后与上一行成员混在一起难分辨。
+   - summary 是纯文本（"host:1.1.1.1，range:..."），没有字段标签，未利用 L() 风格。
+   - 描述同样缺引用样式。
+4. **GroupMembers 标题**：`成员（N）` 与 RefsPreview 段标题风格不一致（后者是 `byLabel（N）` + 可选操作按钮）。
+5. **PoolDetail**：单行 mono，缺少 `起始/结束` 字段标签。
+6. **literal / unknown 提示**：literal 提示和 description 都用同款 `text-xs text-muted-foreground`，无法区分"系统注释"和"用户描述"。
+7. **共享工具**：`L()` 目前定义在 RefsPreview 内部，对象预览复用时需要抽出（或在 ObjectPreview 内复制一份）。
 
-### 1. 通用：字段标题小组件
+### 优化方案
 
-```tsx
-function L({ children }: { children: ReactNode }) {
-  return <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70 mr-0.5">{children}</span>;
-}
-```
+**A. 提取共享原子（轻量）**
+- 在 `src/components/RefsPreview.tsx` 把 `L`（小号 uppercase label）和"引用样式描述"类名（`border-l-2 border-border pl-2 italic`）抽到新文件 `src/components/previewAtoms.tsx`，导出 `L`、`DescQuote`（包装 children 的 span/div）。
+- RefsPreview 和 ObjectPreview 都从这里 import，保持视觉一致。
 
-- 字号比次要文本再小一档、uppercase、letter-spacing 加一点。
-- 用于"源 / 目的 / 服务 / 原始 / 转换为 / 区域 / 调度" 等字段名。
-- 紧跟其后是实际值；多个字段间用 `gap-2` 而不是 `·`，让 label 自身承担分隔感。
+**B. 卡片头部 (ObjectName HoverCardContent)**
+- 标题行保持 `名称 + Badge(kindLabel)`，但把 Badge 放到 `ml-auto`，让名称靠左独占主要空间。
+- `r.description` 改用 `DescQuote`：`border-l-2 border-border pl-2 italic text-xs text-muted-foreground`，与 RefsPreview 描述一致。
+- `r.literal`（系统说明，如"通配（不限制）"）保持普通 muted 文本，**不**加引用样式 —— 区分"系统注释"和"用户描述"。
+- `unknown` 提示行使用 `text-destructive` + 小图标语义（保留现样式即可）。
 
-### 2. 策略行：双行结构 + 字段标题
+**C. AddressEntries**
+- 每条改为：`<L>kind</L> <span className="text-foreground">{value}</span>`，去掉 Badge，密度更低。
+- 容器保留 `space-y-0.5 font-mono text-xs`。
 
-```
-源 {src}   目的 {dst}   服务 {svc}                    [允许/拒绝]
-  区域 trust→untrust   调度 仅 work-time   #12
-```
+**D. ServiceEntries**
+- 每条改为：`<L>协议</L> {protocol} <L>目的</L> {destPort ?? 'any'} [<L>源</L> {sourcePort}]`，端口区段用 `text-foreground`，标签用 L()。
+- 多个源端口/目的端口情况下间距用 `gap-x-2`。
 
-- **第一行（font-mono text-sm）**：
-  - `<L>源</L> {H src}` ` <L>目的</L> {H dst}` ` <L>服务</L> {H svc}`
-  - 右侧只保留动作 badge（permit=ok / deny=danger）。
-- **第二行（text-[11px] text-muted-foreground）**：
-  - `<L>区域</L> trust→untrust`（仅当区域不全是 any 时）
-  - `<L>调度</L> 仅 work-time`（仅当非 always；调度部分用 `text-amber-600` warn 色）
-  - 末尾 `#12` 用 `font-mono`，作 id 标识
-  - 各分段用 `gap-x-3` 间隔，第二行整体可换行
-- 命中字段（值等于 `name`）继续用 `H` 加粗高亮。
-- 去掉左边框 `border-l-2`，行间用 `<ul>` 的 `divide-y divide-border/40` 分隔。
+**E. MemberRow（GroupMembers 中的每个成员）**
+- 重构为两排（与 RefsPreview PolicyLine/NatLine 一致）：
+  - 第一排：`<L>类型</L> kindTag · <ObjectName name={m}/> · summary（mono，截断）` + 右侧 `Badge(类型 tone)`（unresolved → danger，否则 muted）。
+  - 第二排（仅当有描述）：`DescQuote` 包装 description，与 RefsPreview NAT 描述一致。
+- summary 在第一排用 `truncate min-w-0`，避免挤压第二排。
+- 列表 `<ul>` 增加 `divide-y divide-border/40 rounded-md border border-border/40 px-2 py-1` —— 借鉴 RefsPreview SectionBlock 的列表外观。
 
-### 3. NAT 行：双行 + 字段标题 + 描述并入次要行
+**F. GroupMembers 段标题**
+- ObjectName 卡片中"成员（N）"行套用 RefsPreview 段标题样式：`text-xs font-medium text-muted-foreground`，并提供"超过 N 个时截断 + 还有 X 个"提示（>30 截断，与 RefsPreview 一致）。
 
-```
-原始 {src} → {origDst}:{origSvc}   转换为 {pool}:{port}        [目的 NAT]
-  状态 已禁用   日志 log   #3   说明 — {description}
-```
+**G. PoolDetail**
+- 改为：`<L>起始</L> {addressFrom} [<L>结束</L> {addressTo}]`。
 
-- **第一行**：
-  - `<L>原始</L> {H src} → {H origDst}:{origSvc}`
-  - `<L>转换为</L> {H pool}:{servicePort}`
-  - 右侧 kind badge
-- **第二行**：
-  - `<L>状态</L> 已禁用`（disabled 时）
-  - `<L>日志</L> log`（log 时）
-  - `#3`
-  - `<L>说明</L> {description}`（line-clamp-2，去掉 italic）
-  - 全部 muted 小字，不再用 badge
+**H. Hover 卡宽度**
+- 当前 `w-96`，配合更紧凑的两排布局够用；保持不变，仅在必要的 truncate 处加 `min-w-0`。
 
-### 4. 组行：加 label + 描述下沉
+### 不在此次改动范围
 
-```
-名称 {groupName}                              [成员 N]
-  说明 {description}
-```
+- 不改 parser / store / 业务字段。
+- 不改 hover 触发逻辑、`ObjectName` 对外 API。
+- 不改 RefsPreview 已有视觉（只抽离 L/DescQuote 共享原子）。
+- 不调 literal/unknown 的语义颜色规则。
 
-- 第二行 `text-[11px] text-muted-foreground`，去掉 italic。
-- 无描述时第二行不渲染。
+### 受影响文件
 
-### 5. 列表容器
-
-- `<ul>` 用 `divide-y divide-border/40`，每项 `py-1.5`，去掉左边框，密度更接近表格行。
-
-### 6. 折叠按钮：保留不变
-
-"展开 N 条 any-any 引用" 逻辑、any-any 全量提示文案保留。
-
-## 不动
-
-- 排序与 any-any 权重、折叠机制
-- 触发器文案、Header summary
-- 其他文件、解析器、store、行号系统
-
-## 验收
-
-1. 列表中每行都有清晰的字段标题（源/目的/服务/原始/转换为/区域/调度/说明），不再需要靠位置推断字段含义。
-2. 主信息一行、次要信息一行；badge 仅剩动作 / NAT 类型 / 组成员数，视觉噪音明显降低。
-3. NAT description 并入次要行，前缀 `说明`，长描述截断到 2 行。
-4. 字段标题样式统一（10px、uppercase、muted），不抢夺主信息焦点。
+- `src/components/previewAtoms.tsx`（新建，导出 `L`、`DescQuote`）
+- `src/components/RefsPreview.tsx`（改 import，删除本地 L 定义；描述行换成 `DescQuote`）
+- `src/components/ObjectPreview.tsx`（按 B–G 重写各子组件）
