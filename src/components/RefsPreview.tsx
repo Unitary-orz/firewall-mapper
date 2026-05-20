@@ -135,46 +135,35 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
   const hasMeta = n.disabled || n.log || n.description || n.id;
   return (
     <div className="space-y-0.5">
-      <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap font-mono text-sm">
-        <span className="flex items-baseline gap-1">
-          <L>原始</L>
-          <H hit={hit} value={n.srcAddr} />
-          <span className="text-muted-foreground">→</span>
-          <H hit={hit} value={n.origDstAddr} />
-          {n.origDstService && (
-            <span className="text-muted-foreground">:{n.origDstService}</span>
-          )}
-        </span>
-        <span className="flex items-baseline gap-1">
-          <L>转换为</L>
-          <H hit={hit} value={n.translatedPool} />
-          {n.servicePort && (
-            <span className="text-muted-foreground">:{n.servicePort}</span>
-          )}
-        </span>
-        <span className="ml-auto">
-          <Badge tone="default">{k}</Badge>
-        </span>
+      <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-x-2 font-mono text-xs min-w-0 flex-1 truncate">
+          <span className="flex items-baseline gap-1 min-w-0">
+            <L>原始</L>
+            <H hit={hit} value={n.srcAddr} />
+            <span className="text-muted-foreground">→</span>
+            <H hit={hit} value={n.origDstAddr} />
+            {n.origDstService && (
+              <span className="text-muted-foreground">:{n.origDstService}</span>
+            )}
+          </span>
+          <span className="flex items-baseline gap-1 min-w-0">
+            <L>转换为</L>
+            <H hit={hit} value={n.translatedPool} />
+            {n.servicePort && (
+              <span className="text-muted-foreground">:{n.servicePort}</span>
+            )}
+          </span>
+        </div>
+        <span className="shrink-0"><Badge tone="default">{k}</Badge></span>
       </div>
       {hasMeta && (
         <div className="flex items-baseline gap-x-3 gap-y-0.5 flex-wrap text-[11px] text-muted-foreground pl-0.5">
-          {n.disabled && (
-            <span className="flex items-baseline gap-1">
-              <L>状态</L>
-              <span className="text-amber-600">已禁用</span>
-            </span>
-          )}
-          {n.log && (
-            <span className="flex items-baseline gap-1">
-              <L>日志</L>
-              <span>log</span>
-            </span>
-          )}
+          {n.disabled && <span className="text-amber-600">已禁用</span>}
+          {n.log && <span>log</span>}
           {n.id && <span className="font-mono">#{n.id}</span>}
           {n.description && (
-            <span className="flex items-baseline gap-1 min-w-0 flex-1">
-              <L>说明</L>
-              <span className="line-clamp-2 break-all">{n.description}</span>
+            <span className="line-clamp-2 break-all min-w-0 flex-1">
+              {n.description}
             </span>
           )}
         </div>
