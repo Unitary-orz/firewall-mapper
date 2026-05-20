@@ -9,8 +9,56 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ServicesRouteImport } from './routes/services'
+import { Route as RawRouteImport } from './routes/raw'
+import { Route as PoliciesRouteImport } from './routes/policies'
+import { Route as ObjectsRouteImport } from './routes/objects'
+import { Route as NatRouteImport } from './routes/nat'
+import { Route as IntermediariesRouteImport } from './routes/intermediaries'
+import { Route as AuditRouteImport } from './routes/audit'
+import { Route as AccessGraphRouteImport } from './routes/access-graph'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RawRoute = RawRouteImport.update({
+  id: '/raw',
+  path: '/raw',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliciesRoute = PoliciesRouteImport.update({
+  id: '/policies',
+  path: '/policies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObjectsRoute = ObjectsRouteImport.update({
+  id: '/objects',
+  path: '/objects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NatRoute = NatRouteImport.update({
+  id: '/nat',
+  path: '/nat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntermediariesRoute = IntermediariesRouteImport.update({
+  id: '/intermediaries',
+  path: '/intermediaries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditRoute = AuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccessGraphRoute = AccessGraphRouteImport.update({
+  id: '/access-graph',
+  path: '/access-graph',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +67,144 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/access-graph': typeof AccessGraphRoute
+  '/audit': typeof AuditRoute
+  '/intermediaries': typeof IntermediariesRoute
+  '/nat': typeof NatRoute
+  '/objects': typeof ObjectsRoute
+  '/policies': typeof PoliciesRoute
+  '/raw': typeof RawRoute
+  '/services': typeof ServicesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/access-graph': typeof AccessGraphRoute
+  '/audit': typeof AuditRoute
+  '/intermediaries': typeof IntermediariesRoute
+  '/nat': typeof NatRoute
+  '/objects': typeof ObjectsRoute
+  '/policies': typeof PoliciesRoute
+  '/raw': typeof RawRoute
+  '/services': typeof ServicesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/access-graph': typeof AccessGraphRoute
+  '/audit': typeof AuditRoute
+  '/intermediaries': typeof IntermediariesRoute
+  '/nat': typeof NatRoute
+  '/objects': typeof ObjectsRoute
+  '/policies': typeof PoliciesRoute
+  '/raw': typeof RawRoute
+  '/services': typeof ServicesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/access-graph'
+    | '/audit'
+    | '/intermediaries'
+    | '/nat'
+    | '/objects'
+    | '/policies'
+    | '/raw'
+    | '/services'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/access-graph'
+    | '/audit'
+    | '/intermediaries'
+    | '/nat'
+    | '/objects'
+    | '/policies'
+    | '/raw'
+    | '/services'
+  id:
+    | '__root__'
+    | '/'
+    | '/access-graph'
+    | '/audit'
+    | '/intermediaries'
+    | '/nat'
+    | '/objects'
+    | '/policies'
+    | '/raw'
+    | '/services'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccessGraphRoute: typeof AccessGraphRoute
+  AuditRoute: typeof AuditRoute
+  IntermediariesRoute: typeof IntermediariesRoute
+  NatRoute: typeof NatRoute
+  ObjectsRoute: typeof ObjectsRoute
+  PoliciesRoute: typeof PoliciesRoute
+  RawRoute: typeof RawRoute
+  ServicesRoute: typeof ServicesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/raw': {
+      id: '/raw'
+      path: '/raw'
+      fullPath: '/raw'
+      preLoaderRoute: typeof RawRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/policies': {
+      id: '/policies'
+      path: '/policies'
+      fullPath: '/policies'
+      preLoaderRoute: typeof PoliciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/objects': {
+      id: '/objects'
+      path: '/objects'
+      fullPath: '/objects'
+      preLoaderRoute: typeof ObjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nat': {
+      id: '/nat'
+      path: '/nat'
+      fullPath: '/nat'
+      preLoaderRoute: typeof NatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/intermediaries': {
+      id: '/intermediaries'
+      path: '/intermediaries'
+      fullPath: '/intermediaries'
+      preLoaderRoute: typeof IntermediariesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/audit': {
+      id: '/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/access-graph': {
+      id: '/access-graph'
+      path: '/access-graph'
+      fullPath: '/access-graph'
+      preLoaderRoute: typeof AccessGraphRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +217,15 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccessGraphRoute: AccessGraphRoute,
+  AuditRoute: AuditRoute,
+  IntermediariesRoute: IntermediariesRoute,
+  NatRoute: NatRoute,
+  ObjectsRoute: ObjectsRoute,
+  PoliciesRoute: PoliciesRoute,
+  RawRoute: RawRoute,
+  ServicesRoute: ServicesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
