@@ -184,7 +184,7 @@ function AccessGraphPage() {
                 <th className="px-3 py-2 text-left">目的</th>
                 <th className="px-3 py-2 text-left">服务</th>
                 <th className="px-3 py-2 text-left">调度</th>
-                <th className="px-3 py-2 text-left">行号</th>
+                {showLineNo && <th className="px-3 py-2 text-left">行号</th>}
               </tr>
             </thead>
             <tbody>
