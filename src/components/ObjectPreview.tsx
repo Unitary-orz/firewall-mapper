@@ -97,15 +97,15 @@ function useResolve(name: string): Resolved {
 }
 
 const kindLabel: Record<Kind, string> = {
-  address: "地址",
+  address: "地址对象",
   "address-group": "地址组",
-  service: "服务",
+  service: "服务对象",
   "service-group": "服务组",
   "nat-pool": "NAT 池",
   "literal-ip": "字面 IP",
   "literal-port": "字面端口",
   "literal-any": "通配",
-  unknown: "未定义",
+  unknown: "未定义引用",
 };
 
 
@@ -151,10 +151,10 @@ function MemberRow({ m }: { m: string }) {
   const s = cfg.services.find((x) => x.name === m);
   const sg = cfg.serviceGroups.find((x) => x.name === m);
 
-  let kindTag = "未定义";
+  let kindTag = "未定义引用";
   let summary = "";
   if (a) {
-    kindTag = "地址";
+    kindTag = "地址对象";
     summary =
       a.entries.map((e) => `${e.kind}:${e.value}`).slice(0, 3).join("，") +
       (a.entries.length > 3 ? " …" : "");
@@ -162,7 +162,7 @@ function MemberRow({ m }: { m: string }) {
     kindTag = "地址组";
     summary = `${ag.members.length} 成员`;
   } else if (s) {
-    kindTag = "服务";
+    kindTag = "服务对象";
     summary =
       s.entries
         .map(
@@ -256,21 +256,13 @@ export function ObjectName({
       <HoverCardTrigger asChild>{trigger}</HoverCardTrigger>
       <HoverCardContent className="w-96 max-h-96 overflow-auto" align="start">
         <div className="space-y-2">
-          <div>
-            <div className="text-sm font-semibold">{r.name}</div>
-            <div className="text-xs text-muted-foreground">
-              <Badge
-                tone={
-                  r.kind === "unknown"
-                    ? "danger"
-                    : isLiteral
-                      ? "muted"
-                      : "default"
-                }
-              >
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-semibold break-all">{r.name}</span>
+            {!isLiteral && (
+              <Badge tone={r.kind === "unknown" ? "danger" : "default"}>
                 {kindLabel[r.kind]}
               </Badge>
-            </div>
+            )}
           </div>
           {r.literal && (
             <div className="text-xs text-muted-foreground">{r.literal}</div>
