@@ -10,7 +10,7 @@ export const Route = createFileRoute("/policies")({
       { title: "策略 · 防火墙配置审计台" },
       {
         name: "description",
-        content: "查看所有放行/拒绝策略：源/目的/服务/调度/动作。",
+        content: "查看所有放行/拒绝策略：源/目的/服务/期限/动作。",
       },
     ],
   }),
@@ -70,7 +70,7 @@ function PoliciesPage() {
     },
     {
       key: "schedule",
-      header: "调度",
+      header: "期限",
       cell: (p) => <span className="text-xs">{p.schedule}</span>,
       search: (p) => p.schedule,
     },
