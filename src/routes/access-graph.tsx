@@ -4,17 +4,32 @@ import type { NatRule, PolicyRule, ParsedConfig } from "@/lib/parser/types";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, LineLink } from "@/components/DataTable";
 import { useShowLineNumbers, useShowFullPortRange } from "@/lib/uiPrefs";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowLeftRight, CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeftRight,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Info,
+  Check,
+  ChevronsUpDown,
+} from "lucide-react";
 import { L } from "@/components/previewAtoms";
 import {
   classifyIntermediary,
@@ -24,6 +39,7 @@ import {
   CAT_LABEL,
   isIpLiteral,
 } from "@/lib/access";
+import { cn } from "@/lib/utils";
 
 interface SearchParams {
   src?: string;
