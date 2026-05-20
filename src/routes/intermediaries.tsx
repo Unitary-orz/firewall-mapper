@@ -251,14 +251,6 @@ function NodeDetail({ node }: { node: NodeAggregate }) {
   const fmtPort = (p?: string) =>
     !p ? "" : !showFull && p === "1-65535" ? "any" : p;
 
-  const goAccess = (q: { src?: string; dst?: string }) => ({
-    pathname: "/access-graph",
-    search: {
-      src: q.src ?? "any",
-      dst: q.dst ?? "any",
-    } as Record<string, string>,
-  });
-
   return (
     <div className="space-y-3 pt-1 text-xs">
       {node.inboundDnat.length > 0 && (

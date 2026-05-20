@@ -63,13 +63,16 @@ function AccessGraphPage() {
 
   const setParam = (key: keyof SearchParams, value: string) => {
     navigate({
-      search: (prev) => ({ ...prev, [key]: value === "any" ? undefined : value }),
+      search: (prev: SearchParams) => ({
+        ...prev,
+        [key]: value === "any" ? undefined : value,
+      }),
       replace: true,
     });
   };
   const swap = () => {
     navigate({
-      search: (prev) => ({ ...prev, src: prev.dst, dst: prev.src }),
+      search: (prev: SearchParams) => ({ ...prev, src: prev.dst, dst: prev.src }),
       replace: true,
     });
   };
