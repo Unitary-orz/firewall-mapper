@@ -89,7 +89,7 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
   return (
     <div className="space-y-0.5">
       <div className="flex items-baseline gap-2">
-        <div className="flex items-baseline gap-x-2 font-mono text-xs min-w-0 flex-1 truncate">
+        <div className="flex items-baseline gap-x-2 gap-y-0.5 font-mono text-xs min-w-0 flex-1 flex-wrap">
           <span className="flex items-baseline gap-1 min-w-0">
             <L>源</L>
             <H hit={hit} value={p.srcAddr} />
@@ -102,10 +102,16 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
             <L>服务</L>
             <H hit={hit} value={p.service} />
           </span>
+          {showSchedule && (
+            <span className="flex items-baseline gap-1 min-w-0">
+              <L>期限</L>
+              <span className="text-violet-600 dark:text-violet-400">仅 {p.schedule}</span>
+            </span>
+          )}
         </div>
         <span className="shrink-0"><Badge tone={actionTone}>{action}</Badge></span>
       </div>
-      {hasMeta && (
+      {(showZone || p.id) && (
         <div className="flex items-baseline gap-x-3 gap-y-0.5 flex-wrap text-[11px] text-muted-foreground pl-0.5">
           {showZone && (
             <span className="flex items-baseline gap-1">
@@ -113,12 +119,6 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
               <span className="font-mono">
                 {p.srcZone || "any"}→{p.dstZone || "any"}
               </span>
-            </span>
-          )}
-          {showSchedule && (
-            <span className="flex items-baseline gap-1">
-              <L>期限</L>
-              <span className="font-mono text-violet-600 dark:text-violet-400">仅 {p.schedule}</span>
             </span>
           )}
           {p.id && <span className="ml-auto font-mono">#{p.id}</span>}
