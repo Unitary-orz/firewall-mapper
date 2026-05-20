@@ -1,18 +1,14 @@
-import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMemo, useState, type ReactNode } from "react";
+import { useShowLineNumbers } from "@/lib/uiPrefs";
 
-export function LineLink({ line, children }: { line?: number; children?: ReactNode }) {
+export function LineLink({ line }: { line?: number }) {
+  const [show] = useShowLineNumbers();
+  if (!show) return null;
   if (!line) return <span className="text-muted-foreground">—</span>;
   return (
-    <Link
-      to="/raw"
-      search={{ line }}
-      className="font-mono text-xs text-primary hover:underline"
-    >
-      {children ?? `L${line}`}
-    </Link>
+    <span className="font-mono text-xs text-muted-foreground">L{line}</span>
   );
 }
 
