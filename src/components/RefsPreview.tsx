@@ -23,16 +23,14 @@ function useEnrich() {
       const p = cfg.policies.find((x) => x.id === r.id);
       if (p)
         return {
-          title: `策略 #${p.id}`,
           action: p.action,
-          sub: `${p.srcZone}→${p.dstZone} · ${p.srcAddr} → ${p.dstAddr} : ${p.service}`,
+          sub: `${p.srcZone}→${p.dstZone}  ${p.srcAddr} → ${p.dstAddr} : ${p.service}`,
         };
     }
     if (r.by === "nat") {
       const n = cfg.natRules.find((x) => x.id === r.id);
       if (n)
         return {
-          title: `NAT #${n.id}`,
           action: n.kind,
           sub:
             n.kind === "destination"
@@ -45,8 +43,7 @@ function useEnrich() {
       const g = cfg.addressGroups.find((x) => x.name === r.id);
       if (g)
         return {
-          title: `地址组 ${g.name}`,
-          sub: `${g.members.length} 个成员`,
+          sub: `${g.name}（${g.members.length} 成员）`,
           desc: g.description,
         };
     }
@@ -54,12 +51,11 @@ function useEnrich() {
       const g = cfg.serviceGroups.find((x) => x.name === r.id);
       if (g)
         return {
-          title: `服务组 ${g.name}`,
-          sub: `${g.members.length} 个成员`,
+          sub: `${g.name}（${g.members.length} 成员）`,
           desc: g.description,
         };
     }
-    return { title: r.detail, sub: "" };
+    return { sub: r.detail };
   };
 }
 
@@ -116,7 +112,6 @@ export function RefsPreview({
                       L{r.lineNo}
                     </Link>
                     <Badge tone="muted">{byLabel[r.by]}</Badge>
-                    <span className="font-medium">{e.title}</span>
                     {e.action && (
                       <Badge
                         tone={
@@ -130,12 +125,12 @@ export function RefsPreview({
                         {e.action}
                       </Badge>
                     )}
+                    {e.sub && (
+                      <span className="font-mono text-foreground break-all">
+                        {e.sub}
+                      </span>
+                    )}
                   </div>
-                  {e.sub && (
-                    <div className="mt-0.5 font-mono text-muted-foreground break-all">
-                      {e.sub}
-                    </div>
-                  )}
                   {e.desc && (
                     <div className="mt-0.5 text-muted-foreground italic break-all">
                       {e.desc}
