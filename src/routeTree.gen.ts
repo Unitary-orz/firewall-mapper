@@ -10,16 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as RawRouteImport } from './routes/raw'
 import { Route as PoliciesRouteImport } from './routes/policies'
 import { Route as ObjectsRouteImport } from './routes/objects'
 import { Route as NatRouteImport } from './routes/nat'
 import { Route as IntermediariesRouteImport } from './routes/intermediaries'
 import { Route as AuditRouteImport } from './routes/audit'
+import { Route as AccessGraphRouteImport } from './routes/access-graph'
 import { Route as IndexRouteImport } from './routes/index'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RawRoute = RawRouteImport.update({
+  id: '/raw',
+  path: '/raw',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PoliciesRoute = PoliciesRouteImport.update({
@@ -47,6 +54,11 @@ const AuditRoute = AuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccessGraphRoute = AccessGraphRouteImport.update({
+  id: '/access-graph',
+  path: '/access-graph',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -55,69 +67,83 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/access-graph': typeof AccessGraphRoute
   '/audit': typeof AuditRoute
   '/intermediaries': typeof IntermediariesRoute
   '/nat': typeof NatRoute
   '/objects': typeof ObjectsRoute
   '/policies': typeof PoliciesRoute
+  '/raw': typeof RawRoute
   '/services': typeof ServicesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/access-graph': typeof AccessGraphRoute
   '/audit': typeof AuditRoute
   '/intermediaries': typeof IntermediariesRoute
   '/nat': typeof NatRoute
   '/objects': typeof ObjectsRoute
   '/policies': typeof PoliciesRoute
+  '/raw': typeof RawRoute
   '/services': typeof ServicesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/access-graph': typeof AccessGraphRoute
   '/audit': typeof AuditRoute
   '/intermediaries': typeof IntermediariesRoute
   '/nat': typeof NatRoute
   '/objects': typeof ObjectsRoute
   '/policies': typeof PoliciesRoute
+  '/raw': typeof RawRoute
   '/services': typeof ServicesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/access-graph'
     | '/audit'
     | '/intermediaries'
     | '/nat'
     | '/objects'
     | '/policies'
+    | '/raw'
     | '/services'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/access-graph'
     | '/audit'
     | '/intermediaries'
     | '/nat'
     | '/objects'
     | '/policies'
+    | '/raw'
     | '/services'
   id:
     | '__root__'
     | '/'
+    | '/access-graph'
     | '/audit'
     | '/intermediaries'
     | '/nat'
     | '/objects'
     | '/policies'
+    | '/raw'
     | '/services'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccessGraphRoute: typeof AccessGraphRoute
   AuditRoute: typeof AuditRoute
   IntermediariesRoute: typeof IntermediariesRoute
   NatRoute: typeof NatRoute
   ObjectsRoute: typeof ObjectsRoute
   PoliciesRoute: typeof PoliciesRoute
+  RawRoute: typeof RawRoute
   ServicesRoute: typeof ServicesRoute
 }
 
@@ -128,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/raw': {
+      id: '/raw'
+      path: '/raw'
+      fullPath: '/raw'
+      preLoaderRoute: typeof RawRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/policies': {
@@ -165,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/access-graph': {
+      id: '/access-graph'
+      path: '/access-graph'
+      fullPath: '/access-graph'
+      preLoaderRoute: typeof AccessGraphRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -177,11 +217,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccessGraphRoute: AccessGraphRoute,
   AuditRoute: AuditRoute,
   IntermediariesRoute: IntermediariesRoute,
   NatRoute: NatRoute,
   ObjectsRoute: ObjectsRoute,
   PoliciesRoute: PoliciesRoute,
+  RawRoute: RawRoute,
   ServicesRoute: ServicesRoute,
 }
 export const routeTree = rootRouteImport
