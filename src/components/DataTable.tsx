@@ -46,7 +46,7 @@ export interface Column<T> {
 
 export function DataTable<T>({
   rows,
-  columns,
+  columns: allColumns,
   filename = "export.csv",
   emptyText = "无数据",
   pageSize = 50,
