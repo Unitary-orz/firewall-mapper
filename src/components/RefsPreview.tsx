@@ -73,7 +73,7 @@ function L({ children }: { children: ReactNode }) {
 function H({ hit, value }: { hit: string; value: string }) {
   const v = value || "—";
   if (v === hit) {
-    return <strong className="font-semibold text-primary">{v}</strong>;
+    return <span className="text-primary font-medium">{v}</span>;
   }
   return <span className="text-foreground">{v}</span>;
 }
