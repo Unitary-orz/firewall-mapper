@@ -225,7 +225,7 @@ function AccessGraphPage() {
                 <th className="px-3 py-2 text-left">原目的/端口</th>
                 <th className="px-3 py-2 text-left">→ 转换为</th>
                 <th className="px-3 py-2 text-left">描述</th>
-                <th className="px-3 py-2 text-left">行号</th>
+                {showLineNo && <th className="px-3 py-2 text-left">行号</th>}
               </tr>
             </thead>
             <tbody>
