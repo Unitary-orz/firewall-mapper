@@ -121,9 +121,7 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
               <span className="font-mono text-amber-600">仅 {p.schedule}</span>
             </span>
           )}
-          {p.id && (
-            <span className="ml-auto font-mono">#{p.id}</span>
-          )}
+          {p.id && <span className="ml-auto font-mono">#{p.id}</span>}
         </div>
       )}
     </div>
@@ -158,14 +156,14 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
       </div>
       {hasMeta && (
         <div className="flex items-baseline gap-x-3 gap-y-0.5 flex-wrap text-[11px] text-muted-foreground pl-0.5">
-          {n.disabled && <span className="text-amber-600">已禁用</span>}
-          {n.log && <span>log</span>}
-          {n.id && <span className="font-mono">#{n.id}</span>}
           {n.description && (
-            <span className="line-clamp-2 break-all min-w-0 flex-1">
+            <span className="line-clamp-2 break-all min-w-0">
               {n.description}
             </span>
           )}
+          {n.disabled && <span className="text-amber-600">已禁用</span>}
+          {n.log && <span>log</span>}
+          {n.id && <span className="ml-auto font-mono">#{n.id}</span>}
         </div>
       )}
     </div>
