@@ -57,17 +57,7 @@ function ObjectsPage() {
     {
       key: "refs",
       header: "被引用",
-      cell: (a) => {
-        const refs = xr.addressUsedBy.get(a.name) ?? [];
-        if (refs.length === 0)
-          return <Badge tone="warn">未引用</Badge>;
-        return (
-          <span className="text-xs">
-            {refs.length} 处（
-            {[...new Set(refs.map((r) => r.by))].join(", ")}）
-          </span>
-        );
-      },
+      cell: (a) => <RefsPreview name={a.name} kind="address" />,
       search: (a) =>
         String((xr.addressUsedBy.get(a.name) ?? []).length),
     },
