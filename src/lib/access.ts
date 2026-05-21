@@ -659,12 +659,35 @@ export function focusCandidates(
 export function filterLinesByFocus(
   lines: FocusLine[],
   focus: FocusType,
-  id: string
+  id: string,
+  cfg?: ParsedConfig
 ): FocusLine[] {
   if (!id) return [];
+  const expand =
+    cfg && (focus === "src" || focus === "dst")
+      ? collectAddressMembers(id, cfg)
+      : null;
   return lines.filter((l) => {
-    if (focus === "src") return l.src === id;
-    if (focus === "dst") return l.dst === id;
+    if (focus === "src") {
+      if (l.src === id || l.src === "any" || id === "any") return true;
+      if (expand && expand.has(l.src)) return true;
+      if (cfg) {
+        const lExp = collectAddressMembers(l.src, cfg);
+        if (lExp.has(id)) return true;
+        for (const x of lExp) if (expand?.has(x)) return true;
+      }
+      return false;
+    }
+    if (focus === "dst") {
+      if (l.dst === id || l.dst === "any" || id === "any") return true;
+      if (expand && expand.has(l.dst)) return true;
+      if (cfg) {
+        const lExp = collectAddressMembers(l.dst, cfg);
+        if (lExp.has(id)) return true;
+        for (const x of lExp) if (expand?.has(x)) return true;
+      }
+      return false;
+    }
     return l.service === id;
   });
 }
