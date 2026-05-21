@@ -472,25 +472,61 @@ function collectAddressMembers(
   return out;
 }
 
-/** Expand a name into the set of identifiers (object/group names) it represents.
- * If `name` is a literal IPv4, also include every address-object containing it
- * plus any group transitively containing those objects. */
-function addrIdentity(name: string, cfg: ParsedConfig): Set<string> {
+/** Expand a name into the set of identifiers it represents:
+ *  - `name:<obj-or-group>` for every transitively reachable name
+ *  - `<kind>:<value>` (host/net/range/domain/mac) for every literal leaf entry
+ *  - If `name` itself is a literal IPv4, include `host:<ip>` plus the names of
+ *    every address-object that contains it. */
+function addrLeaves(
+  name: string,
+  cfg: ParsedConfig,
+  seen: Set<string> = new Set()
+): Set<string> {
   const out = new Set<string>();
-  collectAddressMembers(name, cfg).forEach((x) => out.add(x));
+  if (seen.has(name)) return out;
+  seen.add(name);
+  out.add(`name:${name}`);
+
   if (isIpLiteral(name)) {
-    const objs = findAddressesContainingIp(name, cfg);
-    objs.forEach((objName) => {
-      collectAddressMembers(objName, cfg).forEach((x) => out.add(x));
-      cfg.addressGroups.forEach((g) => {
-        if (collectAddressMembers(g.name, cfg).has(objName)) out.add(g.name);
-      });
-    });
+    out.add(`host:${name}`);
+    findAddressesContainingIp(name, cfg).forEach((n) => out.add(`name:${n}`));
+    return out;
+  }
+
+  const obj = cfg.addresses.find((a) => a.name === name);
+  if (obj) {
+    obj.entries.forEach((e) => out.add(`${e.kind}:${e.value}`));
+    return out;
+  }
+
+  const grp = cfg.addressGroups.find((g) => g.name === name);
+  if (grp) {
+    grp.members.forEach((m) =>
+      addrLeaves(m, cfg, seen).forEach((x) => out.add(x))
+    );
   }
   return out;
 }
 
-/** True if A and B address sets overlap, or either side is "any". */
+function pickHosts(s: Set<string>): string[] {
+  const out: string[] = [];
+  s.forEach((v) => {
+    if (v.startsWith("host:")) out.push(v.slice(5));
+  });
+  return out;
+}
+
+function anyHostInside(hosts: string[], other: Set<string>): boolean {
+  for (const ip of hosts) {
+    for (const v of other) {
+      if (v.startsWith("net:") && inCidr(ip, v.slice(4))) return true;
+      if (v.startsWith("range:") && inRange(ip, v.slice(6))) return true;
+    }
+  }
+  return false;
+}
+
+/** True if A and B address sets overlap (by name, literal endpoint, or host∈net/range), or either side is "any". */
 export function addrMatches(
   a: string,
   b: string,
@@ -499,13 +535,14 @@ export function addrMatches(
   if (!a || !b) return false;
   if (a === "any" || b === "any") return true;
   if (a === b) return true;
-  const A = addrIdentity(a, cfg);
-  if (A.has(b)) return true;
-  const B = addrIdentity(b, cfg);
-  if (B.has(a)) return true;
+  const A = addrLeaves(a, cfg);
+  const B = addrLeaves(b, cfg);
   for (const x of A) if (B.has(x)) return true;
+  if (anyHostInside(pickHosts(A), B)) return true;
+  if (anyHostInside(pickHosts(B), A)) return true;
   return false;
 }
+
 
 
 /** True if policy service covers natPort (proto/port literal), or either is "any". */
