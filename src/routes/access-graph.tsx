@@ -948,7 +948,7 @@ function DnatLabel({
             <span className="break-all">
               {entry.entryAddr}
               {entryPort && (
-                <span className="text-muted-foreground">:{entryPort}</span>
+                <span className="text-sky-700 dark:text-sky-300">:{entryPort}</span>
               )}
             </span>
           </div>
@@ -958,9 +958,10 @@ function DnatLabel({
             </span>
             <span className="break-all text-amber-700 dark:text-amber-300">
               {entry.rule.translatedPool}
-              {backendPort && <span>:{backendPort}</span>}
+              {backendPort && <span className="text-sky-700 dark:text-sky-300">:{backendPort}</span>}
             </span>
           </div>
+
         </div>
       </HoverCardContent>
     </HoverCard>
