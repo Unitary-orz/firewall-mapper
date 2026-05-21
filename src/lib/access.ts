@@ -593,13 +593,21 @@ function pickMatchingDnat(
 function collectAddressMembers(
   name: string,
   cfg: ParsedConfig,
-  seen: Set<string> = new Set()
+  seen?: Set<string>
 ): Set<string> {
+  if (!seen) {
+    const cache = idx(cfg).members;
+    const hit = cache.get(name);
+    if (hit) return hit;
+    const r = collectAddressMembers(name, cfg, new Set());
+    cache.set(name, r);
+    return r;
+  }
   const out = new Set<string>();
   if (seen.has(name)) return out;
   seen.add(name);
   out.add(name);
-  const grp = cfg.addressGroups.find((g) => g.name === name);
+  const grp = idx(cfg).grpByName.get(name);
   if (grp) {
     grp.members.forEach((m) => {
       collectAddressMembers(m, cfg, seen).forEach((x) => out.add(x));
@@ -616,16 +624,21 @@ type AddrEndpoint =
   | { kind: "domain"; value: string }
   | { kind: "mac"; value: string };
 
-/** Recursively expand a name into its literal endpoints.
- *  Names are only used as expansion paths — matching is done on literal
- *  values (IP / CIDR / range / domain / mac), never on shared name strings.
- *  Returns [] for unresolved names. */
 function addrEndpoints(
   name: string,
   cfg: ParsedConfig,
-  seen: Set<string> = new Set()
+  seen?: Set<string>
 ): AddrEndpoint[] {
-  if (!name || seen.has(name)) return [];
+  if (!name) return [];
+  if (!seen) {
+    const cache = idx(cfg).endpoints;
+    const hit = cache.get(name);
+    if (hit) return hit;
+    const r = addrEndpoints(name, cfg, new Set());
+    cache.set(name, r);
+    return r;
+  }
+  if (seen.has(name)) return [];
   seen.add(name);
 
   if (isIpLiteral(name)) {
@@ -634,12 +647,13 @@ function addrEndpoints(
       : [{ kind: "host", value: name }];
   }
 
-  const obj = cfg.addresses.find((a) => a.name === name);
+  const i = idx(cfg);
+  const obj = i.addrByName.get(name);
   if (obj) {
     return obj.entries.map((e) => ({ kind: e.kind, value: e.value })) as AddrEndpoint[];
   }
 
-  const pool = cfg.natPools.find((p) => p.name === name);
+  const pool = i.poolByName.get(name);
   if (pool && pool.addressFrom) {
     if (pool.addressTo && pool.addressTo !== pool.addressFrom) {
       return [{ kind: "range", value: `${pool.addressFrom}-${pool.addressTo}` }];
@@ -647,7 +661,7 @@ function addrEndpoints(
     return [{ kind: "host", value: pool.addressFrom }];
   }
 
-  const grp = cfg.addressGroups.find((g) => g.name === name);
+  const grp = i.grpByName.get(name);
   if (grp) {
     const out: AddrEndpoint[] = [];
     grp.members.forEach((m) =>
