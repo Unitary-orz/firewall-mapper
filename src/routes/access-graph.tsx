@@ -439,34 +439,28 @@ function GroupSummary({ rows }: { rows: FocusLine[] }) {
   const permitRows = rows.filter((r) => r.action === "permit").length;
   const denyRows = rows.filter((r) => r.action === "deny").length;
   const missingRows = rows.filter((r) => r.action === "none").length;
+  const parts: { label: string; cls?: string }[] = [
+    { label: `${total} 条` },
+  ];
+  if (natRows > 0) parts.push({ label: `DNAT ${natRows}`, cls: "text-amber-700 dark:text-amber-300" });
+  if (permitRows > 0) parts.push({ label: `permit ${permitRows}`, cls: "text-emerald-700 dark:text-emerald-300" });
+  if (denyRows > 0) parts.push({ label: `deny ${denyRows}`, cls: "text-destructive" });
+  if (missingRows > 0)
+    parts.push({
+      label: `未关联策略 ${missingRows}`,
+      cls: "text-amber-700 dark:text-amber-300 font-medium",
+    });
   return (
-    <span className="ml-auto flex flex-wrap items-center gap-1.5 text-[10px]">
-      <span className="rounded bg-secondary/60 px-1.5 py-0.5">
-        {total} 条
-      </span>
-      {natRows > 0 && (
-        <span className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-300">
-          NAT {natRows}
-        </span>
-      )}
-      {permitRows > 0 && (
-        <span className="rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300">
-          permit {permitRows}
-        </span>
-      )}
-      {denyRows > 0 && (
-        <span className="rounded border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-destructive">
-          deny {denyRows}
-        </span>
-      )}
-      {missingRows > 0 && (
-        <span
-          className="rounded border border-amber-500/60 bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-700 dark:text-amber-300"
-          title="DNAT 暴露但未找到匹配安全策略的行数"
-        >
-          策略缺失 {missingRows}
-        </span>
-      )}
+    <span
+      className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground"
+      title="DNAT 暴露但未找到匹配安全策略 = 未关联策略"
+    >
+      {parts.map((p, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <span className="opacity-40">·</span>}
+          <span className={p.cls}>{p.label}</span>
+        </React.Fragment>
+      ))}
     </span>
   );
 }
