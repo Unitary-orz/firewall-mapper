@@ -903,17 +903,20 @@ function DnatLabel({
       <span className="shrink-0 font-semibold text-amber-700 dark:text-amber-300">
         {kind}
       </span>
-      <span className="min-w-0 truncate">
+      <span className="min-w-0 truncate text-muted-foreground">
         {entry.entryAddr}
-        {entryPort && <span className="text-muted-foreground">:{entryPort}</span>}
+        {entryPort && (
+          <span className="text-amber-700/70 dark:text-amber-300/70">:{entryPort}</span>
+        )}
       </span>
       <ArrowRight className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
       <span className="min-w-0 truncate text-amber-700 dark:text-amber-300">
         {entry.rule.translatedPool}
         {backendPort && backendPort !== entryPort && (
-          <span className="text-muted-foreground">:{backendPort}</span>
+          <span className="text-amber-700/70 dark:text-amber-300/70">:{backendPort}</span>
         )}
       </span>
+
 
       {entry.rule.disabled && (
         <Badge tone="warn">disabled</Badge>
