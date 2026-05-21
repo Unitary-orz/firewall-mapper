@@ -13,7 +13,7 @@ import {
 import { ChevronDown, ArrowRight } from "lucide-react";
 import { L } from "@/components/previewAtoms";
 import {
-  buildNodeAggregates,
+  getNodeAggregates,
   CAT_LABEL,
   type IntermediaryCat,
   type NodeAggregate,
