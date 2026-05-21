@@ -821,15 +821,20 @@ function DnatLabel({
       <span className="px-0.5 text-amber-700 dark:text-amber-400">
         转换为
       </span>
-      {portChanged ? (
-        <>
-          <span className="text-amber-700 dark:text-amber-300">
-            :{backendPort}
-          </span>
-        </>
-      ) : backendPort ? (
-        <span className="text-muted-foreground">:{backendPort}</span>
-      ) : null}
+      <span className="text-amber-700 dark:text-amber-300">
+        {entry.rule.translatedPool}
+      </span>
+      {backendPort && (
+        <span
+          className={cn(
+            portChanged
+              ? "font-semibold text-amber-700 dark:text-amber-300"
+              : "text-muted-foreground"
+          )}
+        >
+          :{backendPort}
+        </span>
+      )}
       {entry.rule.iface && (
         <span className="text-[10px] text-muted-foreground">
           [{entry.rule.iface}]
