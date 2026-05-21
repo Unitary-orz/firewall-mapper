@@ -70,9 +70,12 @@ export interface NatRule {
   iface: string;
   srcAddr: string;
   origDstAddr: string;
-  origDstService: string; // 端口或服务对象
-  translatedPool: string; // 目的转换池
+  origDstService: string; // 端口或服务对象（DNAT 使用）
+  translatedPool: string; // 目的转换池（DNAT 使用）
   servicePort?: string; // 可选 service <port>
+  // ---- SNAT 专用 ----
+  translatedSrc?: string; // 转换后的源（对象 / 池 / 字面量）
+  egressInterface?: boolean; // 源 NAT 走出接口取址
   description?: string;
   disabled?: boolean;
   log?: boolean;

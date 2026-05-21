@@ -266,6 +266,50 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
       continue;
     }
 
+    // ---------- ip nat source （单行 SNAT） ----------
+    // 形如：ip nat source <iface> <srcAddr> <origDstAddr> <translatedSrc> {interface | <poolAddr>} [log] <id>
+    if (head === "ip" && t[1] === "nat" && t[2] === "source") {
+      const rest = t.slice(3);
+      let id = "";
+      let log = false;
+      const trimmed = [...rest];
+      const last = trimmed[trimmed.length - 1];
+      if (last && /^\d+$/.test(last)) {
+        id = last;
+        trimmed.pop();
+      }
+      if (trimmed[trimmed.length - 1] === "log") {
+        log = true;
+        trimmed.pop();
+      }
+      // 剩余至少 5 项：iface src origDst translatedSrc {interface|poolAddr}
+      if (trimmed.length >= 5 && id) {
+        const iface = trimmed[0];
+        const srcAddr = trimmed[1];
+        const origDstAddr = trimmed[2];
+        const translatedSrc = trimmed[3];
+        const tail = trimmed[4];
+        const egressInterface = tail === "interface";
+        const rule: NatRule = {
+          id,
+          kind: "source",
+          iface,
+          srcAddr,
+          origDstAddr,
+          origDstService: "any",
+          translatedPool: egressInterface ? "" : tail,
+          translatedSrc,
+          egressInterface,
+          log,
+          lineNo,
+          raw: line.trim(),
+        };
+        natMap.set(id, rule);
+      }
+      i++;
+      continue;
+    }
+
     // ---------- ip nat <id> <attr...> （NAT 元数据续行） ----------
     if (head === "ip" && t[1] === "nat" && /^\d+$/.test(t[2] ?? "")) {
       const id = t[2];
@@ -457,14 +501,15 @@ export function buildCrossRef(cfg: ParsedConfig): CrossRef {
     });
   });
   cfg.natRules.forEach((r) => {
-    [r.srcAddr, r.origDstAddr, r.translatedPool].forEach((a) =>
+    [r.srcAddr, r.origDstAddr, r.translatedPool, r.translatedSrc].forEach((a) => {
+      if (!a) return;
       add(addressUsedBy, a, {
         by: "nat",
         id: r.id,
         detail: `NAT #${r.id}`,
         lineNo: r.lineNo,
-      })
-    );
+      });
+    });
     add(serviceUsedBy, r.origDstService, {
       by: "nat",
       id: r.id,
