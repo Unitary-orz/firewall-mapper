@@ -531,6 +531,7 @@ function SvcFocusView({ svc, lines }: { svc: string; lines: FocusLine[] }) {
               <FocusLineRow key={l.key} line={l} hideSrc={false} hideSvc mutedDst />
             ))}
           </div>
+          <GroupNatChain rows={rows} />
         </FocusCard>
       ))}
     </div>
