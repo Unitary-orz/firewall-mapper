@@ -569,13 +569,15 @@ const COLLAPSE_THRESHOLD = 12;
 
 function sortRows(rows: FocusLine[]): FocusLine[] {
   const score = (l: FocusLine) =>
-    l.action === "none"
+    l.action === "unassociated"
       ? 0
       : l.action === "deny"
         ? 1
-        : l.action === "permit"
-          ? 3
-          : 2;
+        : l.action === "associated"
+          ? 2
+          : l.action === "permit"
+            ? 3
+            : 4;
   return [...rows].sort(
     (a, b) =>
       score(a) - score(b) ||
