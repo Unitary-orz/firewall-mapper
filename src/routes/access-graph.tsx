@@ -674,8 +674,11 @@ function ActionBadge({ action }: { action: string }) {
     );
   if (action === "none")
     return (
-      <span className="inline-flex items-center rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
-        无策略
+      <span
+        className="inline-flex items-center rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400"
+        title="DNAT 已暴露此端口，但未找到匹配的安全策略（permit/deny 均无）。可能策略缺失，或解析器无法确认覆盖关系。"
+      >
+        未关联策略
       </span>
     );
   return (
