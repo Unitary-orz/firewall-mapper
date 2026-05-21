@@ -798,8 +798,12 @@ function NatToken({ nat }: { nat: FlowDnatEntry[] }) {
   const [showFull] = useShowFullPortRange();
   if (nat.length === 0) {
     return (
-      <span className="inline-flex items-center rounded-md border border-dashed border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-        direct
+      <span className="inline-flex items-center gap-1 text-muted-foreground/80">
+        <span className="h-px w-6 bg-foreground/40" />
+        <ArrowRight className="h-3.5 w-3.5 text-foreground/70" strokeWidth={2.5} />
+        <span className="text-[10px] uppercase tracking-wide">direct</span>
+        <ArrowRight className="h-3.5 w-3.5 text-foreground/70" strokeWidth={2.5} />
+        <span className="h-px w-6 bg-foreground/40" />
       </span>
     );
   }
