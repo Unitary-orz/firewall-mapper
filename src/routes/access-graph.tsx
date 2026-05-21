@@ -424,7 +424,7 @@ function SrcFocusView({ src, lines }: { src: string; lines: FocusLine[] }) {
           </div>
           <div className="space-y-1.5">
             {sortRows(rows).map((l) => (
-              <FocusLineRow key={l.key} line={l} hideSrc={false} />
+              <FocusLineRow key={l.key} line={l} hideSrc={false} mutedDst />
             ))}
           </div>
         </FocusCard>
