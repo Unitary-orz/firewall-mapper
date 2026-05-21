@@ -602,6 +602,13 @@ function FocusLineRow({
   hideDst?: boolean;
   hideSvc?: boolean;
 }) {
+  // 状态色条语义：
+  //   未关联策略 → amber（缺失）
+  //   deny       → 红（拒绝）
+  //   permit+部分覆盖 → amber/60（覆盖不全）
+  //   permit+NAT → 蓝（有转换，正常）
+  //   permit direct → emerald（直连放通）
+  const hasNat = line.nat.length > 0;
   const accent =
     line.action === "none"
       ? "border-l-amber-500"
@@ -609,35 +616,51 @@ function FocusLineRow({
         ? "border-l-destructive"
         : line.coverageKind === "partial"
           ? "border-l-amber-500/60"
-          : "border-l-transparent";
+          : hasNat
+            ? "border-l-blue-500/70"
+            : "border-l-emerald-500/60";
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
-        accent
+        "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
+        "grid-cols-[minmax(0,auto)_minmax(0,1fr)_minmax(0,auto)_minmax(0,auto)_minmax(0,auto)]"
       )}
     >
-      {!hideSrc && (
-        <>
-          <NodeChip name={line.src} role="src" />
-          <Connector />
-        </>
-      )}
-      <NatToken nat={line.nat} />
-      <Connector />
-      {!hideDst && <NodeChip name={line.dst} role="dst" />}
-      {!hideDst && <Connector />}
-      {!hideSvc && <SvcChip svc={line.service} />}
-      <ActionBadge action={line.action} />
-      {line.policies.length > 0 && (
-        <PolicyCountBadge policies={line.policies} />
-      )}
+      {/* 1. 来源 */}
+      <div className="flex min-w-0 items-center">
+        {!hideSrc ? <NodeChip name={line.src} role="src" /> : <Placeholder />}
+      </div>
+      {/* 2. NAT / direct */}
+      <div className="flex min-w-0 items-center gap-1.5">
+        <Connector />
+        <NatToken nat={line.nat} />
+        <Connector />
+      </div>
+      {/* 3. 目的 */}
+      <div className="flex min-w-0 items-center">
+        {!hideDst ? <NodeChip name={line.dst} role="dst" /> : <Placeholder />}
+      </div>
+      {/* 4. 服务 */}
+      <div className="flex min-w-0 items-center pl-1">
+        {!hideSvc ? <SvcChip svc={line.service} /> : <Placeholder />}
+      </div>
+      {/* 5. 策略状态（固定最右） */}
+      <div className="flex items-center justify-end gap-1.5 pl-1">
+        <ActionBadge action={line.action} />
+        {line.policies.length > 0 && (
+          <PolicyCountBadge policies={line.policies} />
+        )}
+      </div>
     </div>
   );
 }
 
 function Connector() {
   return <span className="h-px w-3 shrink-0 bg-border" />;
+}
+
+function Placeholder() {
+  return <span className="font-mono text-xs text-muted-foreground/40">—</span>;
 }
 
 // ---------- NodeChip / SvcChip / ActionBadge ----------
