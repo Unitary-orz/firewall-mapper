@@ -624,7 +624,7 @@ function FocusLineRow({
       )}
     >
       <div className="flex min-w-0 items-center">
-        {!hideSrc ? <NodeChip name={line.src} role="src" /> : <Placeholder />}
+        {!hideSrc ? <NodePlain name={line.src} /> : <Placeholder />}
       </div>
       <div className="flex min-w-0 items-center gap-1.5">
         <NatToken nat={line.nat} />
@@ -633,14 +633,11 @@ function FocusLineRow({
         {hideDst ? (
           <Placeholder />
         ) : mutedDst ? (
-          <span
-            className="min-w-0 truncate font-mono text-[11px] text-muted-foreground/70"
-            title={line.dst}
-          >
-            {line.dst}
+          <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground/70">
+            <ObjectName name={line.dst} />
           </span>
         ) : (
-          <NodeChip name={line.dst} role="dst" />
+          <NodePlain name={line.dst} />
         )}
       </div>
       <div className="flex min-w-0 items-center pl-1">
