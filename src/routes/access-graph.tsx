@@ -615,12 +615,12 @@ function FocusLineRow({
 }) {
   const hasNat = line.nat.length > 0;
   const accent =
-    line.action === "none"
+    line.action === "unassociated"
       ? "border-l-amber-500"
       : line.action === "deny"
         ? "border-l-destructive"
-        : line.coverageKind === "partial"
-          ? "border-l-amber-500/60"
+        : line.action === "associated"
+          ? "border-l-blue-500/70"
           : hasNat
             ? "border-l-blue-500/70"
             : "border-l-emerald-500/60";
