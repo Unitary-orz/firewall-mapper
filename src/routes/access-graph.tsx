@@ -132,7 +132,6 @@ function AccessGraphPage() {
     });
   };
 
-  const allFlows = useMemo(() => (cfg ? getFlows(cfg) : []), [cfg]);
   const allLines = useMemo(
     () => (cfg ? getFocusLines(cfg) : []),
     [cfg]
