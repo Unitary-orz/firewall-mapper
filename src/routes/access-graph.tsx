@@ -683,8 +683,9 @@ function NodeChip({
   const cat = classifyIntermediary(name);
   const cls =
     role === "src"
-      ? "border-emerald-500/40 bg-emerald-500/10"
-      : "border-blue-500/40 bg-blue-500/10";
+      ? "border-emerald-500/40 bg-transparent"
+      : "border-blue-500/40 bg-transparent";
+
   return (
     <span
       className={cn(
@@ -849,11 +850,12 @@ function NatToken({ nat }: { nat: FlowDnatEntry[] }) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] text-amber-700 hover:bg-amber-500/15 dark:text-amber-300"
+          className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-transparent px-2 py-0.5 font-mono text-[11px] text-amber-700 hover:bg-amber-500/5 dark:text-amber-300"
         >
           NAT × {nat.length}
           <ChevronDown className="h-3 w-3 opacity-70" />
         </button>
+
       </PopoverTrigger>
       <PopoverContent align="center" className="w-[28rem] p-2">
         <div className="mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
