@@ -142,8 +142,8 @@ function AccessGraphPage() {
     [allLines, focus]
   );
   const lines = useMemo(
-    () => filterLinesByFocus(allLines, focus, id),
-    [allLines, focus, id]
+    () => (cfg ? filterLinesByFocus(allLines, focus, id, cfg) : []),
+    [allLines, focus, id, cfg]
   );
 
   if (!cfg) return <EmptyConfig />;
@@ -438,22 +438,29 @@ function GroupSummary({ rows }: { rows: FocusLine[] }) {
   const natRows = rows.filter((r) => r.nat.length > 0).length;
   const permitRows = rows.filter((r) => r.action === "permit").length;
   const denyRows = rows.filter((r) => r.action === "deny").length;
-  const missingRows = rows.filter((r) => r.action === "none").length;
-  const parts: { label: string; cls?: string }[] = [
-    { label: `${total} 条` },
-  ];
-  if (natRows > 0) parts.push({ label: `DNAT ${natRows}`, cls: "text-amber-700 dark:text-amber-300" });
-  if (permitRows > 0) parts.push({ label: `permit ${permitRows}`, cls: "text-emerald-700 dark:text-emerald-300" });
-  if (denyRows > 0) parts.push({ label: `deny ${denyRows}`, cls: "text-destructive" });
-  if (missingRows > 0)
+  const associatedRows = rows.filter((r) => r.action === "associated").length;
+  const unassociatedRows = rows.filter((r) => r.action === "unassociated").length;
+  const parts: { label: string; cls?: string }[] = [{ label: `${total} 条` }];
+  if (natRows > 0)
+    parts.push({ label: `DNAT ${natRows}`, cls: "text-amber-700 dark:text-amber-300" });
+  if (associatedRows > 0)
     parts.push({
-      label: `未关联策略 ${missingRows}`,
+      label: `已关联 ${associatedRows}`,
+      cls: "text-emerald-700 dark:text-emerald-300",
+    });
+  if (unassociatedRows > 0)
+    parts.push({
+      label: `未关联 ${unassociatedRows}`,
       cls: "text-amber-700 dark:text-amber-300 font-medium",
     });
+  if (permitRows > 0)
+    parts.push({ label: `permit ${permitRows}`, cls: "text-emerald-700 dark:text-emerald-300" });
+  if (denyRows > 0)
+    parts.push({ label: `deny ${denyRows}`, cls: "text-destructive" });
   return (
     <span
       className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground"
-      title="DNAT 暴露但未找到匹配安全策略 = 未关联策略"
+      title="DNAT 转化后的目的+后端端口是否被任一 permit 策略覆盖"
     >
       {parts.map((p, i) => (
         <React.Fragment key={i}>
@@ -562,13 +569,15 @@ const COLLAPSE_THRESHOLD = 12;
 
 function sortRows(rows: FocusLine[]): FocusLine[] {
   const score = (l: FocusLine) =>
-    l.action === "none"
+    l.action === "unassociated"
       ? 0
       : l.action === "deny"
         ? 1
-        : l.action === "permit"
-          ? 3
-          : 2;
+        : l.action === "associated"
+          ? 2
+          : l.action === "permit"
+            ? 3
+            : 4;
   return [...rows].sort(
     (a, b) =>
       score(a) - score(b) ||
@@ -606,12 +615,12 @@ function FocusLineRow({
 }) {
   const hasNat = line.nat.length > 0;
   const accent =
-    line.action === "none"
+    line.action === "unassociated"
       ? "border-l-amber-500"
       : line.action === "deny"
         ? "border-l-destructive"
-        : line.coverageKind === "partial"
-          ? "border-l-amber-500/60"
+        : line.action === "associated"
+          ? "border-l-blue-500/70"
           : hasNat
             ? "border-l-blue-500/70"
             : "border-l-emerald-500/60";
@@ -732,11 +741,20 @@ function ActionBadge({ action }: { action: string }) {
         deny
       </span>
     );
-  if (action === "none")
+  if (action === "associated")
+    return (
+      <span
+        className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400"
+        title="转化后的目的+后端端口被至少一条 permit 策略覆盖"
+      >
+        已关联策略
+      </span>
+    );
+  if (action === "unassociated" || action === "none")
     return (
       <span
         className="text-[11px] text-muted-foreground/70"
-        title="DNAT 已暴露此端口，但未找到匹配的安全策略（permit/deny 均无）。可能策略缺失，或解析器无法确认覆盖关系。"
+        title="转化后的目的+后端端口没有任何 permit 策略覆盖"
       >
         未关联策略
       </span>
