@@ -413,18 +413,29 @@ export interface Flow {
 export function serviceToPorts(
   name: string,
   cfg: ParsedConfig,
-  seen: Set<string> = new Set()
+  seen?: Set<string>
 ): string[] {
   if (!name || name === "any") return ["any"];
+  // Top-level memoized path. Recursive calls pass a `seen` set to break cycles
+  // and must skip the cache to avoid polluting it with partial results.
+  if (!seen) {
+    const cache = idx(cfg).service;
+    const hit = cache.get(name);
+    if (hit) return hit;
+    const result = serviceToPorts(name, cfg, new Set());
+    cache.set(name, result);
+    return result;
+  }
   if (seen.has(name)) return [];
   seen.add(name);
-  const svc = cfg.services.find((s) => s.name === name);
+  const i = idx(cfg);
+  const svc = i.svcByName.get(name);
   if (svc) {
     return svc.entries.map((e) =>
       e.destPort ? `${e.protocol}/${e.destPort}` : e.protocol
     );
   }
-  const grp = cfg.serviceGroups.find((g) => g.name === name);
+  const grp = i.svcGrpByName.get(name);
   if (grp) {
     const out = new Set<string>();
     grp.members.forEach((m) =>
