@@ -632,9 +632,7 @@ function FocusLineRow({
       </div>
       {/* 2. NAT / direct */}
       <div className="flex min-w-0 items-center gap-1.5">
-        <Connector />
         <NatToken nat={line.nat} />
-        <Connector />
       </div>
       {/* 3. 目的 */}
       <div className="flex min-w-0 items-center">
