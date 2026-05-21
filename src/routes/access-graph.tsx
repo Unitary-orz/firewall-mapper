@@ -837,6 +837,8 @@ function NatToken({ nat }: { nat: FlowDnatEntry[] }) {
   );
 }
 
+// 主图短格式：DNAT #203  防火墙IP:11743 → api-172.23.51.28:11743
+// hover 展示完整 "转换为" 字段 + iface / 行号 / disabled
 function DnatLabel({
   entry,
   showFull,
@@ -852,11 +854,10 @@ function DnatLabel({
   const backendPort = entry.backendPort
     ? fmtPort(entry.backendPort, showFull)
     : "";
-  const portChanged = entryPort && backendPort && entryPort !== backendPort;
-  return (
+  const trigger = (
     <span
       className={cn(
-        "inline-flex flex-wrap items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px]",
+        "inline-flex min-w-0 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] hover:bg-amber-500/15",
         block && "w-full"
       )}
     >
@@ -864,37 +865,67 @@ function DnatLabel({
         {kind}
       </span>
       <span className="text-muted-foreground">#{entry.rule.id}</span>
-      <span>{entry.entryAddr}</span>
-      {entryPort && <span className="text-muted-foreground">:{entryPort}</span>}
-      <span className="px-0.5 text-amber-700 dark:text-amber-400">
-        转换为
+      <span className="truncate">
+        {entry.entryAddr}
+        {entryPort && <span className="text-muted-foreground">:{entryPort}</span>}
       </span>
-      <span className="text-amber-700 dark:text-amber-300">
+      <ArrowRight className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
+      <span className="truncate text-amber-700 dark:text-amber-300">
         {entry.rule.translatedPool}
+        {backendPort && <span>:{backendPort}</span>}
       </span>
-      {backendPort && (
-        <span
-          className={cn(
-            portChanged
-              ? "font-semibold text-amber-700 dark:text-amber-300"
-              : "text-muted-foreground"
-          )}
-        >
-          :{backendPort}
-        </span>
-      )}
-      {entry.rule.iface && (
-        <span className="text-[10px] text-muted-foreground">
-          [{entry.rule.iface}]
-        </span>
-      )}
-      {entry.rule.disabled && <Badge tone="warn">disabled</Badge>}
-      {showLineNo && block && (
-        <span className="ml-auto">
-          <LineLink line={entry.rule.lineNo} />
-        </span>
+      {entry.rule.disabled && (
+        <Badge tone="warn">disabled</Badge>
       )}
     </span>
+  );
+
+  return (
+    <HoverCard openDelay={120} closeDelay={80}>
+      <HoverCardTrigger asChild>
+        <span className="cursor-help">{trigger}</span>
+      </HoverCardTrigger>
+      <HoverCardContent align="start" className="w-[26rem] p-3">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+            {kind} #{entry.rule.id}
+          </span>
+          {entry.rule.iface && (
+            <span className="text-[11px] text-muted-foreground">
+              接口 {entry.rule.iface}
+            </span>
+          )}
+          {entry.rule.disabled && <Badge tone="warn">disabled</Badge>}
+          {showLineNo && (
+            <span className="ml-auto">
+              <LineLink line={entry.rule.lineNo} />
+            </span>
+          )}
+        </div>
+        <div className="space-y-1.5 font-mono text-xs">
+          <div className="flex items-baseline gap-2">
+            <span className="w-16 shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
+              原始目的
+            </span>
+            <span className="break-all">
+              {entry.entryAddr}
+              {entryPort && (
+                <span className="text-muted-foreground">:{entryPort}</span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="w-16 shrink-0 text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-400">
+              转换为
+            </span>
+            <span className="break-all text-amber-700 dark:text-amber-300">
+              {entry.rule.translatedPool}
+              {backendPort && <span>:{backendPort}</span>}
+            </span>
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
