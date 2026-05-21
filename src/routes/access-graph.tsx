@@ -596,18 +596,14 @@ function FocusLineRow({
   hideSrc,
   hideDst,
   hideSvc,
+  mutedDst,
 }: {
   line: FocusLine;
   hideSrc?: boolean;
   hideDst?: boolean;
   hideSvc?: boolean;
+  mutedDst?: boolean;
 }) {
-  // 状态色条语义：
-  //   未关联策略 → amber（缺失）
-  //   deny       → 红（拒绝）
-  //   permit+部分覆盖 → amber/60（覆盖不全）
-  //   permit+NAT → 蓝（有转换，正常）
-  //   permit direct → emerald（直连放通）
   const hasNat = line.nat.length > 0;
   const accent =
     line.action === "none"
@@ -623,26 +619,33 @@ function FocusLineRow({
     <div
       className={cn(
         "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
+        accent,
         "grid-cols-[minmax(0,auto)_minmax(0,1fr)_minmax(0,auto)_minmax(0,auto)_minmax(0,auto)]"
       )}
     >
-      {/* 1. 来源 */}
       <div className="flex min-w-0 items-center">
         {!hideSrc ? <NodeChip name={line.src} role="src" /> : <Placeholder />}
       </div>
-      {/* 2. NAT / direct */}
       <div className="flex min-w-0 items-center gap-1.5">
         <NatToken nat={line.nat} />
       </div>
-      {/* 3. 目的 */}
       <div className="flex min-w-0 items-center">
-        {!hideDst ? <NodeChip name={line.dst} role="dst" /> : <Placeholder />}
+        {hideDst ? (
+          <Placeholder />
+        ) : mutedDst ? (
+          <span
+            className="min-w-0 truncate font-mono text-[11px] text-muted-foreground/60"
+            title={line.dst}
+          >
+            ↳ 同上
+          </span>
+        ) : (
+          <NodeChip name={line.dst} role="dst" />
+        )}
       </div>
-      {/* 4. 服务 */}
       <div className="flex min-w-0 items-center pl-1">
         {!hideSvc ? <SvcChip svc={line.service} /> : <Placeholder />}
       </div>
-      {/* 5. 策略状态（固定最右） */}
       <div className="flex items-center justify-end gap-1.5 pl-1">
         <ActionBadge action={line.action} />
         {line.policies.length > 0 && (
