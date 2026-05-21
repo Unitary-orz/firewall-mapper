@@ -741,11 +741,20 @@ function ActionBadge({ action }: { action: string }) {
         deny
       </span>
     );
-  if (action === "none")
+  if (action === "associated")
+    return (
+      <span
+        className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400"
+        title="转化后的目的+后端端口被至少一条 permit 策略覆盖"
+      >
+        已关联策略
+      </span>
+    );
+  if (action === "unassociated" || action === "none")
     return (
       <span
         className="text-[11px] text-muted-foreground/70"
-        title="DNAT 已暴露此端口，但未找到匹配的安全策略（permit/deny 均无）。可能策略缺失，或解析器无法确认覆盖关系。"
+        title="转化后的目的+后端端口没有任何 permit 策略覆盖"
       >
         未关联策略
       </span>
