@@ -943,16 +943,17 @@ function DnatLabel({
         </div>
         <div className="space-y-1.5 font-mono text-xs">
           <div className="flex items-baseline gap-2">
-            <span className="w-16 shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <span className="w-16 shrink-0 text-[10px] uppercase tracking-wide text-foreground">
               原始目的
             </span>
-            <span className="break-all text-foreground">
+            <span className="break-all text-muted-foreground">
               {entry.entryAddr}
               {entryPort && (
-                <span className="text-muted-foreground">:{entryPort}</span>
+                <span className="text-amber-700/70 dark:text-amber-300/70">:{entryPort}</span>
               )}
             </span>
           </div>
+
           <div className="flex items-baseline gap-2">
             <span className="w-16 shrink-0 text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-400">
               转换为
