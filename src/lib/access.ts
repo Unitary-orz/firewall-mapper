@@ -669,7 +669,9 @@ export function filterLinesByFocus(
       : null;
   return lines.filter((l) => {
     if (focus === "src") {
-      if (l.src === id || l.src === "any" || id === "any") return true;
+      if (id === "any") return l.src === "any";
+      if (l.src === "any") return false;
+      if (l.src === id) return true;
       if (expand && expand.has(l.src)) return true;
       if (cfg) {
         const lExp = collectAddressMembers(l.src, cfg);
@@ -679,7 +681,9 @@ export function filterLinesByFocus(
       return false;
     }
     if (focus === "dst") {
-      if (l.dst === id || l.dst === "any" || id === "any") return true;
+      if (id === "any") return l.dst === "any";
+      if (l.dst === "any") return false;
+      if (l.dst === id) return true;
       if (expand && expand.has(l.dst)) return true;
       if (cfg) {
         const lExp = collectAddressMembers(l.dst, cfg);
