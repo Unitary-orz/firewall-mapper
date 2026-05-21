@@ -501,14 +501,15 @@ export function buildCrossRef(cfg: ParsedConfig): CrossRef {
     });
   });
   cfg.natRules.forEach((r) => {
-    [r.srcAddr, r.origDstAddr, r.translatedPool].forEach((a) =>
+    [r.srcAddr, r.origDstAddr, r.translatedPool, r.translatedSrc].forEach((a) => {
+      if (!a) return;
       add(addressUsedBy, a, {
         by: "nat",
         id: r.id,
         detail: `NAT #${r.id}`,
         lineNo: r.lineNo,
-      })
-    );
+      });
+    });
     add(serviceUsedBy, r.origDstService, {
       by: "nat",
       id: r.id,
