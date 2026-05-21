@@ -860,20 +860,19 @@ function DnatLabel({
   const trigger = (
     <span
       className={cn(
-        "inline-flex min-w-0 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] hover:bg-amber-500/15",
-        block && "w-full"
+        "inline-flex min-w-0 max-w-[22rem] items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] hover:bg-amber-500/15",
+        block && "w-full max-w-none"
       )}
     >
-      <span className="font-semibold text-amber-700 dark:text-amber-300">
+      <span className="shrink-0 font-semibold text-amber-700 dark:text-amber-300">
         {kind}
       </span>
-      <span className="text-muted-foreground">#{entry.rule.id}</span>
-      <span className="truncate">
+      <span className="min-w-0 truncate">
         {entry.entryAddr}
         {entryPort && <span className="text-muted-foreground">:{entryPort}</span>}
       </span>
       <ArrowRight className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
-      <span className="truncate text-amber-700 dark:text-amber-300">
+      <span className="min-w-0 truncate text-amber-700 dark:text-amber-300">
         {entry.rule.translatedPool}
         {backendPort && <span>:{backendPort}</span>}
       </span>
