@@ -524,7 +524,7 @@ function PolicyMiniList({
           key={`${p.id}@${p.lineNo}`}
           className="flex flex-wrap items-center gap-1.5 px-2.5 py-1.5 font-mono"
         >
-          <Badge tone={p.action === "permit" ? "ok" : "danger"} className="text-[10px]">
+          <Badge tone={p.action === "permit" ? "ok" : "danger"}>
             #{p.id} {p.action === "permit" ? "放行" : "拒绝"}
           </Badge>
           <span className="text-muted-foreground">
