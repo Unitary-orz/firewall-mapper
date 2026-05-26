@@ -46,7 +46,7 @@ function NatPage() {
         {r.disabled ? (
           <Badge tone="muted">已禁用</Badge>
         ) : (
-          <Badge tone="success">已启用</Badge>
+          <Badge tone="ok">已启用</Badge>
         )}
         {r.log && <Badge tone="default">log</Badge>}
       </div>
