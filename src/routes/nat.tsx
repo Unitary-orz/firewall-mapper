@@ -136,6 +136,7 @@ function NatPage() {
       ),
       search: (r) => `${r.translatedPool} ${r.servicePort ?? ""}`,
     },
+    logCol,
     descCol,
     lineCol,
   ];
