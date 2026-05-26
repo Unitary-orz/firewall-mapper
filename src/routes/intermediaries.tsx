@@ -350,9 +350,7 @@ function NodeCard({ node }: { node: NodeAggregate }) {
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="truncate text-sm font-semibold">{node.name}</span>
-              <Badge tone="muted" className="text-[10px]">
-                {CAT_LABEL[node.cat]}
-              </Badge>
+              <Badge tone="muted">{CAT_LABEL[node.cat]}</Badge>
             </div>
 
             {node.address && (
