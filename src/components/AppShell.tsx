@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useShowLineNumbers, useShowFullPortRange } from "@/lib/uiPrefs";
+import { useShowLineNumbers, useShowFullPortRange, useShowPolicyZone } from "@/lib/uiPrefs";
 
 const nav = [
   { to: "/", label: "概览" },
