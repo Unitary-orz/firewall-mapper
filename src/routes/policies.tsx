@@ -65,11 +65,19 @@ function PoliciesPage() {
           {
             key: "zone",
             header: "Zone",
-            cell: (p: (typeof cfg.policies)[number]) => (
-              <span className="font-mono text-xs text-muted-foreground">
-                {p.srcZone} → {p.dstZone}
-              </span>
-            ),
+            cell: (p: (typeof cfg.policies)[number]) => {
+              const isAnyAny =
+                (!p.srcZone || p.srcZone === "any") &&
+                (!p.dstZone || p.dstZone === "any");
+              if (isAnyAny) {
+                return <span className="text-xs text-muted-foreground">—</span>;
+              }
+              return (
+                <span className="font-mono text-xs text-muted-foreground">
+                  {p.srcZone} → {p.dstZone}
+                </span>
+              );
+            },
             search: (p: (typeof cfg.policies)[number]) =>
               `${p.srcZone} ${p.dstZone}`,
           } satisfies Column<(typeof cfg.policies)[number]>,
