@@ -76,8 +76,11 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
   const actionTone =
     p.action === "permit" ? "ok" : p.action === "deny" ? "danger" : "muted";
   const showSchedule = p.schedule && p.schedule !== "always" && p.schedule !== "-";
+  const [showZonePref] = useShowPolicyZone();
   const showZone =
-    (p.srcZone || p.dstZone) && !(p.srcZone === "any" && p.dstZone === "any");
+    showZonePref &&
+    (p.srcZone || p.dstZone) &&
+    !(p.srcZone === "any" && p.dstZone === "any");
   const hasMeta = showZone || showSchedule || p.id;
   return (
     <div className="space-y-0.5">
