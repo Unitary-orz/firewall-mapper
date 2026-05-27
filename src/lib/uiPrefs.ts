@@ -1,10 +1,14 @@
 import { useSyncExternalStore } from "react";
 
-type PrefKey = "cfg.showLineNo" | "cfg.showFullPortRange";
+type PrefKey =
+  | "cfg.showLineNo"
+  | "cfg.showFullPortRange"
+  | "cfg.showPolicyZone";
 
 const defaults: Record<PrefKey, boolean> = {
   "cfg.showLineNo": false,
   "cfg.showFullPortRange": false,
+  "cfg.showPolicyZone": false,
 };
 
 function read(key: PrefKey): boolean {
