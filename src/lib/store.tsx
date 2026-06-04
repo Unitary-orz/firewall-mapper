@@ -63,9 +63,11 @@ export function ConfigStoreProvider({ children }: { children: React.ReactNode })
   const clear = useCallback(() => {
     setRaw(null);
     setFileName(undefined);
+    setUpdatedAt(undefined);
     try {
       localStorage.removeItem(LS_KEY);
       localStorage.removeItem(LS_NAME);
+      localStorage.removeItem(LS_TIME);
     } catch {
       // ignore
     }
