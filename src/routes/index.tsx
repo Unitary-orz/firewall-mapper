@@ -28,8 +28,14 @@ export const Route = createFileRoute("/")({
   component: IndexPage,
 });
 
+function formatUpdatedAt(d: Date | undefined): string {
+  if (!d) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 function IndexPage() {
-  const { cfg, audit, loadText, fileName } = useConfigStore();
+  const { cfg, audit, loadText, fileName, updatedAt } = useConfigStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
 
@@ -307,6 +313,11 @@ function IndexPage() {
           <section>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">概览</h2>
+              {updatedAt && (
+                <span className="text-xs text-muted-foreground">
+                  配置更新于 {formatUpdatedAt(updatedAt)}
+                </span>
+              )}
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Stat label="地址对象" value={cfg.addresses.length} to="/objects" />

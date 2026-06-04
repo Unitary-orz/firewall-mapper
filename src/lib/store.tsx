@@ -16,24 +16,30 @@ interface StoreCtx {
   loadText: (text: string, fileName?: string) => void;
   clear: () => void;
   fileName?: string;
+  updatedAt?: Date;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
 const LS_KEY = "fw-config-raw-v1";
 const LS_NAME = "fw-config-name-v1";
 
+const LS_TIME = "fw-config-time-v1";
+
 export function ConfigStoreProvider({ children }: { children: React.ReactNode }) {
   const [raw, setRaw] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | undefined>(undefined);
+  const [updatedAt, setUpdatedAt] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       const r = localStorage.getItem(LS_KEY);
       const n = localStorage.getItem(LS_NAME) ?? undefined;
+      const t = localStorage.getItem(LS_TIME);
       if (r) {
         setRaw(r);
         setFileName(n);
+        if (t) setUpdatedAt(new Date(t));
       }
     } catch {
       // ignore
@@ -41,11 +47,14 @@ export function ConfigStoreProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const loadText = useCallback((text: string, name?: string) => {
+    const now = new Date();
     setRaw(text);
     setFileName(name);
+    setUpdatedAt(now);
     try {
       localStorage.setItem(LS_KEY, text);
       if (name) localStorage.setItem(LS_NAME, name);
+      localStorage.setItem(LS_TIME, now.toISOString());
     } catch {
       // quota
     }
@@ -54,9 +63,11 @@ export function ConfigStoreProvider({ children }: { children: React.ReactNode })
   const clear = useCallback(() => {
     setRaw(null);
     setFileName(undefined);
+    setUpdatedAt(undefined);
     try {
       localStorage.removeItem(LS_KEY);
       localStorage.removeItem(LS_NAME);
+      localStorage.removeItem(LS_TIME);
     } catch {
       // ignore
     }
@@ -64,12 +75,12 @@ export function ConfigStoreProvider({ children }: { children: React.ReactNode })
 
   const value = useMemo<StoreCtx>(() => {
     if (!raw)
-      return { cfg: null, xr: null, audit: [], loadText, clear, fileName };
+      return { cfg: null, xr: null, audit: [], loadText, clear, fileName, updatedAt };
     const cfg = parseConfig(raw, fileName);
     const xr = buildCrossRef(cfg);
     const audit = runAudit(cfg, xr);
-    return { cfg, xr, audit, loadText, clear, fileName };
-  }, [raw, fileName, loadText, clear]);
+    return { cfg, xr, audit, loadText, clear, fileName, updatedAt };
+  }, [raw, fileName, updatedAt, loadText, clear]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
