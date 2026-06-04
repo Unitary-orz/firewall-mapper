@@ -28,8 +28,14 @@ export const Route = createFileRoute("/")({
   component: IndexPage,
 });
 
+function formatUpdatedAt(d: Date | undefined): string {
+  if (!d) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 function IndexPage() {
-  const { cfg, audit, loadText, fileName } = useConfigStore();
+  const { cfg, audit, loadText, fileName, updatedAt } = useConfigStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
 
