@@ -47,11 +47,14 @@ export function ConfigStoreProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const loadText = useCallback((text: string, name?: string) => {
+    const now = new Date();
     setRaw(text);
     setFileName(name);
+    setUpdatedAt(now);
     try {
       localStorage.setItem(LS_KEY, text);
       if (name) localStorage.setItem(LS_NAME, name);
+      localStorage.setItem(LS_TIME, now.toISOString());
     } catch {
       // quota
     }
