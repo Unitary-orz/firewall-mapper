@@ -23,9 +23,12 @@ const Ctx = createContext<StoreCtx | null>(null);
 const LS_KEY = "fw-config-raw-v1";
 const LS_NAME = "fw-config-name-v1";
 
+const LS_TIME = "fw-config-time-v1";
+
 export function ConfigStoreProvider({ children }: { children: React.ReactNode }) {
   const [raw, setRaw] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | undefined>(undefined);
+  const [updatedAt, setUpdatedAt] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
