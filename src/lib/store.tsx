@@ -35,9 +35,11 @@ export function ConfigStoreProvider({ children }: { children: React.ReactNode })
     try {
       const r = localStorage.getItem(LS_KEY);
       const n = localStorage.getItem(LS_NAME) ?? undefined;
+      const t = localStorage.getItem(LS_TIME);
       if (r) {
         setRaw(r);
         setFileName(n);
+        if (t) setUpdatedAt(new Date(t));
       }
     } catch {
       // ignore
