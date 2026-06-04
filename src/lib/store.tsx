@@ -16,6 +16,7 @@ interface StoreCtx {
   loadText: (text: string, fileName?: string) => void;
   clear: () => void;
   fileName?: string;
+  updatedAt?: Date;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
