@@ -75,12 +75,12 @@ export function ConfigStoreProvider({ children }: { children: React.ReactNode })
 
   const value = useMemo<StoreCtx>(() => {
     if (!raw)
-      return { cfg: null, xr: null, audit: [], loadText, clear, fileName };
+      return { cfg: null, xr: null, audit: [], loadText, clear, fileName, updatedAt };
     const cfg = parseConfig(raw, fileName);
     const xr = buildCrossRef(cfg);
     const audit = runAudit(cfg, xr);
-    return { cfg, xr, audit, loadText, clear, fileName };
-  }, [raw, fileName, loadText, clear]);
+    return { cfg, xr, audit, loadText, clear, fileName, updatedAt };
+  }, [raw, fileName, updatedAt, loadText, clear]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
