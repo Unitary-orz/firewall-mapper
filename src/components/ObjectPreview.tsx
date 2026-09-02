@@ -57,9 +57,28 @@ function classifyLiteral(name: string): Resolved | null {
   return null;
 }
 
-function useResolve(name: string): Resolved {
+export type ResolvePrefer = "address" | "service";
+
+function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
   const { cfg } = useConfigStore();
   if (!cfg || !name) return { kind: "unknown", name };
+
+  // 名称冲突时（地址对象与服务对象同名），按调用方语境优先解析
+  if (prefer === "service") {
+    const ps = cfg.services.find((x) => x.name === name);
+    if (ps)
+      return { kind: "service", name, lineNo: ps.lineNo, description: ps.description, svc: ps };
+    const psg = cfg.serviceGroups.find((x) => x.name === name);
+    if (psg)
+      return {
+        kind: "service-group",
+        name,
+        lineNo: psg.lineNo,
+        description: psg.description,
+        svcGroup: psg,
+      };
+  }
+
   const a = cfg.addresses.find((x) => x.name === name);
   if (a)
     return { kind: "address", name, lineNo: a.lineNo, description: a.description, addr: a };
