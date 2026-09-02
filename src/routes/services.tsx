@@ -92,7 +92,7 @@ function ServicesPage() {
       cell: (g) => (
         <div className="space-y-0.5">
           {g.members.map((m, i) => (
-            <div key={i}><ObjectName name={m} /></div>
+            <div key={i}><ObjectName name={m} prefer="service" /></div>
           ))}
         </div>
       ),
