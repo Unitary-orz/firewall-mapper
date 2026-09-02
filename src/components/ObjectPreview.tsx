@@ -57,9 +57,28 @@ function classifyLiteral(name: string): Resolved | null {
   return null;
 }
 
-function useResolve(name: string): Resolved {
+export type ResolvePrefer = "address" | "service";
+
+function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
   const { cfg } = useConfigStore();
   if (!cfg || !name) return { kind: "unknown", name };
+
+  // 名称冲突时（地址对象与服务对象同名），按调用方语境优先解析
+  if (prefer === "service") {
+    const ps = cfg.services.find((x) => x.name === name);
+    if (ps)
+      return { kind: "service", name, lineNo: ps.lineNo, description: ps.description, svc: ps };
+    const psg = cfg.serviceGroups.find((x) => x.name === name);
+    if (psg)
+      return {
+        kind: "service-group",
+        name,
+        lineNo: psg.lineNo,
+        description: psg.description,
+        svcGroup: psg,
+      };
+  }
+
   const a = cfg.addresses.find((x) => x.name === name);
   if (a)
     return { kind: "address", name, lineNo: a.lineNo, description: a.description, addr: a };
@@ -168,14 +187,18 @@ function ServiceEntries({ s }: { s: ServiceObject }) {
   );
 }
 
-function MemberRow({ m }: { m: string }) {
+function MemberRow({ m, prefer = "address" }: { m: string; prefer?: ResolvePrefer }) {
   const { cfg } = useConfigStore();
   const [showFull] = useShowFullPortRange();
   if (!cfg) return null;
-  const a = cfg.addresses.find((x) => x.name === m);
-  const ag = cfg.addressGroups.find((x) => x.name === m);
+  const svcFirst = prefer === "service";
+  const rawA = cfg.addresses.find((x) => x.name === m);
+  const rawAg = cfg.addressGroups.find((x) => x.name === m);
   const s = cfg.services.find((x) => x.name === m);
   const sg = cfg.serviceGroups.find((x) => x.name === m);
+  // 同名冲突时按语境优先
+  const a = svcFirst && (s || sg) ? undefined : rawA;
+  const ag = svcFirst && (s || sg) ? undefined : rawAg;
 
   let kindTag = "未定义引用";
   let summary = "";
@@ -214,7 +237,7 @@ function MemberRow({ m }: { m: string }) {
     <li className="py-1.5 px-2 space-y-0.5">
       <div className="flex items-baseline gap-2">
         <div className="flex items-baseline gap-x-2 text-xs min-w-0 flex-1 truncate">
-          <ObjectName name={m} />
+          <ObjectName name={m} prefer={prefer} />
           {summary && (
             <span className="font-mono text-muted-foreground break-all truncate min-w-0">
               {summary}
@@ -231,7 +254,7 @@ function MemberRow({ m }: { m: string }) {
 }
 
 
-function GroupMembers({ members }: { members: string[] }) {
+function GroupMembers({ members, prefer = "address" }: { members: string[]; prefer?: ResolvePrefer }) {
   if (members.length === 0)
     return <div className="text-xs text-muted-foreground">（空）</div>;
   const max = 30;
@@ -240,7 +263,7 @@ function GroupMembers({ members }: { members: string[] }) {
   return (
     <ul className="divide-y divide-border/40 rounded-md border border-border/40">
       {shown.map((m, i) => (
-        <MemberRow key={i} m={m} />
+        <MemberRow key={i} m={m} prefer={prefer} />
       ))}
       {rest > 0 && (
         <li className="text-xs text-muted-foreground py-1.5 px-2">
@@ -274,11 +297,13 @@ function PoolDetail({ p }: { p: NatPool }) {
 export function ObjectName({
   name,
   className = "",
+  prefer = "address",
 }: {
   name: string;
   className?: string;
+  prefer?: ResolvePrefer;
 }) {
-  const r = useResolve(name);
+  const r = useResolve(name, prefer);
   const isEmpty = !name;
 
   if (isEmpty) {
@@ -345,7 +370,7 @@ export function ObjectName({
               <div className="text-xs font-medium text-muted-foreground mb-1">
                 成员（{r.svcGroup.members.length}）
               </div>
-              <GroupMembers members={r.svcGroup.members} />
+              <GroupMembers members={r.svcGroup.members} prefer="service" />
             </div>
           )}
           {r.kind === "unknown" && (

@@ -60,7 +60,7 @@ function PoliciesPage() {
     {
       key: "svc",
       header: "服务",
-      cell: (p) => <ObjectName name={p.service} />,
+      cell: (p) => <ObjectName name={p.service} prefer="service" />,
       search: (p) =>
         `${p.service} ${serviceToPorts(p.service, cfg).join(" ")}`,
     },
