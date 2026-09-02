@@ -293,11 +293,13 @@ function PoolDetail({ p }: { p: NatPool }) {
 export function ObjectName({
   name,
   className = "",
+  prefer = "address",
 }: {
   name: string;
   className?: string;
+  prefer?: ResolvePrefer;
 }) {
-  const r = useResolve(name);
+  const r = useResolve(name, prefer);
   const isEmpty = !name;
 
   if (isEmpty) {
