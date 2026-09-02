@@ -237,7 +237,7 @@ function MemberRow({ m, prefer = "address" }: { m: string; prefer?: ResolvePrefe
     <li className="py-1.5 px-2 space-y-0.5">
       <div className="flex items-baseline gap-2">
         <div className="flex items-baseline gap-x-2 text-xs min-w-0 flex-1 truncate">
-          <ObjectName name={m} />
+          <ObjectName name={m} prefer={prefer} />
           {summary && (
             <span className="font-mono text-muted-foreground break-all truncate min-w-0">
               {summary}
@@ -254,7 +254,7 @@ function MemberRow({ m, prefer = "address" }: { m: string; prefer?: ResolvePrefe
 }
 
 
-function GroupMembers({ members }: { members: string[] }) {
+function GroupMembers({ members, prefer = "address" }: { members: string[]; prefer?: ResolvePrefer }) {
   if (members.length === 0)
     return <div className="text-xs text-muted-foreground">（空）</div>;
   const max = 30;
@@ -263,7 +263,7 @@ function GroupMembers({ members }: { members: string[] }) {
   return (
     <ul className="divide-y divide-border/40 rounded-md border border-border/40">
       {shown.map((m, i) => (
-        <MemberRow key={i} m={m} />
+        <MemberRow key={i} m={m} prefer={prefer} />
       ))}
       {rest > 0 && (
         <li className="text-xs text-muted-foreground py-1.5 px-2">
@@ -370,7 +370,7 @@ export function ObjectName({
               <div className="text-xs font-medium text-muted-foreground mb-1">
                 成员（{r.svcGroup.members.length}）
               </div>
-              <GroupMembers members={r.svcGroup.members} />
+              <GroupMembers members={r.svcGroup.members} prefer="service" />
             </div>
           )}
           {r.kind === "unknown" && (
