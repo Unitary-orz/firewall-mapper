@@ -187,14 +187,18 @@ function ServiceEntries({ s }: { s: ServiceObject }) {
   );
 }
 
-function MemberRow({ m }: { m: string }) {
+function MemberRow({ m, prefer = "address" }: { m: string; prefer?: ResolvePrefer }) {
   const { cfg } = useConfigStore();
   const [showFull] = useShowFullPortRange();
   if (!cfg) return null;
-  const a = cfg.addresses.find((x) => x.name === m);
-  const ag = cfg.addressGroups.find((x) => x.name === m);
+  const svcFirst = prefer === "service";
+  const rawA = cfg.addresses.find((x) => x.name === m);
+  const rawAg = cfg.addressGroups.find((x) => x.name === m);
   const s = cfg.services.find((x) => x.name === m);
   const sg = cfg.serviceGroups.find((x) => x.name === m);
+  // 同名冲突时按语境优先
+  const a = svcFirst && (s || sg) ? undefined : rawA;
+  const ag = svcFirst && (s || sg) ? undefined : rawAg;
 
   let kindTag = "未定义引用";
   let summary = "";
