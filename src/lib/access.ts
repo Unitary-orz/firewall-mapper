@@ -66,6 +66,11 @@ function idx(cfg: ParsedConfig): AccessIndex {
   return v;
 }
 
+/** O(1) name lookups shared by UI previews. */
+export function lookupIndex(cfg: ParsedConfig) {
+  return idx(cfg);
+}
+
 /** Cached top-level flow + focus-line builders so navigating away and back
  *  does not re-run buildFlows / buildFocusLines from scratch. */
 export function getFlows(cfg: ParsedConfig): Flow[] {

@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Badge } from "@/components/DataTable";
 import { useConfigStore } from "@/lib/store";
+import { lookupIndex } from "@/lib/access";
 import { useShowFullPortRange } from "@/lib/uiPrefs";
 import { L, DescQuote } from "@/components/previewAtoms";
 import type {
@@ -65,10 +66,10 @@ function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
 
   // 名称冲突时（地址对象与服务对象同名），按调用方语境优先解析
   if (prefer === "service") {
-    const ps = cfg.services.find((x) => x.name === name);
+    const ps = lookupIndex(cfg).svcByName.get(name);
     if (ps)
       return { kind: "service", name, lineNo: ps.lineNo, description: ps.description, svc: ps };
-    const psg = cfg.serviceGroups.find((x) => x.name === name);
+    const psg = lookupIndex(cfg).svcGrpByName.get(name);
     if (psg)
       return {
         kind: "service-group",
@@ -79,10 +80,10 @@ function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
       };
   }
 
-  const a = cfg.addresses.find((x) => x.name === name);
+  const a = lookupIndex(cfg).addrByName.get(name);
   if (a)
     return { kind: "address", name, lineNo: a.lineNo, description: a.description, addr: a };
-  const ag = cfg.addressGroups.find((x) => x.name === name);
+  const ag = lookupIndex(cfg).grpByName.get(name);
   if (ag)
     return {
       kind: "address-group",
@@ -91,10 +92,10 @@ function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
       description: ag.description,
       addrGroup: ag,
     };
-  const s = cfg.services.find((x) => x.name === name);
+  const s = lookupIndex(cfg).svcByName.get(name);
   if (s)
     return { kind: "service", name, lineNo: s.lineNo, description: s.description, svc: s };
-  const sg = cfg.serviceGroups.find((x) => x.name === name);
+  const sg = lookupIndex(cfg).svcGrpByName.get(name);
   if (sg)
     return {
       kind: "service-group",
@@ -103,7 +104,7 @@ function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
       description: sg.description,
       svcGroup: sg,
     };
-  const p = cfg.natPools.find((x) => x.name === name);
+  const p = lookupIndex(cfg).poolByName.get(name);
   if (p)
     return {
       kind: "nat-pool",
@@ -192,10 +193,10 @@ function MemberRow({ m, prefer = "address" }: { m: string; prefer?: ResolvePrefe
   const [showFull] = useShowFullPortRange();
   if (!cfg) return null;
   const svcFirst = prefer === "service";
-  const rawA = cfg.addresses.find((x) => x.name === m);
-  const rawAg = cfg.addressGroups.find((x) => x.name === m);
-  const s = cfg.services.find((x) => x.name === m);
-  const sg = cfg.serviceGroups.find((x) => x.name === m);
+  const rawA = lookupIndex(cfg).addrByName.get(m);
+  const rawAg = lookupIndex(cfg).grpByName.get(m);
+  const s = lookupIndex(cfg).svcByName.get(m);
+  const sg = lookupIndex(cfg).svcGrpByName.get(m);
   // 同名冲突时按语境优先
   const a = svcFirst && (s || sg) ? undefined : rawA;
   const ag = svcFirst && (s || sg) ? undefined : rawAg;
