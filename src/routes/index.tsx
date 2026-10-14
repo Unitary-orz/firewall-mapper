@@ -6,13 +6,7 @@ import { Input } from "@/components/ui/input";
 import { getNodeAggregates } from "@/lib/access";
 import { downloadExcel, type ExportTable } from "@/lib/export";
 import type { ParsedConfig } from "@/lib/parser/types";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,8 +14,7 @@ export const Route = createFileRoute("/")({
       { title: "概览 · 防火墙配置审计台" },
       {
         name: "description",
-        content:
-          "上传防火墙配置文件，查看对象、策略、NAT、中间节点统计与风险概览。",
+        content: "上传防火墙配置文件，查看对象、策略、NAT、中间节点统计与风险概览。",
       },
     ],
   }),
@@ -86,9 +79,7 @@ function IndexPage() {
         rows: cfg.services.map((s) => [
           s.name,
           s.entries
-            .map((e) =>
-              e.destPort ? `${e.protocol}/${e.destPort}` : e.protocol
-            )
+            .map((e) => (e.destPort ? `${e.protocol}/${e.destPort}` : e.protocol))
             .join("; "),
           s.description ?? "",
           s.lineNo,
@@ -106,15 +97,7 @@ function IndexPage() {
       },
       {
         label: "策略",
-        headers: [
-          "ID",
-          "源",
-          "目的",
-          "服务",
-          "期限",
-          "动作",
-          "行号",
-        ],
+        headers: ["ID", "源", "目的", "服务", "期限", "动作", "行号"],
         rows: cfg.policies.map((p) => [
           p.id,
           p.srcAddr,
@@ -127,16 +110,7 @@ function IndexPage() {
       },
       {
         label: "NAT 目的规则",
-        headers: [
-          "ID",
-          "接口",
-          "源",
-          "原目的",
-          "原服务",
-          "转换目的",
-          "服务端口",
-          "行号",
-        ],
+        headers: ["ID", "接口", "源", "原目的", "原服务", "转换目的", "服务端口", "行号"],
         rows: cfg.natRules
           .filter((r) => r.kind === "destination" || r.kind === "static")
           .map((r) => [
@@ -152,15 +126,7 @@ function IndexPage() {
       },
       {
         label: "NAT 源规则",
-        headers: [
-          "ID",
-          "接口",
-          "源",
-          "原目的",
-          "转换后源",
-          "出接口取址",
-          "行号",
-        ],
+        headers: ["ID", "接口", "源", "原目的", "转换后源", "出接口取址", "行号"],
         rows: cfg.natRules
           .filter((r) => r.kind === "source")
           .map((r) => [
@@ -187,12 +153,7 @@ function IndexPage() {
       {
         label: "接口",
         headers: ["名称", "IP", "属性", "行号"],
-        rows: cfg.interfaces.map((i) => [
-          i.name,
-          i.ips.join("; "),
-          i.attrs.join("; "),
-          i.lineNo,
-        ]),
+        rows: cfg.interfaces.map((i) => [i.name, i.ips.join("; "), i.attrs.join("; "), i.lineNo]),
       },
       {
         label: "计划",
@@ -208,28 +169,12 @@ function IndexPage() {
       },
       {
         label: "中间节点",
-        headers: [
-          "类别",
-          "名称",
-          "地址",
-          "DNAT 引用",
-          "入站策略",
-          "出站策略",
-          "行号",
-        ],
+        headers: ["类别", "名称", "地址", "DNAT 引用", "入站策略", "出站策略", "行号"],
         rows: nodeRows,
       },
       {
         label: "审计提示",
-        headers: [
-          "等级",
-          "类别",
-          "标题",
-          "详情",
-          "关联行号",
-          "对象类型",
-          "对象名称",
-        ],
+        headers: ["等级", "类别", "标题", "详情", "关联行号", "对象类型", "对象名称"],
         rows: audit.map((a) => [
           a.severity,
           a.category,
@@ -265,9 +210,7 @@ function IndexPage() {
               if (f) await onFile(f);
             }}
           >
-            <p className="text-sm text-muted-foreground">
-              拖拽配置文件到此处，或点击下方按钮选择
-            </p>
+            <p className="text-sm text-muted-foreground">拖拽配置文件到此处，或点击下方按钮选择</p>
             <input
               ref={fileRef}
               type="file"
@@ -278,11 +221,7 @@ function IndexPage() {
                 if (f) await onFile(f);
               }}
             />
-            <Button
-              className="mt-3"
-              onClick={() => fileRef.current?.click()}
-              disabled={loading}
-            >
+            <Button className="mt-3" onClick={() => fileRef.current?.click()} disabled={loading}>
               {loading ? "解析中…" : "选择文件"}
             </Button>
             {fileName && (
@@ -300,7 +239,8 @@ function IndexPage() {
             <CardHeader>
               <CardTitle>导出全部模块</CardTitle>
               <CardDescription>
-                在概览页可以一次性导出所有模块为一个包含多个 sheet 的 Excel 文件，原来的模块页面 CSV 导出功能保持不变。
+                在概览页可以一次性导出所有模块为一个包含多个 sheet 的 Excel 文件，原来的模块页面 CSV
+                导出功能保持不变。
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -327,21 +267,14 @@ function IndexPage() {
               <Stat label="策略" value={cfg.policies.length} to="/policies" />
               <Stat label="NAT 规则" value={cfg.natRules.length} to="/nat" />
               <Stat label="NAT 池" value={cfg.natPools.length} to="/nat" />
-              <Stat
-                label="中间节点"
-                value={cfg.intermediaries.length}
-                to="/intermediaries"
-              />
+              <Stat label="中间节点" value={cfg.intermediaries.length} to="/intermediaries" />
             </div>
           </section>
 
           <section>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold">审计提示</h2>
-              <Link
-                to="/audit"
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
+              <Link to="/audit" className="text-sm text-muted-foreground hover:text-foreground">
                 查看全部 →
               </Link>
             </div>
@@ -369,15 +302,7 @@ function IndexPage() {
   );
 }
 
-function Stat({
-  label,
-  value,
-  to,
-}: {
-  label: string;
-  value: number;
-  to: string;
-}) {
+function Stat({ label, value, to }: { label: string; value: number; to: string }) {
   return (
     <Link
       to={to}
@@ -389,15 +314,7 @@ function Stat({
   );
 }
 
-function SeverityStat({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
+function SeverityStat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className={`rounded-lg p-4 ${color}`}>
       <div className="text-xs">{label}</div>

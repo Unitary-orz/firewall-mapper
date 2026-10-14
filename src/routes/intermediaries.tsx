@@ -6,11 +6,7 @@ import { Badge, LineLink } from "@/components/DataTable";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Shield,
   Router,
@@ -39,8 +35,7 @@ export const Route = createFileRoute("/intermediaries")({
       { title: "中间节点 · 防火墙配置审计台" },
       {
         name: "description",
-        content:
-          "按命名识别 WAF / 网关 / 代理 / 堡垒机 / 负载均衡，并展示每个节点的上下游引用。",
+        content: "按命名识别 WAF / 网关 / 代理 / 堡垒机 / 负载均衡，并展示每个节点的上下游引用。",
       },
     ],
   }),
@@ -140,8 +135,7 @@ function IntermediariesPage() {
         if (names.includes(n.name)) return true;
       }
       return (
-        n.name.toLowerCase().includes(needle) ||
-        (n.address ?? "").toLowerCase().includes(needle)
+        n.name.toLowerCase().includes(needle) || (n.address ?? "").toLowerCase().includes(needle)
       );
     });
   }, [nodes, q, activeCat]);
@@ -171,7 +165,8 @@ function IntermediariesPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">中间节点</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            按命名识别 WAF、网关、堡垒机、代理、负载均衡等中间件，聚合展示每个节点的上下游策略与 NAT 引用。
+            按命名识别 WAF、网关、堡垒机、代理、负载均衡等中间件，聚合展示每个节点的上下游策略与 NAT
+            引用。
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
@@ -207,12 +202,7 @@ function IntermediariesPage() {
                   active ? CAT_ICON_TEXT[c].split(" ")[0] : "text-muted-foreground/60",
                 )}
               />
-              <span
-                className={cn(
-                  "text-[11px] font-medium",
-                  active && CAT_LABEL_COLOR[c],
-                )}
-              >
+              <span className={cn("text-[11px] font-medium", active && CAT_LABEL_COLOR[c])}>
                 {CAT_LABEL[c]}
               </span>
               <span
@@ -258,9 +248,7 @@ function IntermediariesPage() {
             <X className="h-3 w-3" />
           </Button>
         )}
-        <span className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} 个匹配
-        </span>
+        <span className="ml-auto text-xs text-muted-foreground">{filtered.length} 个匹配</span>
       </div>
 
       {/* ---- node list ---- */}
@@ -297,9 +285,11 @@ function IntermediariesPage() {
 
       {/* ---- footer note ---- */}
       <p className="rounded-lg border border-border/50 bg-secondary/20 px-4 py-2.5 text-[11px] leading-relaxed text-muted-foreground">
-        识别规则：对象名称含 <code className="rounded bg-secondary px-1 text-[11px]">waf</code> → WAF；含
+        识别规则：对象名称含 <code className="rounded bg-secondary px-1 text-[11px]">waf</code> →
+        WAF；含
         <code className="rounded bg-secondary px-1 text-[11px]">堡垒 / bastion</code> → 堡垒机；含
-        <code className="rounded bg-secondary px-1 text-[11px]">网关 / gateway / api-</code> → 网关；含
+        <code className="rounded bg-secondary px-1 text-[11px]">网关 / gateway / api-</code> →
+        网关；含
         <code className="rounded bg-secondary px-1 text-[11px]">代理 / proxy</code> → 代理；含
         <code className="rounded bg-secondary px-1 text-[11px]">负载 / lb / slb</code> → 负载均衡。
         策略关联通过 srcAddr / dstAddr 及 NAT translatedPool 的名称匹配完成。
@@ -361,9 +351,7 @@ function NodeCard({ node }: { node: NodeAggregate }) {
             </div>
 
             {node.address && (
-              <p className="truncate font-mono text-xs text-muted-foreground/80">
-                {node.address}
-              </p>
+              <p className="truncate font-mono text-xs text-muted-foreground/80">{node.address}</p>
             )}
 
             {/* stats inline */}
@@ -423,8 +411,7 @@ function NodeCard({ node }: { node: NodeAggregate }) {
 
 function NodeDetail({ node }: { node: NodeAggregate }) {
   const [showFull] = useShowFullPortRange();
-  const fmtPort = (p?: string) =>
-    !p ? "" : !showFull && p === "1-65535" ? "any" : p;
+  const fmtPort = (p?: string) => (!p ? "" : !showFull && p === "1-65535" ? "any" : p);
 
   return (
     <div className="space-y-3 text-xs">
@@ -444,16 +431,12 @@ function NodeDetail({ node }: { node: NodeAggregate }) {
                 <Badge tone="muted">#{r.id}</Badge>
                 <span>{r.origDstAddr}</span>
                 {r.origDstService && r.origDstService !== "any" && (
-                  <span className="text-muted-foreground">
-                    :{fmtPort(r.origDstService)}
-                  </span>
+                  <span className="text-muted-foreground">:{fmtPort(r.origDstService)}</span>
                 )}
                 <ArrowRight className="h-3 w-3 text-muted-foreground" />
                 <span className="font-medium">{r.translatedPool}</span>
                 {r.servicePort && (
-                  <span className="text-muted-foreground">
-                    :{fmtPort(r.servicePort)}
-                  </span>
+                  <span className="text-muted-foreground">:{fmtPort(r.servicePort)}</span>
                 )}
                 <span className="ml-auto">
                   <LineLink line={r.lineNo} />
@@ -480,10 +463,7 @@ function NodeDetail({ node }: { node: NodeAggregate }) {
               访问图 <ExternalLink className="h-3 w-3" />
             </Link>
           </h4>
-          <PolicyMiniList
-            rows={node.inboundPolicies}
-            sideLabel="src"
-          />
+          <PolicyMiniList rows={node.inboundPolicies} sideLabel="src" />
         </section>
       )}
 
@@ -503,10 +483,7 @@ function NodeDetail({ node }: { node: NodeAggregate }) {
               访问图 <ExternalLink className="h-3 w-3" />
             </Link>
           </h4>
-          <PolicyMiniList
-            rows={node.outboundPolicies}
-            sideLabel="dst"
-          />
+          <PolicyMiniList rows={node.outboundPolicies} sideLabel="dst" />
         </section>
       )}
     </div>
@@ -538,9 +515,7 @@ function PolicyMiniList({
             {sideLabel === "src" ? p.srcAddr : p.dstAddr}
           </span>
           <ArrowRight className="h-3 w-3 text-muted-foreground/60" />
-          <span>
-            {sideLabel === "src" ? p.dstAddr : p.srcAddr}
-          </span>
+          <span>{sideLabel === "src" ? p.dstAddr : p.srcAddr}</span>
           <span className="text-muted-foreground/60">· {p.service}</span>
           <span className="ml-auto">
             <LineLink line={p.lineNo} />

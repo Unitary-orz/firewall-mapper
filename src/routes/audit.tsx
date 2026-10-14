@@ -26,15 +26,7 @@ function AuditPage() {
       key: "sev",
       header: "等级",
       cell: (f) => (
-        <Badge
-          tone={
-            f.severity === "high"
-              ? "danger"
-              : f.severity === "warn"
-                ? "warn"
-                : "muted"
-          }
-        >
+        <Badge tone={f.severity === "high" ? "danger" : f.severity === "warn" ? "warn" : "muted"}>
           {f.severity}
         </Badge>
       ),
@@ -57,9 +49,7 @@ function AuditPage() {
     {
       key: "detail",
       header: "详情",
-      cell: (f) => (
-        <span className="text-xs text-muted-foreground">{f.detail}</span>
-      ),
+      cell: (f) => <span className="text-xs text-muted-foreground">{f.detail}</span>,
       search: (f) => f.detail,
     },
     {

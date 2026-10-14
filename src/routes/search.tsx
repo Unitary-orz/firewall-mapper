@@ -2,23 +2,14 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useMemo, useRef, useEffect, useState } from "react";
 import { useConfigStore } from "@/lib/store";
 import { EmptyConfig } from "@/components/EmptyConfig";
-import {
-  Badge,
-  DataTable,
-  LineLink,
-  type Column,
-} from "@/components/DataTable";
+import { Badge, DataTable, LineLink, type Column } from "@/components/DataTable";
 import { ObjectName } from "@/components/ObjectPreview";
 import { RefsPreview } from "@/components/RefsPreview";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useShowFullPortRange } from "@/lib/uiPrefs";
-import {
-  isIpLiteral,
-  serviceToPorts,
-  findAddressesContainingIp,
-} from "@/lib/access";
+import { isIpLiteral, serviceToPorts, findAddressesContainingIp } from "@/lib/access";
 import { Search, X } from "lucide-react";
 import type {
   AddressObject,
@@ -78,15 +69,7 @@ const emptyResults: GlobalSearchResults = {
 
 /* ---------- tab key type ---------- */
 
-type TabKey =
-  | "addr"
-  | "addrGrp"
-  | "svc"
-  | "svcGrp"
-  | "policy"
-  | "dnat"
-  | "snat"
-  | "pool";
+type TabKey = "addr" | "addrGrp" | "svc" | "svcGrp" | "policy" | "dnat" | "snat" | "pool";
 
 interface TabDef {
   key: TabKey;
@@ -119,8 +102,7 @@ function SearchPage() {
     const q = query.trim().toLowerCase();
     if (!cfg || !xr || !q) return { ...emptyResults, query: q };
 
-    const matchesText = (text?: string) =>
-      !!text && text.toLowerCase().includes(q);
+    const matchesText = (text?: string) => !!text && text.toLowerCase().includes(q);
     const isIp = isIpLiteral(q);
 
     // combine ipToNames (exact host) + findAddressesContainingIp (CIDR/range)
@@ -134,9 +116,7 @@ function SearchPage() {
       !!name && (matchesText(name) || ipNames.has(name));
     const matchesServiceValue = (serviceName: string) =>
       matchesText(serviceName) ||
-      serviceToPorts(serviceName, cfg).some((p) =>
-        p.toLowerCase().includes(q)
-      );
+      serviceToPorts(serviceName, cfg).some((p) => p.toLowerCase().includes(q));
 
     // address objects
     const addresses = cfg.addresses.filter((a) => {
@@ -149,22 +129,19 @@ function SearchPage() {
     const addressGroups = cfg.addressGroups.filter((g) => {
       if (ipNames.has(g.name)) return true;
       if (matchesText(g.name) || matchesText(g.description)) return true;
-      return g.members.some(
-        (m) => matchesText(m) || ipNames.has(m)
-      );
+      return g.members.some((m) => matchesText(m) || ipNames.has(m));
     });
 
     // service objects
     const services = cfg.services.filter((s) => {
       if (matchesText(s.name) || matchesText(s.description)) return true;
-      if (serviceToPorts(s.name, cfg).some((p) => p.toLowerCase().includes(q)))
-        return true;
+      if (serviceToPorts(s.name, cfg).some((p) => p.toLowerCase().includes(q))) return true;
       return s.entries.some(
         (e) =>
           matchesText(e.protocol) ||
           matchesText(e.destPort) ||
           matchesText(e.sourcePort) ||
-          matchesText(`${e.protocol}/${e.destPort ?? ""}`)
+          matchesText(`${e.protocol}/${e.destPort ?? ""}`),
       );
     });
 
@@ -172,21 +149,14 @@ function SearchPage() {
     const serviceGroups = cfg.serviceGroups.filter((g) => {
       if (matchesText(g.name) || matchesText(g.description)) return true;
       return g.members.some(
-        (m) =>
-          matchesText(m) ||
-          serviceToPorts(m, cfg).some((p) => p.toLowerCase().includes(q))
+        (m) => matchesText(m) || serviceToPorts(m, cfg).some((p) => p.toLowerCase().includes(q)),
       );
     });
 
     // policies
     const policies = cfg.policies.filter((p) => {
       if (matchesText(p.id) || matchesText(p.action)) return true;
-      if (
-        matchesText(p.srcZone) ||
-        matchesText(p.dstZone) ||
-        matchesText(p.schedule)
-      )
-        return true;
+      if (matchesText(p.srcZone) || matchesText(p.dstZone) || matchesText(p.schedule)) return true;
       return (
         matchesAddressName(p.srcAddr) ||
         matchesAddressName(p.dstAddr) ||
@@ -196,8 +166,7 @@ function SearchPage() {
 
     // NAT rules
     const natRules = cfg.natRules.filter((r) => {
-      if (matchesText(r.id) || matchesText(r.iface) || matchesText(r.kind))
-        return true;
+      if (matchesText(r.id) || matchesText(r.iface) || matchesText(r.kind)) return true;
       if (matchesText(r.description)) return true;
       const addressHit =
         matchesAddressName(r.srcAddr) ||
@@ -205,8 +174,7 @@ function SearchPage() {
         matchesAddressName(r.translatedPool) ||
         matchesAddressName(r.translatedSrc);
       const serviceHit =
-        matchesServiceValue(r.origDstService ?? "") ||
-        matchesText(r.servicePort ?? "");
+        matchesServiceValue(r.origDstService ?? "") || matchesText(r.servicePort ?? "");
       return addressHit || serviceHit;
     });
 
@@ -214,10 +182,7 @@ function SearchPage() {
     const natPools = cfg.natPools.filter((p) => {
       if (ipNames.has(p.name)) return true;
       if (matchesText(p.name) || matchesText(p.description)) return true;
-      return (
-        matchesText(p.addressFrom) ||
-        matchesText(p.addressTo)
-      );
+      return matchesText(p.addressFrom) || matchesText(p.addressTo);
     });
 
     return {
@@ -235,15 +200,12 @@ function SearchPage() {
   /* ---- compute tabs ---- */
 
   const dnatRules = useMemo(
-    () =>
-      results.natRules.filter(
-        (r) => r.kind === "destination" || r.kind === "static"
-      ),
-    [results.natRules]
+    () => results.natRules.filter((r) => r.kind === "destination" || r.kind === "static"),
+    [results.natRules],
   );
   const snatRules = useMemo(
     () => results.natRules.filter((r) => r.kind === "source"),
-    [results.natRules]
+    [results.natRules],
   );
 
   const allTabDefs: TabDef[] = [
@@ -271,8 +233,7 @@ function SearchPage() {
 
   /* ---- column definitions (matching each module page) ---- */
 
-  const fmtPort = (p?: string) =>
-    p ? (!showFull && p === "1-65535" ? "any" : p) : "any";
+  const fmtPort = (p?: string) => (p ? (!showFull && p === "1-65535" ? "any" : p) : "any");
   const showSrc = (p?: string) => !!p && !(!showFull && p === "1-65535");
 
   // address object columns
@@ -300,19 +261,14 @@ function SearchPage() {
     {
       key: "desc",
       header: "描述",
-      cell: (a) => (
-        <span className="text-xs text-muted-foreground">
-          {a.description ?? "—"}
-        </span>
-      ),
+      cell: (a) => <span className="text-xs text-muted-foreground">{a.description ?? "—"}</span>,
       search: (a) => a.description ?? "",
     },
     {
       key: "refs",
       header: "被引用",
       cell: (a) => <RefsPreview name={a.name} kind="address" />,
-      search: (a) =>
-        String((xr?.addressUsedBy.get(a.name) ?? []).length),
+      search: (a) => String((xr?.addressUsedBy.get(a.name) ?? []).length),
     },
     {
       key: "line",
@@ -348,19 +304,14 @@ function SearchPage() {
     {
       key: "desc",
       header: "描述",
-      cell: (g) => (
-        <span className="text-xs text-muted-foreground">
-          {g.description ?? "—"}
-        </span>
-      ),
+      cell: (g) => <span className="text-xs text-muted-foreground">{g.description ?? "—"}</span>,
       search: (g) => g.description ?? "",
     },
     {
       key: "refs",
       header: "被引用",
       cell: (g) => <RefsPreview name={g.name} kind="address" />,
-      search: (g) =>
-        String((xr?.addressUsedBy.get(g.name) ?? []).length),
+      search: (g) => String((xr?.addressUsedBy.get(g.name) ?? []).length),
     },
     {
       key: "line",
@@ -392,25 +343,19 @@ function SearchPage() {
           ))}
         </div>
       ),
-      search: (s) =>
-        s.entries.map((e) => `${e.protocol} ${e.destPort ?? ""}`).join(" "),
+      search: (s) => s.entries.map((e) => `${e.protocol} ${e.destPort ?? ""}`).join(" "),
     },
     {
       key: "desc",
       header: "描述",
-      cell: (s) => (
-        <span className="text-xs text-muted-foreground">
-          {s.description ?? "—"}
-        </span>
-      ),
+      cell: (s) => <span className="text-xs text-muted-foreground">{s.description ?? "—"}</span>,
       search: (s) => s.description ?? "",
     },
     {
       key: "refs",
       header: "被引用",
       cell: (s) => <RefsPreview name={s.name} kind="service" />,
-      search: (s) =>
-        String((xr?.serviceUsedBy.get(s.name) ?? []).length),
+      search: (s) => String((xr?.serviceUsedBy.get(s.name) ?? []).length),
     },
     {
       key: "line",
@@ -442,26 +387,19 @@ function SearchPage() {
         </div>
       ),
       search: (g) =>
-        `${g.members.join(" ")} ${g.members
-          .flatMap((m) => serviceToPorts(m, cfg!))
-          .join(" ")}`,
+        `${g.members.join(" ")} ${g.members.flatMap((m) => serviceToPorts(m, cfg!)).join(" ")}`,
     },
     {
       key: "desc",
       header: "描述",
-      cell: (g) => (
-        <span className="text-xs text-muted-foreground">
-          {g.description ?? "—"}
-        </span>
-      ),
+      cell: (g) => <span className="text-xs text-muted-foreground">{g.description ?? "—"}</span>,
       search: (g) => g.description ?? "",
     },
     {
       key: "refs",
       header: "被引用",
       cell: (g) => <RefsPreview name={g.name} kind="service" />,
-      search: (g) =>
-        String((xr?.serviceUsedBy.get(g.name) ?? []).length),
+      search: (g) => String((xr?.serviceUsedBy.get(g.name) ?? []).length),
     },
     {
       key: "line",
@@ -484,11 +422,7 @@ function SearchPage() {
     {
       key: "action",
       header: "动作",
-      cell: (p) => (
-        <Badge tone={p.action === "permit" ? "ok" : "danger"}>
-          {p.action}
-        </Badge>
-      ),
+      cell: (p) => <Badge tone={p.action === "permit" ? "ok" : "danger"}>{p.action}</Badge>,
       search: (p) => p.action,
       className: "w-20",
     },
@@ -496,22 +430,19 @@ function SearchPage() {
       key: "src",
       header: "源",
       cell: (p) => <ObjectName name={p.srcAddr} />,
-      search: (p) =>
-        `${p.srcAddr} ${(xr?.addressToValues.get(p.srcAddr) ?? []).join(" ")}`,
+      search: (p) => `${p.srcAddr} ${(xr?.addressToValues.get(p.srcAddr) ?? []).join(" ")}`,
     },
     {
       key: "dst",
       header: "目的",
       cell: (p) => <ObjectName name={p.dstAddr} />,
-      search: (p) =>
-        `${p.dstAddr} ${(xr?.addressToValues.get(p.dstAddr) ?? []).join(" ")}`,
+      search: (p) => `${p.dstAddr} ${(xr?.addressToValues.get(p.dstAddr) ?? []).join(" ")}`,
     },
     {
       key: "svc",
       header: "服务",
       cell: (p) => <ObjectName name={p.service} />,
-      search: (p) =>
-        `${p.service} ${serviceToPorts(p.service, cfg!).join(" ")}`,
+      search: (p) => `${p.service} ${serviceToPorts(p.service, cfg!).join(" ")}`,
     },
     {
       key: "zone",
@@ -566,11 +497,7 @@ function SearchPage() {
   const natDescCol: Column<NatRule> = {
     key: "desc",
     header: "描述",
-    cell: (r) => (
-      <span className="text-xs text-muted-foreground">
-        {r.description ?? "—"}
-      </span>
-    ),
+    cell: (r) => <span className="text-xs text-muted-foreground">{r.description ?? "—"}</span>,
     search: (r) => r.description ?? "",
   };
   const natLineCol: Column<NatRule> = {
@@ -590,8 +517,7 @@ function SearchPage() {
       key: "src",
       header: "源",
       cell: (r) => <ObjectName name={r.srcAddr} />,
-      search: (r) =>
-        `${r.srcAddr} ${(xr?.addressToValues.get(r.srcAddr) ?? []).join(" ")}`,
+      search: (r) => `${r.srcAddr} ${(xr?.addressToValues.get(r.srcAddr) ?? []).join(" ")}`,
     },
     {
       key: "orig",
@@ -614,9 +540,7 @@ function SearchPage() {
         <div className="space-y-0.5">
           <ObjectName name={r.translatedPool} />
           {r.servicePort && (
-            <div className="font-mono text-xs text-muted-foreground">
-              service {r.servicePort}
-            </div>
+            <div className="font-mono text-xs text-muted-foreground">service {r.servicePort}</div>
           )}
         </div>
       ),
@@ -636,15 +560,13 @@ function SearchPage() {
       key: "src",
       header: "原始源",
       cell: (r) => <ObjectName name={r.srcAddr} />,
-      search: (r) =>
-        `${r.srcAddr} ${(xr?.addressToValues.get(r.srcAddr) ?? []).join(" ")}`,
+      search: (r) => `${r.srcAddr} ${(xr?.addressToValues.get(r.srcAddr) ?? []).join(" ")}`,
     },
     {
       key: "dst",
       header: "目的",
       cell: (r) => <ObjectName name={r.origDstAddr} />,
-      search: (r) =>
-        `${r.origDstAddr} ${(xr?.addressToValues.get(r.origDstAddr) ?? []).join(" ")}`,
+      search: (r) => `${r.origDstAddr} ${(xr?.addressToValues.get(r.origDstAddr) ?? []).join(" ")}`,
     },
     {
       key: "trans",
@@ -680,9 +602,7 @@ function SearchPage() {
       cell: (p) => (
         <span className="font-mono text-xs">
           {p.addressFrom ?? "—"}
-          {p.addressTo && p.addressTo !== p.addressFrom
-            ? ` ~ ${p.addressTo}`
-            : ""}
+          {p.addressTo && p.addressTo !== p.addressFrom ? ` ~ ${p.addressTo}` : ""}
         </span>
       ),
       search: (p) => `${p.addressFrom ?? ""} ${p.addressTo ?? ""}`,
@@ -690,11 +610,7 @@ function SearchPage() {
     {
       key: "desc",
       header: "描述",
-      cell: (p) => (
-        <span className="text-xs text-muted-foreground">
-          {p.description ?? "—"}
-        </span>
-      ),
+      cell: (p) => <span className="text-xs text-muted-foreground">{p.description ?? "—"}</span>,
       search: (p) => p.description ?? "",
     },
     {
@@ -747,9 +663,7 @@ function SearchPage() {
           在此处输入 IP、对象名、服务名或端口号，可跨全部模块定位相关配置。
         </p>
       ) : totalCount === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          未找到匹配「{query.trim()}」的结果。
-        </p>
+        <p className="text-sm text-muted-foreground">未找到匹配「{query.trim()}」的结果。</p>
       ) : (
         <>
           {/* stats bar */}
@@ -761,9 +675,7 @@ function SearchPage() {
                   {t.label} {t.count}
                 </span>
               ))}
-            <span className="px-2 py-1 font-medium">
-              共 {totalCount} 条结果
-            </span>
+            <span className="px-2 py-1 font-medium">共 {totalCount} 条结果</span>
           </div>
 
           {/* tabs */}

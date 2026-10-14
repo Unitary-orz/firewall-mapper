@@ -24,29 +24,18 @@ function NatPage() {
   const { cfg, xr } = useConfigStore();
 
   const dnatRules = useMemo(
-    () =>
-      cfg?.natRules.filter(
-        (r) => r.kind === "destination" || r.kind === "static"
-      ) ?? [],
-    [cfg]
+    () => cfg?.natRules.filter((r) => r.kind === "destination" || r.kind === "static") ?? [],
+    [cfg],
   );
-  const snatRules = useMemo(
-    () => cfg?.natRules.filter((r) => r.kind === "source") ?? [],
-    [cfg]
-  );
+  const snatRules = useMemo(() => cfg?.natRules.filter((r) => r.kind === "source") ?? [], [cfg]);
 
   if (!cfg) return <EmptyConfig />;
-
 
   const statusCol: Column<NatRule> = {
     key: "status",
     header: "状态",
     cell: (r) =>
-      r.disabled ? (
-        <Badge tone="muted">已禁用</Badge>
-      ) : (
-        <Badge tone="ok">已启用</Badge>
-      ),
+      r.disabled ? <Badge tone="muted">已禁用</Badge> : <Badge tone="ok">已启用</Badge>,
     search: (r) => (r.disabled ? "disabled 已禁用" : "enabled 已启用"),
     className: "w-20",
   };
@@ -55,11 +44,7 @@ function NatPage() {
     key: "log",
     header: "日志",
     cell: (r) =>
-      r.log ? (
-        <Badge tone="default">log</Badge>
-      ) : (
-        <span className="text-muted-foreground">—</span>
-      ),
+      r.log ? <Badge tone="default">log</Badge> : <span className="text-muted-foreground">—</span>,
     search: (r) => (r.log ? "log 日志" : ""),
     className: "w-16",
   };
@@ -82,11 +67,7 @@ function NatPage() {
   const descCol: Column<NatRule> = {
     key: "desc",
     header: "描述",
-    cell: (r) => (
-      <span className="text-xs text-muted-foreground">
-        {r.description ?? "—"}
-      </span>
-    ),
+    cell: (r) => <span className="text-xs text-muted-foreground">{r.description ?? "—"}</span>,
     search: (r) => r.description ?? "",
   };
 
@@ -119,7 +100,8 @@ function NatPage() {
           </div>
         </div>
       ),
-      search: (r) => `${r.origDstAddr} ${(xr?.addressToValues.get(r.origDstAddr) ?? []).join(" ")} ${r.origDstService}`,
+      search: (r) =>
+        `${r.origDstAddr} ${(xr?.addressToValues.get(r.origDstAddr) ?? []).join(" ")} ${r.origDstService}`,
     },
     {
       key: "trans",
@@ -128,13 +110,12 @@ function NatPage() {
         <div className="space-y-0.5">
           <ObjectName name={r.translatedPool} />
           {r.servicePort && (
-            <div className="font-mono text-xs text-muted-foreground">
-              service {r.servicePort}
-            </div>
+            <div className="font-mono text-xs text-muted-foreground">service {r.servicePort}</div>
           )}
         </div>
       ),
-      search: (r) => `${r.translatedPool} ${(xr?.addressToValues.get(r.translatedPool) ?? []).join(" ")} ${r.servicePort ?? ""}`,
+      search: (r) =>
+        `${r.translatedPool} ${(xr?.addressToValues.get(r.translatedPool) ?? []).join(" ")} ${r.servicePort ?? ""}`,
     },
     logCol,
     descCol,
@@ -167,9 +148,7 @@ function NatPage() {
           ) : (
             <span className="text-muted-foreground">—</span>
           )}
-          {r.egressInterface && (
-            <Badge tone="default">出接口取址</Badge>
-          )}
+          {r.egressInterface && <Badge tone="default">出接口取址</Badge>}
         </div>
       ),
       search: (r) =>
@@ -193,9 +172,7 @@ function NatPage() {
       cell: (p) => (
         <span className="font-mono text-xs">
           {p.addressFrom ?? "—"}
-          {p.addressTo && p.addressTo !== p.addressFrom
-            ? ` ~ ${p.addressTo}`
-            : ""}
+          {p.addressTo && p.addressTo !== p.addressFrom ? ` ~ ${p.addressTo}` : ""}
         </span>
       ),
       search: (p) => `${p.addressFrom ?? ""} ${p.addressTo ?? ""}`,
@@ -203,11 +180,7 @@ function NatPage() {
     {
       key: "desc",
       header: "描述",
-      cell: (p) => (
-        <span className="text-xs text-muted-foreground">
-          {p.description ?? "—"}
-        </span>
-      ),
+      cell: (p) => <span className="text-xs text-muted-foreground">{p.description ?? "—"}</span>,
       search: (p) => p.description ?? "",
     },
     {
@@ -228,36 +201,18 @@ function NatPage() {
       </p>
       <Tabs defaultValue="dnat">
         <TabsList>
-          <TabsTrigger value="dnat">
-            目的 NAT ({dnatRules.length})
-          </TabsTrigger>
-          <TabsTrigger value="snat">
-            源 NAT ({snatRules.length})
-          </TabsTrigger>
-          <TabsTrigger value="pools">
-            NAT 池 ({cfg.natPools.length})
-          </TabsTrigger>
+          <TabsTrigger value="dnat">目的 NAT ({dnatRules.length})</TabsTrigger>
+          <TabsTrigger value="snat">源 NAT ({snatRules.length})</TabsTrigger>
+          <TabsTrigger value="pools">NAT 池 ({cfg.natPools.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="dnat" className="mt-4">
-          <DataTable
-            rows={dnatRules}
-            columns={dnatCols}
-            filename="nat-destination.csv"
-          />
+          <DataTable rows={dnatRules} columns={dnatCols} filename="nat-destination.csv" />
         </TabsContent>
         <TabsContent value="snat" className="mt-4">
-          <DataTable
-            rows={snatRules}
-            columns={snatCols}
-            filename="nat-source.csv"
-          />
+          <DataTable rows={snatRules} columns={snatCols} filename="nat-source.csv" />
         </TabsContent>
         <TabsContent value="pools" className="mt-4">
-          <DataTable
-            rows={cfg.natPools}
-            columns={poolCols}
-            filename="nat-pools.csv"
-          />
+          <DataTable rows={cfg.natPools} columns={poolCols} filename="nat-pools.csv" />
         </TabsContent>
       </Tabs>
     </div>

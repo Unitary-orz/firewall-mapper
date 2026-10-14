@@ -1,11 +1,7 @@
-
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Badge } from "@/components/DataTable";
 import { useConfigStore } from "@/lib/store";
+import { lookupIndex } from "@/lib/access";
 import { useShowFullPortRange } from "@/lib/uiPrefs";
 import { L, DescQuote } from "@/components/previewAtoms";
 import type {
@@ -46,14 +42,10 @@ const PORT_RE = /^\d{1,5}(-\d{1,5})?$/;
 const ANY_RE = /^any(-(src|dst|ip|service))?$/i;
 
 function classifyLiteral(name: string): Resolved | null {
-  if (ANY_RE.test(name))
-    return { kind: "literal-any", name, literal: "通配（不限制）" };
-  if (IP_RE.test(name))
-    return { kind: "literal-ip", name, literal: "字面 IP / 网段" };
-  if (RANGE_RE.test(name))
-    return { kind: "literal-ip", name, literal: "字面 IP 区间" };
-  if (PORT_RE.test(name))
-    return { kind: "literal-port", name, literal: "字面端口" };
+  if (ANY_RE.test(name)) return { kind: "literal-any", name, literal: "通配（不限制）" };
+  if (IP_RE.test(name)) return { kind: "literal-ip", name, literal: "字面 IP / 网段" };
+  if (RANGE_RE.test(name)) return { kind: "literal-ip", name, literal: "字面 IP 区间" };
+  if (PORT_RE.test(name)) return { kind: "literal-port", name, literal: "字面端口" };
   return null;
 }
 
@@ -65,10 +57,10 @@ function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
 
   // 名称冲突时（地址对象与服务对象同名），按调用方语境优先解析
   if (prefer === "service") {
-    const ps = cfg.services.find((x) => x.name === name);
+    const ps = lookupIndex(cfg).svcByName.get(name);
     if (ps)
       return { kind: "service", name, lineNo: ps.lineNo, description: ps.description, svc: ps };
-    const psg = cfg.serviceGroups.find((x) => x.name === name);
+    const psg = lookupIndex(cfg).svcGrpByName.get(name);
     if (psg)
       return {
         kind: "service-group",
@@ -79,10 +71,9 @@ function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
       };
   }
 
-  const a = cfg.addresses.find((x) => x.name === name);
-  if (a)
-    return { kind: "address", name, lineNo: a.lineNo, description: a.description, addr: a };
-  const ag = cfg.addressGroups.find((x) => x.name === name);
+  const a = lookupIndex(cfg).addrByName.get(name);
+  if (a) return { kind: "address", name, lineNo: a.lineNo, description: a.description, addr: a };
+  const ag = lookupIndex(cfg).grpByName.get(name);
   if (ag)
     return {
       kind: "address-group",
@@ -91,10 +82,9 @@ function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
       description: ag.description,
       addrGroup: ag,
     };
-  const s = cfg.services.find((x) => x.name === name);
-  if (s)
-    return { kind: "service", name, lineNo: s.lineNo, description: s.description, svc: s };
-  const sg = cfg.serviceGroups.find((x) => x.name === name);
+  const s = lookupIndex(cfg).svcByName.get(name);
+  if (s) return { kind: "service", name, lineNo: s.lineNo, description: s.description, svc: s };
+  const sg = lookupIndex(cfg).svcGrpByName.get(name);
   if (sg)
     return {
       kind: "service-group",
@@ -103,7 +93,7 @@ function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
       description: sg.description,
       svcGroup: sg,
     };
-  const p = cfg.natPools.find((x) => x.name === name);
+  const p = lookupIndex(cfg).poolByName.get(name);
   if (p)
     return {
       kind: "nat-pool",
@@ -129,8 +119,6 @@ const kindLabel: Record<Kind, string> = {
   unknown: "未定义引用",
 };
 
-
-
 function AddressEntries({ a }: { a: AddressObject }) {
   return (
     <div className="space-y-0.5 font-mono text-xs">
@@ -154,8 +142,7 @@ function isFullPort(p?: string) {
 
 function ServiceEntries({ s }: { s: ServiceObject }) {
   const [showFull] = useShowFullPortRange();
-  const fmt = (p?: string) =>
-    p ? (!showFull && isFullPort(p) ? "any" : p) : "any";
+  const fmt = (p?: string) => (p ? (!showFull && isFullPort(p) ? "any" : p) : "any");
   return (
     <div className="space-y-0.5 font-mono text-xs">
       {s.entries.length === 0 ? (
@@ -192,10 +179,10 @@ function MemberRow({ m, prefer = "address" }: { m: string; prefer?: ResolvePrefe
   const [showFull] = useShowFullPortRange();
   if (!cfg) return null;
   const svcFirst = prefer === "service";
-  const rawA = cfg.addresses.find((x) => x.name === m);
-  const rawAg = cfg.addressGroups.find((x) => x.name === m);
-  const s = cfg.services.find((x) => x.name === m);
-  const sg = cfg.serviceGroups.find((x) => x.name === m);
+  const rawA = lookupIndex(cfg).addrByName.get(m);
+  const rawAg = lookupIndex(cfg).grpByName.get(m);
+  const s = lookupIndex(cfg).svcByName.get(m);
+  const sg = lookupIndex(cfg).svcGrpByName.get(m);
   // 同名冲突时按语境优先
   const a = svcFirst && (s || sg) ? undefined : rawA;
   const ag = svcFirst && (s || sg) ? undefined : rawAg;
@@ -205,22 +192,21 @@ function MemberRow({ m, prefer = "address" }: { m: string; prefer?: ResolvePrefe
   if (a) {
     kindTag = "地址对象";
     summary =
-      a.entries.map((e) => `${e.kind}:${e.value}`).slice(0, 3).join("，") +
-      (a.entries.length > 3 ? " …" : "");
+      a.entries
+        .map((e) => `${e.kind}:${e.value}`)
+        .slice(0, 3)
+        .join("，") + (a.entries.length > 3 ? " …" : "");
   } else if (ag) {
     kindTag = "地址组";
     summary = `${ag.members.length} 成员`;
   } else if (s) {
     kindTag = "服务对象";
-    const fmt = (p?: string) =>
-      p ? (!showFull && isFullPort(p) ? "any" : p) : "any";
+    const fmt = (p?: string) => (p ? (!showFull && isFullPort(p) ? "any" : p) : "any");
     summary =
       s.entries
         .map((e) => {
           const src =
-            e.sourcePort && !(!showFull && isFullPort(e.sourcePort))
-              ? `←${e.sourcePort}`
-              : "";
+            e.sourcePort && !(!showFull && isFullPort(e.sourcePort)) ? `←${e.sourcePort}` : "";
           return `${e.protocol}/${fmt(e.destPort)}${src}`;
         })
         .slice(0, 3)
@@ -253,10 +239,14 @@ function MemberRow({ m, prefer = "address" }: { m: string; prefer?: ResolvePrefe
   );
 }
 
-
-function GroupMembers({ members, prefer = "address" }: { members: string[]; prefer?: ResolvePrefer }) {
-  if (members.length === 0)
-    return <div className="text-xs text-muted-foreground">（空）</div>;
+function GroupMembers({
+  members,
+  prefer = "address",
+}: {
+  members: string[];
+  prefer?: ResolvePrefer;
+}) {
+  if (members.length === 0) return <div className="text-xs text-muted-foreground">（空）</div>;
   const max = 30;
   const shown = members.slice(0, max);
   const rest = members.length - shown.length;
@@ -265,15 +255,10 @@ function GroupMembers({ members, prefer = "address" }: { members: string[]; pref
       {shown.map((m, i) => (
         <MemberRow key={i} m={m} prefer={prefer} />
       ))}
-      {rest > 0 && (
-        <li className="text-xs text-muted-foreground py-1.5 px-2">
-          …还有 {rest} 个
-        </li>
-      )}
+      {rest > 0 && <li className="text-xs text-muted-foreground py-1.5 px-2">…还有 {rest} 个</li>}
     </ul>
   );
 }
-
 
 function PoolDetail({ p }: { p: NatPool }) {
   const hasTo = p.addressTo && p.addressTo !== p.addressFrom;
@@ -293,7 +278,6 @@ function PoolDetail({ p }: { p: NatPool }) {
   );
 }
 
-
 export function ObjectName({
   name,
   className = "",
@@ -307,17 +291,11 @@ export function ObjectName({
   const isEmpty = !name;
 
   if (isEmpty) {
-    return (
-      <span className={`font-mono text-xs text-muted-foreground ${className}`}>
-        —
-      </span>
-    );
+    return <span className={`font-mono text-xs text-muted-foreground ${className}`}>—</span>;
   }
 
   const isLiteral =
-    r.kind === "literal-any" ||
-    r.kind === "literal-ip" ||
-    r.kind === "literal-port";
+    r.kind === "literal-any" || r.kind === "literal-ip" || r.kind === "literal-port";
 
   const colorCls = isLiteral
     ? "text-muted-foreground"
@@ -326,11 +304,7 @@ export function ObjectName({
       : "text-primary";
 
   const trigger = (
-    <span
-      className={`font-mono text-xs cursor-help ${colorCls} ${className}`}
-    >
-      {name}
-    </span>
+    <span className={`font-mono text-xs cursor-help ${colorCls} ${className}`}>{name}</span>
   );
 
   return (
@@ -339,9 +313,7 @@ export function ObjectName({
       <HoverCardContent className="w-96 max-h-96 overflow-auto" align="start">
         <div className="space-y-2">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold break-all min-w-0 flex-1">
-              {r.name}
-            </span>
+            <span className="text-sm font-semibold break-all min-w-0 flex-1">{r.name}</span>
             {!isLiteral && (
               <span className="shrink-0">
                 <Badge tone={r.kind === "unknown" ? "danger" : "default"}>
@@ -350,9 +322,7 @@ export function ObjectName({
               </span>
             )}
           </div>
-          {r.literal && (
-            <div className="text-xs text-muted-foreground">{r.literal}</div>
-          )}
+          {r.literal && <div className="text-xs text-muted-foreground">{r.literal}</div>}
           {r.description && <DescQuote>{r.description}</DescQuote>}
           {r.addr && <AddressEntries a={r.addr} />}
           {r.svc && <ServiceEntries s={r.svc} />}

@@ -7,9 +7,7 @@ export function LineLink({ line }: { line?: number }) {
   const [show] = useShowLineNumbers();
   if (!show) return null;
   if (!line) return <span className="text-muted-foreground">—</span>;
-  return (
-    <span className="font-mono text-xs text-muted-foreground">L{line}</span>
-  );
+  return <span className="font-mono text-xs text-muted-foreground">L{line}</span>;
 }
 
 export function Badge({
@@ -27,9 +25,7 @@ export function Badge({
     muted: "bg-muted text-muted-foreground",
   };
   return (
-    <span
-      className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs ${colors[tone]}`}
-    >
+    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs ${colors[tone]}`}>
       {children}
     </span>
   );
@@ -62,7 +58,7 @@ export function DataTable<T>({
   const [showLineNo] = useShowLineNumbers();
   const columns = useMemo(
     () => allColumns.filter((c) => showLineNo || !c.hiddenWhenNoLineNo),
-    [allColumns, showLineNo]
+    [allColumns, showLineNo],
   );
 
   const filtered = useMemo(() => {
@@ -70,13 +66,9 @@ export function DataTable<T>({
     if (!needle) return rows;
     return rows.filter((r) =>
       columns.some((c) => {
-        const v = c.search
-          ? c.search(r)
-          : typeof c.cell(r) === "string"
-            ? String(c.cell(r))
-            : "";
+        const v = c.search ? c.search(r) : typeof c.cell(r) === "string" ? String(c.cell(r)) : "";
         return v.toLowerCase().includes(needle);
-      })
+      }),
     );
   }, [q, rows, columns]);
 
@@ -90,12 +82,10 @@ export function DataTable<T>({
       ...filtered.map((r) =>
         columns
           .map((c) => {
-            const v = c.search
-              ? c.search(r)
-              : reactNodeToText(c.cell(r));
+            const v = c.search ? c.search(r) : reactNodeToText(c.cell(r));
             return `"${v.replace(/"/g, '""')}"`;
           })
-          .join(",")
+          .join(","),
       ),
     ];
     const blob = new Blob([lines.join("\n")], {
@@ -134,10 +124,7 @@ export function DataTable<T>({
           <thead className="bg-secondary/60 text-xs uppercase text-muted-foreground">
             <tr>
               {columns.map((c) => (
-                <th
-                  key={c.key}
-                  className={`px-3 py-2 text-left font-medium ${c.className ?? ""}`}
-                >
+                <th key={c.key} className={`px-3 py-2 text-left font-medium ${c.className ?? ""}`}>
                   {c.header}
                 </th>
               ))}
@@ -155,15 +142,9 @@ export function DataTable<T>({
               </tr>
             ) : (
               pageRows.map((r, i) => (
-                <tr
-                  key={i}
-                  className="border-t border-border hover:bg-secondary/40"
-                >
+                <tr key={i} className="border-t border-border hover:bg-secondary/40">
                   {columns.map((c) => (
-                    <td
-                      key={c.key}
-                      className={`px-3 py-1.5 align-top ${c.className ?? ""}`}
-                    >
+                    <td key={c.key} className={`px-3 py-1.5 align-top ${c.className ?? ""}`}>
                       {c.cell(r)}
                     </td>
                   ))}
@@ -175,12 +156,7 @@ export function DataTable<T>({
       </div>
       {pages > 1 && (
         <div className="flex items-center justify-end gap-2 text-sm">
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={cur === 0}
-            onClick={() => setPage(cur - 1)}
-          >
+          <Button size="sm" variant="ghost" disabled={cur === 0} onClick={() => setPage(cur - 1)}>
             ← 上一页
           </Button>
           <span className="text-muted-foreground">
@@ -205,9 +181,7 @@ function reactNodeToText(n: ReactNode): string {
   if (typeof n === "string" || typeof n === "number") return String(n);
   if (Array.isArray(n)) return n.map(reactNodeToText).join(" ");
   if (typeof n === "object" && "props" in (n as object)) {
-    return reactNodeToText(
-      (n as { props: { children?: ReactNode } }).props.children
-    );
+    return reactNodeToText((n as { props: { children?: ReactNode } }).props.children);
   }
   return "";
 }

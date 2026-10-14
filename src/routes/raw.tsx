@@ -60,8 +60,7 @@ function RawPage() {
           跳转
         </Button>
         <span className="text-xs text-muted-foreground">
-          共 {cfg.rawLines.length} 行
-          {focusLine ? ` · 当前高亮 L${focusLine}` : ""}
+          共 {cfg.rawLines.length} 行{focusLine ? ` · 当前高亮 L${focusLine}` : ""}
         </span>
       </div>
       <div
@@ -76,17 +75,13 @@ function RawPage() {
               key={n}
               data-line={n}
               className={`flex border-l-2 ${
-                active
-                  ? "border-primary bg-primary/10"
-                  : "border-transparent hover:bg-secondary/40"
+                active ? "border-primary bg-primary/10" : "border-transparent hover:bg-secondary/40"
               }`}
             >
               <span className="w-14 select-none border-r border-border px-2 py-0.5 text-right text-muted-foreground">
                 {n}
               </span>
-              <pre className="whitespace-pre-wrap break-all px-3 py-0.5">
-                {l || " "}
-              </pre>
+              <pre className="whitespace-pre-wrap break-all px-3 py-0.5">{l || " "}</pre>
             </div>
           );
         })}

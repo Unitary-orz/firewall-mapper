@@ -35,11 +35,7 @@ function PoliciesPage() {
     {
       key: "action",
       header: "动作",
-      cell: (p) => (
-        <Badge tone={p.action === "permit" ? "ok" : "danger"}>
-          {p.action}
-        </Badge>
-      ),
+      cell: (p) => <Badge tone={p.action === "permit" ? "ok" : "danger"}>{p.action}</Badge>,
       search: (p) => p.action,
       className: "w-20",
     },
@@ -47,22 +43,19 @@ function PoliciesPage() {
       key: "src",
       header: "源",
       cell: (p) => <ObjectName name={p.srcAddr} />,
-      search: (p) =>
-        `${p.srcAddr} ${(xr?.addressToValues.get(p.srcAddr) ?? []).join(" ")}`,
+      search: (p) => `${p.srcAddr} ${(xr?.addressToValues.get(p.srcAddr) ?? []).join(" ")}`,
     },
     {
       key: "dst",
       header: "目的",
       cell: (p) => <ObjectName name={p.dstAddr} />,
-      search: (p) =>
-        `${p.dstAddr} ${(xr?.addressToValues.get(p.dstAddr) ?? []).join(" ")}`,
+      search: (p) => `${p.dstAddr} ${(xr?.addressToValues.get(p.dstAddr) ?? []).join(" ")}`,
     },
     {
       key: "svc",
       header: "服务",
       cell: (p) => <ObjectName name={p.service} prefer="service" />,
-      search: (p) =>
-        `${p.service} ${serviceToPorts(p.service, cfg).join(" ")}`,
+      search: (p) => `${p.service} ${serviceToPorts(p.service, cfg).join(" ")}`,
     },
     ...(showZone
       ? [
@@ -71,8 +64,7 @@ function PoliciesPage() {
             header: "Zone",
             cell: (p: (typeof cfg.policies)[number]) => {
               const isAnyAny =
-                (!p.srcZone || p.srcZone === "any") &&
-                (!p.dstZone || p.dstZone === "any");
+                (!p.srcZone || p.srcZone === "any") && (!p.dstZone || p.dstZone === "any");
               if (isAnyAny) {
                 return <span className="text-xs text-muted-foreground">—</span>;
               }
@@ -82,8 +74,7 @@ function PoliciesPage() {
                 </span>
               );
             },
-            search: (p: (typeof cfg.policies)[number]) =>
-              `${p.srcZone} ${p.dstZone}`,
+            search: (p: (typeof cfg.policies)[number]) => `${p.srcZone} ${p.dstZone}`,
           } satisfies Column<(typeof cfg.policies)[number]>,
         ]
       : []),

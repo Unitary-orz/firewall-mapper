@@ -34,7 +34,7 @@ export function downloadCsv(filename: string, csv: string) {
   a.href = url;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function sanitizeSheetName(name: string, used: Set<string>): string {
