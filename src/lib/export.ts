@@ -8,7 +8,9 @@ export interface ExportTable {
 
 function quoteCell(value: string | number | boolean | undefined): string {
   if (value == null) return "";
-  const str = String(value);
+  let str = String(value);
+  // 防 CSV 公式注入：以 = + - @ 开头的文本加前缀
+  if (typeof value === "string" && /^[=+\-@\t\r]/.test(str)) str = `'${str}`;
   return `"${str.replace(/"/g, '""')}"`;
 }
 
@@ -37,7 +39,7 @@ export function downloadCsv(filename: string, csv: string) {
 
 function sanitizeSheetName(name: string, used: Set<string>): string {
   const maxLength = 31;
-  let candidate = name.slice(0, maxLength).replace(/[\[\]\*\/\\\?\:]/g, "");
+  let candidate = name.slice(0, maxLength).replace(/[[\]*/\\?:]/g, "");
   if (!candidate) candidate = "Sheet";
   let suffix = 1;
   while (used.has(candidate)) {
