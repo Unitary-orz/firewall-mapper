@@ -84,8 +84,9 @@ export function ConfigStoreProvider({ children }: { children: React.ReactNode })
   }, [raw]);
 
   const value = useMemo<StoreCtx>(() => {
-    const cfg = parsed.cfg ? { ...parsed.cfg, meta: { ...parsed.cfg.meta, fileName } } : null;
-    return { ...parsed, cfg, loadText, clear, fileName, updatedAt };
+    // 保持 cfg 引用不变，以便复用分析缓存
+    if (parsed.cfg) parsed.cfg.meta.fileName = fileName;
+    return { ...parsed, loadText, clear, fileName, updatedAt };
   }, [parsed, fileName, updatedAt, loadText, clear]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
