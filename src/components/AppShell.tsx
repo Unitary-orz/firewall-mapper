@@ -4,11 +4,7 @@ import { useConfigStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useShowLineNumbers, useShowFullPortRange, useShowPolicyZone } from "@/lib/uiPrefs";
 
 const nav = [
@@ -49,9 +45,7 @@ function DisplaySettings() {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 p-3">
-        <div className="mb-2 text-xs font-medium text-muted-foreground">
-          显示选项
-        </div>
+        <div className="mb-2 text-xs font-medium text-muted-foreground">显示选项</div>
         <div className="space-y-3">
           <label className="flex cursor-pointer select-none items-start justify-between gap-3">
             <div className="min-w-0">
@@ -60,31 +54,19 @@ function DisplaySettings() {
                 仅用于追溯原始配置文本，平时无需打开
               </div>
             </div>
-            <Switch
-              checked={showLineNo}
-              onCheckedChange={setShowLineNo}
-              className="mt-0.5"
-            />
+            <Switch checked={showLineNo} onCheckedChange={setShowLineNo} className="mt-0.5" />
           </label>
           <label className="flex cursor-pointer select-none items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm">显示全端口范围</div>
-              <div className="text-xs text-muted-foreground">
-                默认把 1-65535 显示为 any
-              </div>
+              <div className="text-xs text-muted-foreground">默认把 1-65535 显示为 any</div>
             </div>
-            <Switch
-              checked={showFullPort}
-              onCheckedChange={setShowFullPort}
-              className="mt-0.5"
-            />
+            <Switch checked={showFullPort} onCheckedChange={setShowFullPort} className="mt-0.5" />
           </label>
           <label className="flex cursor-pointer select-none items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm">显示策略 Zone</div>
-              <div className="text-xs text-muted-foreground">
-                多数环境为 any→any，默认隐藏
-              </div>
+              <div className="text-xs text-muted-foreground">多数环境为 any→any，默认隐藏</div>
             </div>
             <Switch
               checked={showPolicyZone}
@@ -120,7 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     "rounded px-2.5 py-1 text-sm transition-colors",
                     active
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                   )}
                 >
                   {n.label}

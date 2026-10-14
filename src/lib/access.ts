@@ -103,16 +103,12 @@ export function classifyIntermediary(name: string): IntermediaryCat | undefined 
   )
     return "gateway";
   if (name.includes("代理") || lower.includes("proxy")) return "proxy";
-  if (name.includes("负载") || lower.includes("lb") || lower.includes("slb"))
-    return "lb";
+  if (name.includes("负载") || lower.includes("lb") || lower.includes("slb")) return "lb";
   return undefined;
 }
 
 /** Expand a name to itself + any address-group transitively containing it. */
-export function expandAddressNames(
-  name: string,
-  cfg: ParsedConfig
-): Set<string> {
+export function expandAddressNames(name: string, cfg: ParsedConfig): Set<string> {
   if (name === "any") return new Set(["any"]);
   const cache = idx(cfg).expandAddr;
   const cached = cache.get(name);
@@ -156,10 +152,7 @@ function getReverseAddrGroupIndex(cfg: ParsedConfig): Map<string, string[]> {
 }
 
 /** Expand a service name to itself + any service-group transitively containing it. */
-export function expandServiceNames(
-  name: string,
-  cfg: ParsedConfig
-): Set<string> {
+export function expandServiceNames(name: string, cfg: ParsedConfig): Set<string> {
   if (name === "any") return new Set(["any"]);
   const cache = idx(cfg).expandSvc;
   const cached = cache.get(name);
@@ -238,10 +231,7 @@ function inRange(ip: string, range: string): boolean {
 }
 
 /** Address object names whose entries contain `ip` (literal IPv4). */
-export function findAddressesContainingIp(
-  ip: string,
-  cfg: ParsedConfig
-): string[] {
+export function findAddressesContainingIp(ip: string, cfg: ParsedConfig): string[] {
   if (!IPV4.test(ip)) return [];
   const cache = idx(cfg).addrContainsIp;
   const cached = cache.get(ip);
@@ -263,15 +253,13 @@ export function findAddressesContainingIp(
 /** Build the expanded name set for a user input (object name OR literal IP). */
 export function resolveEndpoint(
   input: string,
-  cfg: ParsedConfig
+  cfg: ParsedConfig,
 ): { names: Set<string>; literalHits: string[] } {
   if (input === "any") return { names: new Set(["any"]), literalHits: [] };
   if (isIpLiteral(input)) {
     const hits = findAddressesContainingIp(input, cfg);
     const names = new Set<string>();
-    hits.forEach((n) =>
-      expandAddressNames(n, cfg).forEach((x) => names.add(x))
-    );
+    hits.forEach((n) => expandAddressNames(n, cfg).forEach((x) => names.add(x)));
     return { names, literalHits: hits };
   }
   return { names: expandAddressNames(input, cfg), literalHits: [] };
@@ -279,17 +267,12 @@ export function resolveEndpoint(
 
 // ---------- service summary ----------
 
-export function summarizeService(
-  name: string,
-  cfg: ParsedConfig
-): string {
+export function summarizeService(name: string, cfg: ParsedConfig): string {
   if (!name || name === "any") return name || "—";
   const svc = idx(cfg).svcByName.get(name);
   if (svc) {
     return svc.entries
-      .map((e) =>
-        e.destPort ? `${e.protocol}/${e.destPort}` : e.protocol
-      )
+      .map((e) => (e.destPort ? `${e.protocol}/${e.destPort}` : e.protocol))
       .join(", ");
   }
   return name;
@@ -314,12 +297,7 @@ export interface NodeAggregate {
 
 export function buildNodeAggregates(cfg: ParsedConfig): NodeAggregate[] {
   const map = new Map<string, NodeAggregate>();
-  const ensure = (
-    name: string,
-    cat: IntermediaryCat,
-    address?: string,
-    lineNo?: number
-  ) => {
+  const ensure = (name: string, cat: IntermediaryCat, address?: string, lineNo?: number) => {
     const cur = map.get(name);
     if (cur) {
       if (!cur.address && address) cur.address = address;
@@ -375,8 +353,7 @@ export function buildNodeAggregates(cfg: ParsedConfig): NodeAggregate[] {
   });
 
   return [...map.values()].sort(
-    (a, b) =>
-      a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name)
+    (a, b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name),
   );
 }
 
@@ -415,11 +392,7 @@ export interface Flow {
 }
 
 /** Expand a service name (object/group) to literal "proto/port" strings. */
-export function serviceToPorts(
-  name: string,
-  cfg: ParsedConfig,
-  seen?: Set<string>
-): string[] {
+export function serviceToPorts(name: string, cfg: ParsedConfig, seen?: Set<string>): string[] {
   if (!name || name === "any") return ["any"];
   // Top-level memoized path. Recursive calls pass a `seen` set to break cycles
   // and must skip the cache to avoid polluting it with partial results.
@@ -436,16 +409,12 @@ export function serviceToPorts(
   const i = idx(cfg);
   const svc = i.svcByName.get(name);
   if (svc) {
-    return svc.entries.map((e) =>
-      e.destPort ? `${e.protocol}/${e.destPort}` : e.protocol
-    );
+    return svc.entries.map((e) => (e.destPort ? `${e.protocol}/${e.destPort}` : e.protocol));
   }
   const grp = i.svcGrpByName.get(name);
   if (grp) {
     const out = new Set<string>();
-    grp.members.forEach((m) =>
-      serviceToPorts(m, cfg, seen).forEach((p) => out.add(p))
-    );
+    grp.members.forEach((m) => serviceToPorts(m, cfg, seen).forEach((p) => out.add(p)));
     return [...out];
   }
   return [name]; // literal "tcp/443" or unknown
@@ -476,8 +445,7 @@ export function buildFlows(cfg: ParsedConfig): Flow[] {
   cfg.natRules.forEach((n) => {
     if (n.kind !== "destination" && n.kind !== "static") return;
     if (!n.translatedPool) return;
-    const entryPort =
-      n.origDstService && n.origDstService !== "any" ? n.origDstService : "";
+    const entryPort = n.origDstService && n.origDstService !== "any" ? n.origDstService : "";
     const backendPort = n.servicePort || entryPort;
     const f = ensure(n.srcAddr || "any", n.translatedPool);
     f.dnat.push({
@@ -503,7 +471,7 @@ export function buildFlows(cfg: ParsedConfig): Flow[] {
 
   map.forEach((f) => {
     f.policies.sort(
-      (a, b) => Number(a.policy.id) - Number(b.policy.id) || a.policy.lineNo - b.policy.lineNo
+      (a, b) => Number(a.policy.id) - Number(b.policy.id) || a.policy.lineNo - b.policy.lineNo,
     );
     if (f.dnat.length === 0) {
       f.coverage = { kind: "no-nat", exposed: [], gap: [] };
@@ -516,9 +484,7 @@ export function buildFlows(cfg: ParsedConfig): Flow[] {
     });
     const exposed = [...exposedSet];
     const hasAnyPermit = f.permitPorts.has("any");
-    const gap = hasAnyPermit
-      ? []
-      : exposed.filter((p) => p !== "any" && !f.permitPorts.has(p));
+    const gap = hasAnyPermit ? [] : exposed.filter((p) => p !== "any" && !f.permitPorts.has(p));
     const kind: CoverageKind =
       f.permitPorts.size === 0 ? "orphan" : gap.length === 0 ? "ok" : "partial";
     f.coverage = { kind, exposed, gap };
@@ -579,11 +545,7 @@ function parsePortStr(p: string): { proto: string; port: string } {
   return { proto: p.slice(0, idx), port: p.slice(idx + 1) };
 }
 
-function pickMatchingDnat(
-  dnats: FlowDnatEntry[],
-  svc: string,
-  cfg: ParsedConfig
-): FlowDnatEntry[] {
+function pickMatchingDnat(dnats: FlowDnatEntry[], svc: string, cfg: ParsedConfig): FlowDnatEntry[] {
   if (dnats.length === 0) return [];
   if (svc === "any") return dnats;
   return dnats.filter((d) => {
@@ -595,11 +557,7 @@ function pickMatchingDnat(
 // ---------- address / service overlap matching (NAT ↔ policy association) ----------
 
 /** Recursively expand an address(-group) to all member address-object names. */
-function collectAddressMembers(
-  name: string,
-  cfg: ParsedConfig,
-  seen?: Set<string>
-): Set<string> {
+function collectAddressMembers(name: string, cfg: ParsedConfig, seen?: Set<string>): Set<string> {
   if (!seen) {
     const cache = idx(cfg).members;
     const hit = cache.get(name);
@@ -629,11 +587,7 @@ type AddrEndpoint =
   | { kind: "domain"; value: string }
   | { kind: "mac"; value: string };
 
-function addrEndpoints(
-  name: string,
-  cfg: ParsedConfig,
-  seen?: Set<string>
-): AddrEndpoint[] {
+function addrEndpoints(name: string, cfg: ParsedConfig, seen?: Set<string>): AddrEndpoint[] {
   if (!name) return [];
   if (!seen) {
     const cache = idx(cfg).endpoints;
@@ -647,9 +601,7 @@ function addrEndpoints(
   seen.add(name);
 
   if (isIpLiteral(name)) {
-    return CIDR.test(name)
-      ? [{ kind: "net", value: name }]
-      : [{ kind: "host", value: name }];
+    return CIDR.test(name) ? [{ kind: "net", value: name }] : [{ kind: "host", value: name }];
   }
 
   const i = idx(cfg);
@@ -669,9 +621,7 @@ function addrEndpoints(
   const grp = i.grpByName.get(name);
   if (grp) {
     const out: AddrEndpoint[] = [];
-    grp.members.forEach((m) =>
-      addrEndpoints(m, cfg, seen).forEach((e) => out.push(e))
-    );
+    grp.members.forEach((m) => addrEndpoints(m, cfg, seen).forEach((e) => out.push(e)));
     return out;
   }
 
@@ -693,7 +643,7 @@ function endpointIpRange(e: AddrEndpoint): [number, number] | null {
     if (bits === 0) return [0, 0xffffffff];
     const mask = (~0 << (32 - bits)) >>> 0;
     const start = (base & mask) >>> 0;
-    const end = (start | ((~mask) >>> 0)) >>> 0;
+    const end = (start | (~mask >>> 0)) >>> 0;
     return [start, end];
   }
   if (e.kind === "range") {
@@ -717,10 +667,7 @@ function rangesOverlap(x: [number, number], y: [number, number]): boolean {
  *    on IP range / domain value / MAC value. No "shared name" shortcut —
  *    if both sides resolve to disjoint IPs, they DO NOT match. */
 const addrMatchCache = new WeakMap<ParsedConfig, Map<string, boolean>>();
-const rangeCache = new WeakMap<
-  ParsedConfig,
-  Map<string, [number, number][]>
->();
+const rangeCache = new WeakMap<ParsedConfig, Map<string, [number, number][]>>();
 
 function endpointRangesFor(name: string, cfg: ParsedConfig): [number, number][] {
   let m = rangeCache.get(cfg);
@@ -737,11 +684,7 @@ function endpointRangesFor(name: string, cfg: ParsedConfig): [number, number][] 
   return r;
 }
 
-export function addrMatches(
-  a: string,
-  b: string,
-  cfg: ParsedConfig
-): boolean {
+export function addrMatches(a: string, b: string, cfg: ParsedConfig): boolean {
   if (!a || !b) return false;
   if (a === "any" || b === "any") return true;
   if (a === b) return true;
@@ -788,14 +731,8 @@ export function addrMatches(
   return result;
 }
 
-
-
 /** True if policy service covers natPort (proto/port literal), or either is "any". */
-export function svcMatches(
-  policySvc: string,
-  natPort: string,
-  cfg: ParsedConfig
-): boolean {
+export function svcMatches(policySvc: string, natPort: string, cfg: ParsedConfig): boolean {
   if (!policySvc || !natPort) return false;
   if (policySvc === "any" || natPort === "any") return true;
   const polPorts = new Set(serviceToPorts(policySvc, cfg));
@@ -812,7 +749,7 @@ export function svcMatches(
 export function findCoveringPolicies(
   entry: FlowDnatEntry,
   flowSrc: string,
-  cfg: ParsedConfig
+  cfg: ParsedConfig,
 ): PolicyRule[] {
   const target = entry.rule.translatedPool;
   const port = entry.backendPort || "any";
@@ -822,15 +759,11 @@ export function findCoveringPolicies(
       p.action === "permit" &&
       addrMatches(p.srcAddr, src, cfg) &&
       addrMatches(p.dstAddr, target, cfg) &&
-      svcMatches(p.service, port, cfg)
+      svcMatches(p.service, port, cfg),
   );
 }
 
-
-export function buildFocusLines(
-  flows: Flow[],
-  cfg: ParsedConfig
-): FocusLine[] {
+export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
   const out: FocusLine[] = [];
   flows.forEach((f) => {
     // DNAT-bearing flows: emit one row per exposed (proto/port) by cross-policy coverage.
@@ -847,9 +780,7 @@ export function buildFocusLines(
         }
       >();
       f.dnat.forEach((d) => {
-        const ports = d.backendPort
-          ? serviceToPorts(d.backendPort, cfg)
-          : ["any"];
+        const ports = d.backendPort ? serviceToPorts(d.backendPort, cfg) : ["any"];
         const covering = findCoveringPolicies(d, f.src, cfg);
         ports.forEach((p) => {
           const { proto, port } = parsePortStr(p);
@@ -879,7 +810,7 @@ export function buildFocusLines(
       portMap.forEach((g) => {
         const associated = g.policies.length > 0;
         const sorted = g.policies.sort(
-          (a, b) => Number(a.id) - Number(b.id) || a.lineNo - b.lineNo
+          (a, b) => Number(a.id) - Number(b.id) || a.lineNo - b.lineNo,
         );
         out.push({
           key: `${f.key}\t${g.service}\t${associated ? "associated" : "unassociated"}`,
@@ -924,9 +855,7 @@ export function buildFocusLines(
         port: g.port,
         service: svc,
         action: g.action,
-        policies: g.policies.sort(
-          (a, b) => Number(a.id) - Number(b.id) || a.lineNo - b.lineNo
-        ),
+        policies: g.policies.sort((a, b) => Number(a.id) - Number(b.id) || a.lineNo - b.lineNo),
         nat: [],
         coverageKind: f.coverage.kind,
       });
@@ -942,10 +871,7 @@ export interface FocusCandidate {
   count: number; // number of lines hitting this candidate
 }
 
-export function focusCandidates(
-  lines: FocusLine[],
-  focus: FocusType
-): FocusCandidate[] {
+export function focusCandidates(lines: FocusLine[], focus: FocusType): FocusCandidate[] {
   const m = new Map<string, number>();
   lines.forEach((l) => {
     const key = focus === "src" ? l.src : focus === "dst" ? l.dst : l.service;
@@ -957,7 +883,7 @@ export function focusCandidates(
       (a, b) =>
         (a.id === "any" ? 1 : 0) - (b.id === "any" ? 1 : 0) ||
         b.count - a.count ||
-        a.id.localeCompare(b.id)
+        a.id.localeCompare(b.id),
     );
 }
 
@@ -965,13 +891,11 @@ export function filterLinesByFocus(
   lines: FocusLine[],
   focus: FocusType,
   id: string,
-  cfg?: ParsedConfig
+  cfg?: ParsedConfig,
 ): FocusLine[] {
   if (!id) return [];
   const expand =
-    cfg && (focus === "src" || focus === "dst")
-      ? collectAddressMembers(id, cfg)
-      : null;
+    cfg && (focus === "src" || focus === "dst") ? collectAddressMembers(id, cfg) : null;
   return lines.filter((l) => {
     if (focus === "src") {
       if (id === "any") return l.src === "any";
@@ -1001,7 +925,6 @@ export function filterLinesByFocus(
   });
 }
 
-
 function flowMatchSvc(f: Flow, value: string | undefined, cfg: ParsedConfig): boolean {
   if (!value || value === "any") return true;
   if (f.allPorts.has("any")) return true;
@@ -1009,21 +932,13 @@ function flowMatchSvc(f: Flow, value: string | undefined, cfg: ParsedConfig): bo
   return ports.some((p) => p === "any" || f.allPorts.has(p));
 }
 
-export function filterFlows(
-  flows: Flow[],
-  cfg: ParsedConfig,
-  filter: FlowFilter
-): Flow[] {
+export function filterFlows(flows: Flow[], cfg: ParsedConfig, filter: FlowFilter): Flow[] {
   return flows.filter((f) => {
     if (!flowMatchSrc(f, filter.src, cfg)) return false;
     if (!flowMatchDst(f, filter.dst, cfg)) return false;
     if (!flowMatchSvc(f, filter.svc, cfg)) return false;
     if (filter.onlyDnat && f.dnat.length === 0) return false;
-    if (
-      filter.onlyAbnormal &&
-      f.coverage.kind !== "orphan" &&
-      f.coverage.kind !== "partial"
-    )
+    if (filter.onlyAbnormal && f.coverage.kind !== "orphan" && f.coverage.kind !== "partial")
       return false;
     return true;
   });
@@ -1034,7 +949,7 @@ export function facetFor(
   flows: Flow[],
   cfg: ParsedConfig,
   field: "src" | "dst" | "svc",
-  filter: FlowFilter
+  filter: FlowFilter,
 ): FacetOption[] {
   const sub: FlowFilter = { ...filter };
   if (field === "src") sub.src = undefined;
@@ -1047,9 +962,7 @@ export function facetFor(
   } else if (field === "dst") {
     list.forEach((f) => m.set(f.dst, (m.get(f.dst) ?? 0) + 1));
   } else {
-    list.forEach((f) =>
-      f.allPorts.forEach((p) => m.set(p, (m.get(p) ?? 0) + 1))
-    );
+    list.forEach((f) => f.allPorts.forEach((p) => m.set(p, (m.get(p) ?? 0) + 1)));
   }
   return [...m.entries()]
     .map(([name, count]) => ({ name, count }))
@@ -1064,10 +977,6 @@ export function sortFlows(flows: Flow[]): Flow[] {
     return 3;
   };
   return [...flows].sort(
-    (a, b) =>
-      score(a) - score(b) ||
-      a.src.localeCompare(b.src) ||
-      a.dst.localeCompare(b.dst)
+    (a, b) => score(a) - score(b) || a.src.localeCompare(b.src) || a.dst.localeCompare(b.dst),
   );
 }
-

@@ -47,19 +47,14 @@ function ObjectsPage() {
     {
       key: "desc",
       header: "描述",
-      cell: (a) => (
-        <span className="text-xs text-muted-foreground">
-          {a.description ?? "—"}
-        </span>
-      ),
+      cell: (a) => <span className="text-xs text-muted-foreground">{a.description ?? "—"}</span>,
       search: (a) => a.description ?? "",
     },
     {
       key: "refs",
       header: "被引用",
       cell: (a) => <RefsPreview name={a.name} kind="address" />,
-      search: (a) =>
-        String((xr.addressUsedBy.get(a.name) ?? []).length),
+      search: (a) => String((xr.addressUsedBy.get(a.name) ?? []).length),
     },
     {
       key: "line",
@@ -83,7 +78,9 @@ function ObjectsPage() {
       cell: (g) => (
         <div className="space-y-0.5">
           {g.members.map((m, i) => (
-            <div key={i}><ObjectName name={m} /></div>
+            <div key={i}>
+              <ObjectName name={m} />
+            </div>
           ))}
         </div>
       ),
@@ -92,19 +89,14 @@ function ObjectsPage() {
     {
       key: "desc",
       header: "描述",
-      cell: (g) => (
-        <span className="text-xs text-muted-foreground">
-          {g.description ?? "—"}
-        </span>
-      ),
+      cell: (g) => <span className="text-xs text-muted-foreground">{g.description ?? "—"}</span>,
       search: (g) => g.description ?? "",
     },
     {
       key: "refs",
       header: "被引用",
       cell: (g) => <RefsPreview name={g.name} kind="address" />,
-      search: (g) =>
-        String((xr.addressUsedBy.get(g.name) ?? []).length),
+      search: (g) => String((xr.addressUsedBy.get(g.name) ?? []).length),
     },
     {
       key: "line",
@@ -120,26 +112,14 @@ function ObjectsPage() {
       <h1 className="text-2xl font-semibold">地址对象</h1>
       <Tabs defaultValue="addr">
         <TabsList>
-          <TabsTrigger value="addr">
-            地址对象 ({cfg.addresses.length})
-          </TabsTrigger>
-          <TabsTrigger value="grp">
-            地址组 ({cfg.addressGroups.length})
-          </TabsTrigger>
+          <TabsTrigger value="addr">地址对象 ({cfg.addresses.length})</TabsTrigger>
+          <TabsTrigger value="grp">地址组 ({cfg.addressGroups.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="addr" className="mt-4">
-          <DataTable
-            rows={cfg.addresses}
-            columns={addrCols}
-            filename="addresses.csv"
-          />
+          <DataTable rows={cfg.addresses} columns={addrCols} filename="addresses.csv" />
         </TabsContent>
         <TabsContent value="grp" className="mt-4">
-          <DataTable
-            rows={cfg.addressGroups}
-            columns={groupCols}
-            filename="address-groups.csv"
-          />
+          <DataTable rows={cfg.addressGroups} columns={groupCols} filename="address-groups.csv" />
         </TabsContent>
       </Tabs>
     </div>

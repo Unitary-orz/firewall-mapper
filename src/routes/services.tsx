@@ -26,10 +26,8 @@ function ServicesPage() {
   const [showFull] = useShowFullPortRange();
   if (!cfg || !xr) return <EmptyConfig />;
 
-  const fmtPort = (p?: string) =>
-    p ? (!showFull && p === "1-65535" ? "any" : p) : "any";
-  const showSrc = (p?: string) =>
-    !!p && !(!showFull && p === "1-65535");
+  const fmtPort = (p?: string) => (p ? (!showFull && p === "1-65535" ? "any" : p) : "any");
+  const showSrc = (p?: string) => !!p && !(!showFull && p === "1-65535");
 
   const svcCols: Column<(typeof cfg.services)[number]>[] = [
     {
@@ -51,17 +49,12 @@ function ServicesPage() {
           ))}
         </div>
       ),
-      search: (s) =>
-        s.entries.map((e) => `${e.protocol} ${e.destPort ?? ""}`).join(" "),
+      search: (s) => s.entries.map((e) => `${e.protocol} ${e.destPort ?? ""}`).join(" "),
     },
     {
       key: "desc",
       header: "描述",
-      cell: (s) => (
-        <span className="text-xs text-muted-foreground">
-          {s.description ?? "—"}
-        </span>
-      ),
+      cell: (s) => <span className="text-xs text-muted-foreground">{s.description ?? "—"}</span>,
       search: (s) => s.description ?? "",
     },
     {
@@ -92,23 +85,19 @@ function ServicesPage() {
       cell: (g) => (
         <div className="space-y-0.5">
           {g.members.map((m, i) => (
-            <div key={i}><ObjectName name={m} prefer="service" /></div>
+            <div key={i}>
+              <ObjectName name={m} prefer="service" />
+            </div>
           ))}
         </div>
       ),
       search: (g) =>
-        `${g.members.join(" ")} ${g.members
-          .flatMap((m) => serviceToPorts(m, cfg))
-          .join(" ")}`,
+        `${g.members.join(" ")} ${g.members.flatMap((m) => serviceToPorts(m, cfg)).join(" ")}`,
     },
     {
       key: "desc",
       header: "描述",
-      cell: (g) => (
-        <span className="text-xs text-muted-foreground">
-          {g.description ?? "—"}
-        </span>
-      ),
+      cell: (g) => <span className="text-xs text-muted-foreground">{g.description ?? "—"}</span>,
       search: (g) => g.description ?? "",
     },
     {
@@ -131,26 +120,14 @@ function ServicesPage() {
       <h1 className="text-2xl font-semibold">服务对象</h1>
       <Tabs defaultValue="svc">
         <TabsList>
-          <TabsTrigger value="svc">
-            服务对象 ({cfg.services.length})
-          </TabsTrigger>
-          <TabsTrigger value="grp">
-            服务组 ({cfg.serviceGroups.length})
-          </TabsTrigger>
+          <TabsTrigger value="svc">服务对象 ({cfg.services.length})</TabsTrigger>
+          <TabsTrigger value="grp">服务组 ({cfg.serviceGroups.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="svc" className="mt-4">
-          <DataTable
-            rows={cfg.services}
-            columns={svcCols}
-            filename="services.csv"
-          />
+          <DataTable rows={cfg.services} columns={svcCols} filename="services.csv" />
         </TabsContent>
         <TabsContent value="grp" className="mt-4">
-          <DataTable
-            rows={cfg.serviceGroups}
-            columns={sgCols}
-            filename="service-groups.csv"
-          />
+          <DataTable rows={cfg.serviceGroups} columns={sgCols} filename="service-groups.csv" />
         </TabsContent>
       </Tabs>
     </div>

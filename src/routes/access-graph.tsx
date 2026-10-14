@@ -1,17 +1,9 @@
-import {
-  createFileRoute,
-  useNavigate,
-  useSearch,
-} from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useConfigStore } from "@/lib/store";
 import type { CrossRef } from "@/lib/parser";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, LineLink } from "@/components/DataTable";
-import {
-  useShowFullPortRange,
-  useShowLineNumbers,
-  useShowPolicyZone,
-} from "@/lib/uiPrefs";
+import { useShowFullPortRange, useShowLineNumbers, useShowPolicyZone } from "@/lib/uiPrefs";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Command,
@@ -21,25 +13,10 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowRight,
-  Check,
-  ChevronsUpDown,
-  ChevronDown,
-  X,
-  Layers,
-} from "lucide-react";
+import { ArrowRight, Check, ChevronsUpDown, ChevronDown, X, Layers } from "lucide-react";
 import {
   getFlows,
   getFocusLines,
@@ -56,6 +33,7 @@ import {
 import { ObjectName } from "@/components/ObjectPreview";
 import { cn } from "@/lib/utils";
 
+import { groupBy, FocusLineRow, NodeChip, SvcChip } from "@/components/access/FocusRows";
 interface SearchParams {
   focus?: FocusType;
   id?: string;
@@ -71,8 +49,7 @@ export const Route = createFileRoute("/access-graph")({
       { title: "访问路径分析 · 防火墙配置审计台" },
       {
         name: "description",
-        content:
-          "三入口（源/目的/服务）+ 横向 Focus Graph，按 FlowGroup 聚合策略与 NAT。",
+        content: "三入口（源/目的/服务）+ 横向 Focus Graph，按 FlowGroup 聚合策略与 NAT。",
       },
     ],
   }),
@@ -137,17 +114,11 @@ function AccessGraphPage() {
     });
   };
 
-  const allLines = useMemo(
-    () => (cfg ? getFocusLines(cfg) : []),
-    [cfg]
-  );
-  const candidates = useMemo(
-    () => focusCandidates(allLines, focus),
-    [allLines, focus]
-  );
+  const allLines = useMemo(() => (cfg ? getFocusLines(cfg) : []), [cfg]);
+  const candidates = useMemo(() => focusCandidates(allLines, focus), [allLines, focus]);
   const lines = useMemo(
     () => (cfg ? filterLinesByFocus(allLines, focus, id, cfg) : []),
-    [allLines, focus, id, cfg]
+    [allLines, focus, id, cfg],
   );
 
   if (!cfg) return <EmptyConfig />;
@@ -157,21 +128,15 @@ function AccessGraphPage() {
       <div>
         <h1 className="text-2xl font-semibold">访问路径分析</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          先选一个上下文（源 / 目的 / 服务），下方展示局部横向 Focus Graph：
-          来源 → NAT/直连 → 目的 → 服务端口/动作，按 FlowGroup 聚合。
+          先选一个上下文（源 / 目的 / 服务），下方展示局部横向 Focus Graph： 来源 → NAT/直连 → 目的
+          → 服务端口/动作，按 FlowGroup 聚合。
         </p>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-3">
         <FocusTabs focus={focus} onChange={setFocus} />
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <FocusPicker
-            focus={focus}
-            value={id}
-            options={candidates}
-            onChange={setId}
-            xr={xr}
-          />
+          <FocusPicker focus={focus} value={id} options={candidates} onChange={setId} xr={xr} />
           {id && (
             <span className="text-xs text-muted-foreground">
               命中 <b className="text-foreground">{lines.length}</b> 条 FlowGroup
@@ -194,13 +159,7 @@ function AccessGraphPage() {
 
 // ---------- top tabs ----------
 
-function FocusTabs({
-  focus,
-  onChange,
-}: {
-  focus: FocusType;
-  onChange: (f: FocusType) => void;
-}) {
+function FocusTabs({ focus, onChange }: { focus: FocusType; onChange: (f: FocusType) => void }) {
   const tabs: { id: FocusType; label: string; hint: string }[] = [
     { id: "src", label: "Source", hint: "一个来源的访问面" },
     { id: "dst", label: "Destination", hint: "一个目的的暴露面" },
@@ -217,7 +176,7 @@ function FocusTabs({
             "flex flex-col items-start rounded-md px-3 py-1.5 text-left transition",
             focus === t.id
               ? "bg-background shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           <span className="text-sm font-medium">{t.label}</span>
@@ -285,9 +244,7 @@ function FocusPicker({
               className="h-9 text-xs"
             />
             <CommandList>
-              <CommandEmpty className="py-4 text-xs">
-                没有符合的选项
-              </CommandEmpty>
+              <CommandEmpty className="py-4 text-xs">没有符合的选项</CommandEmpty>
               {showLiteral && (
                 <CommandGroup heading="字面值">
                   <CommandItem
@@ -319,20 +276,15 @@ function FocusPicker({
                     <Check
                       className={cn(
                         "mr-2 h-3.5 w-3.5",
-                        value === o.id ? "opacity-100" : "opacity-0"
+                        value === o.id ? "opacity-100" : "opacity-0",
                       )}
                     />
                     <span
-                      className={cn(
-                        "flex-1 font-mono",
-                        o.id === "any" && "text-muted-foreground"
-                      )}
+                      className={cn("flex-1 font-mono", o.id === "any" && "text-muted-foreground")}
                     >
                       {o.id}
                     </span>
-                    <span className="ml-2 text-[10px] text-muted-foreground">
-                      {o.count}
-                    </span>
+                    <span className="ml-2 text-[10px] text-muted-foreground">{o.count}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -374,9 +326,7 @@ function FocusEmpty({
       </p>
       {top.length > 0 && (
         <div className="mt-4">
-          <div className="mb-2 text-center text-xs text-muted-foreground">
-            常用候选（按命中数）
-          </div>
+          <div className="mb-2 text-center text-xs text-muted-foreground">常用候选（按命中数）</div>
           <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-1.5">
             {top.map((c) => (
               <button
@@ -386,9 +336,7 @@ function FocusEmpty({
                 className="rounded-md border border-border bg-background px-2.5 py-1 font-mono text-xs hover:border-primary/50 hover:bg-primary/5"
               >
                 {c.id}
-                <span className="ml-1.5 text-[10px] text-muted-foreground">
-                  {c.count}
-                </span>
+                <span className="ml-1.5 text-[10px] text-muted-foreground">{c.count}</span>
               </button>
             ))}
           </div>
@@ -400,15 +348,7 @@ function FocusEmpty({
 
 // ---------- focus graph dispatcher ----------
 
-function FocusGraph({
-  focus,
-  id,
-  lines,
-}: {
-  focus: FocusType;
-  id: string;
-  lines: FocusLine[];
-}) {
+function FocusGraph({ focus, id, lines }: { focus: FocusType; id: string; lines: FocusLine[] }) {
   if (lines.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -468,8 +408,7 @@ function GroupSummary({ rows }: { rows: FocusLine[] }) {
     });
   if (permitRows > 0)
     parts.push({ label: `permit ${permitRows}`, cls: "text-emerald-700 dark:text-emerald-300" });
-  if (denyRows > 0)
-    parts.push({ label: `deny ${denyRows}`, cls: "text-destructive" });
+  if (denyRows > 0) parts.push({ label: `deny ${denyRows}`, cls: "text-destructive" });
   return (
     <span
       className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground"
@@ -526,10 +465,7 @@ function SvcFocusView({ svc, lines }: { svc: string; lines: FocusLine[] }) {
   const byDst = useMemo(() => groupBy(lines, (l) => l.dst), [lines]);
   return (
     <div className="space-y-3">
-      <FocusHeader
-        anchor={{ name: svc, role: "svc" }}
-        count={lines.length}
-      />
+      <FocusHeader anchor={{ name: svc, role: "svc" }} count={lines.length} />
       {[...byDst.entries()].map(([dst, rows]) => (
         <FocusCard key={dst}>
           <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -571,11 +507,7 @@ function FocusHeader({
 }
 
 function FocusCard({ children }: { children: React.ReactNode }) {
-  return (
-    <article className="rounded-lg border border-border bg-card p-3">
-      {children}
-    </article>
-  );
+  return <article className="rounded-lg border border-border bg-card p-3">{children}</article>;
 }
 
 const COLLAPSE_THRESHOLD = 12;
@@ -596,408 +528,6 @@ function sortRows(rows: FocusLine[]): FocusLine[] {
       score(a) - score(b) ||
       a.proto.localeCompare(b.proto) ||
       a.port.localeCompare(b.port) ||
-      a.src.localeCompare(b.src)
+      a.src.localeCompare(b.src),
   );
-}
-
-function groupBy<T, K>(arr: T[], key: (t: T) => K): Map<K, T[]> {
-  const m = new Map<K, T[]>();
-  arr.forEach((x) => {
-    const k = key(x);
-    const cur = m.get(k);
-    if (cur) cur.push(x);
-    else m.set(k, [x]);
-  });
-  return m;
-}
-
-// ---------- FocusLineRow ----------
-
-function FocusLineRow({
-  line,
-  hideSrc,
-  hideDst,
-  hideSvc,
-  mutedDst,
-}: {
-  line: FocusLine;
-  hideSrc?: boolean;
-  hideDst?: boolean;
-  hideSvc?: boolean;
-  mutedDst?: boolean;
-}) {
-  const hasNat = line.nat.length > 0;
-  const accent =
-    line.action === "unassociated"
-      ? "border-l-amber-500"
-      : line.action === "deny"
-        ? "border-l-destructive"
-        : line.action === "associated"
-          ? "border-l-blue-500/70"
-          : hasNat
-            ? "border-l-blue-500/70"
-            : "border-l-emerald-500/60";
-  return (
-    <div
-      className={cn(
-        "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
-        accent,
-        "grid-cols-[minmax(0,auto)_minmax(0,1fr)_minmax(0,auto)_minmax(0,auto)_minmax(0,auto)]"
-      )}
-    >
-      <div className="flex min-w-0 items-center">
-        {!hideSrc ? <NodePlain name={line.src} /> : <Placeholder />}
-      </div>
-      <div className="flex min-w-0 items-center gap-1.5">
-        <NatToken nat={line.nat} />
-      </div>
-      <div className="flex min-w-0 items-center">
-        {hideDst ? (
-          <Placeholder />
-        ) : mutedDst ? (
-          <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground/70">
-            <ObjectName name={line.dst} />
-          </span>
-        ) : (
-          <NodePlain name={line.dst} />
-        )}
-      </div>
-      <div className="flex min-w-0 items-center pl-1">
-        {!hideSvc ? <SvcChip svc={line.service} /> : <Placeholder />}
-      </div>
-      <div className="flex items-center justify-end gap-1.5 pl-1">
-        <ActionBadge action={line.action} />
-        {line.policies.length > 0 && (
-          <PolicyCountBadge policies={line.policies} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Connector() {
-  return <span className="h-px w-3 shrink-0 bg-border" />;
-}
-
-
-function Placeholder() {
-  return <span className="font-mono text-xs text-muted-foreground/40">—</span>;
-}
-
-// ---------- NodeChip / SvcChip / ActionBadge ----------
-
-function NodeChip({
-  name,
-  role,
-}: {
-  name: string;
-  role: "src" | "dst";
-}) {
-  const cat = classifyIntermediary(name);
-  const cls =
-    role === "src"
-      ? "border-emerald-500/40 bg-transparent"
-      : "border-blue-500/40 bg-transparent";
-
-  return (
-    <span
-      className={cn(
-        "inline-flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-xs",
-        cls
-      )}
-    >
-      <span className="min-w-0 truncate">
-        <ObjectName name={name} />
-      </span>
-      {cat && (
-        <span className="shrink-0 rounded bg-background/60 px-1 text-[10px] uppercase text-muted-foreground">
-          {CAT_LABEL[cat]}
-        </span>
-      )}
-    </span>
-  );
-}
-
-function NodePlain({ name }: { name: string }) {
-  const cat = classifyIntermediary(name);
-  return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 font-mono text-xs text-foreground/90">
-      <span className="min-w-0 truncate">
-        <ObjectName name={name} />
-      </span>
-      {cat && (
-        <span className="shrink-0 rounded bg-muted/60 px-1 text-[10px] uppercase text-muted-foreground">
-          {CAT_LABEL[cat]}
-        </span>
-      )}
-    </span>
-  );
-}
-
-function SvcChip({ svc }: { svc: string }) {
-  return (
-    <span className="inline-flex items-center rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 font-mono text-xs">
-      {svc}
-    </span>
-  );
-}
-
-function ActionBadge({ action }: { action: string }) {
-  if (action === "permit")
-    return (
-      <span className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-        permit
-      </span>
-    );
-  if (action === "deny")
-    return (
-      <span className="inline-flex items-center rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
-        deny
-      </span>
-    );
-  if (action === "associated")
-    return (
-      <span
-        className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400"
-        title="转化后的目的+后端端口被至少一条 permit 策略覆盖"
-      >
-        已关联策略
-      </span>
-    );
-  if (action === "unassociated" || action === "none")
-    return (
-      <span
-        className="text-[11px] text-muted-foreground/70"
-        title="转化后的目的+后端端口没有任何 permit 策略覆盖"
-      >
-        未关联策略
-      </span>
-    );
-  return (
-    <span className="inline-flex items-center rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-      {action}
-    </span>
-  );
-}
-
-function PolicyCountBadge({
-  policies,
-}: {
-  policies: FocusLine["policies"];
-}) {
-  const [showLineNo] = useShowLineNumbers();
-  const [showZonePref] = useShowPolicyZone();
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-0.5 text-[11px] text-muted-foreground hover:border-primary/40 hover:text-foreground"
-        >
-          <Layers className="h-3 w-3" />
-          策略 × {policies.length}
-          <ChevronDown className="h-3 w-3 opacity-60" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-96 p-2">
-        <div className="mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-          命中策略
-        </div>
-        <div className="space-y-1">
-          {policies.map((p) => (
-            <div
-              key={`${p.id}@${p.lineNo}`}
-              className="flex flex-wrap items-center gap-1.5 rounded border border-border bg-background px-1.5 py-1 font-mono text-[11px]"
-            >
-              <Badge
-                tone={
-                  p.action === "permit"
-                    ? "ok"
-                    : p.action === "deny"
-                      ? "danger"
-                      : "muted"
-                }
-              >
-                {p.action}
-              </Badge>
-              <span className="text-muted-foreground">#{p.id}</span>
-              {showZonePref &&
-                !(
-                  (!p.srcZone || p.srcZone === "any") &&
-                  (!p.dstZone || p.dstZone === "any")
-                ) && (
-                  <span className="text-[10px] text-muted-foreground">
-                    {p.srcZone || "any"}→{p.dstZone || "any"}
-                  </span>
-                )}
-              <span>{p.srcAddr}</span>
-              <ArrowRight className="h-3 w-3 text-muted-foreground" />
-              <span>{p.dstAddr}</span>
-              <span className="text-muted-foreground">[{p.service}]</span>
-              {showLineNo && (
-                <span className="ml-auto">
-                  <LineLink line={p.lineNo} />
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-// ---------- NatToken: direct / DNAT / SNAT / NAT×N ----------
-
-function NatToken({ nat }: { nat: FlowDnatEntry[] }) {
-  const [showFull] = useShowFullPortRange();
-  if (nat.length === 0) {
-    return (
-      <span className="inline-flex items-center gap-1 text-muted-foreground/80">
-        <span className="h-px w-6 bg-foreground/40" />
-        <ArrowRight className="h-3.5 w-3.5 text-foreground/70" strokeWidth={2.5} />
-        <span className="text-[10px] uppercase tracking-wide">direct</span>
-        <ArrowRight className="h-3.5 w-3.5 text-foreground/70" strokeWidth={2.5} />
-        <span className="h-px w-6 bg-foreground/40" />
-      </span>
-    );
-  }
-  if (nat.length === 1) {
-    return <DnatLabel entry={nat[0]} showFull={showFull} />;
-  }
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-transparent px-2 py-0.5 font-mono text-[11px] text-amber-700 hover:bg-amber-500/5 dark:text-amber-300"
-        >
-          NAT × {nat.length}
-          <ChevronDown className="h-3 w-3 opacity-70" />
-        </button>
-
-      </PopoverTrigger>
-      <PopoverContent align="center" className="w-[28rem] p-2">
-        <div className="mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-          NAT 规则链
-        </div>
-        <div className="space-y-1">
-          {nat.map((d) => (
-            <DnatLabel
-              key={`${d.rule.id}@${d.rule.lineNo}`}
-              entry={d}
-              showFull={showFull}
-              block
-            />
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-// 主图短格式：DNAT #203  防火墙IP:11743 → api-172.23.51.28:11743
-// hover 展示完整 "转换为" 字段 + iface / 行号 / disabled
-function DnatLabel({
-  entry,
-  showFull,
-  block,
-}: {
-  entry: FlowDnatEntry;
-  showFull: boolean;
-  block?: boolean;
-}) {
-  const [showLineNo] = useShowLineNumbers();
-  const kind = entry.rule.kind === "source" ? "SNAT" : "DNAT";
-  const entryPort = entry.entryPort ? fmtPort(entry.entryPort, showFull) : "";
-  const backendPort = entry.backendPort
-    ? fmtPort(entry.backendPort, showFull)
-    : "";
-  const trigger = (
-    <span
-      className={cn(
-        "inline-flex min-w-0 max-w-[22rem] items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] hover:bg-amber-500/15",
-        block && "w-full max-w-none"
-      )}
-    >
-      <span className="shrink-0 font-semibold text-amber-700 dark:text-amber-300">
-        {kind}
-      </span>
-      <span className="min-w-0 truncate text-muted-foreground">
-        {entry.entryAddr}
-        {entryPort && (
-          <span className="text-amber-700/70 dark:text-amber-300/70">:{entryPort}</span>
-        )}
-      </span>
-      <ArrowRight className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
-      <span className="min-w-0 truncate text-amber-700 dark:text-amber-300">
-        {entry.rule.translatedPool}
-        {backendPort && backendPort !== entryPort && (
-          <span className="text-amber-700/70 dark:text-amber-300/70">:{backendPort}</span>
-        )}
-      </span>
-
-
-      {entry.rule.disabled && (
-        <Badge tone="warn">disabled</Badge>
-      )}
-    </span>
-  );
-
-  return (
-    <HoverCard openDelay={120} closeDelay={80}>
-      <HoverCardTrigger asChild>
-        <span className="cursor-help">{trigger}</span>
-      </HoverCardTrigger>
-      <HoverCardContent align="start" className="w-[26rem] p-3">
-        <div className="mb-2 flex items-center gap-2">
-          <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-            {kind} #{entry.rule.id}
-          </span>
-          {entry.rule.iface && (
-            <span className="text-[11px] text-muted-foreground">
-              接口 {entry.rule.iface}
-            </span>
-          )}
-          {entry.rule.disabled && <Badge tone="warn">disabled</Badge>}
-          {showLineNo && (
-            <span className="ml-auto">
-              <LineLink line={entry.rule.lineNo} />
-            </span>
-          )}
-        </div>
-        <div className="space-y-1.5 font-mono text-xs">
-          <div className="flex items-baseline gap-2">
-            <span className="w-16 shrink-0 text-[10px] uppercase tracking-wide text-foreground">
-              原始目的
-            </span>
-            <span className="break-all text-muted-foreground">
-              {entry.entryAddr}
-              {entryPort && (
-                <span className="text-amber-700/70 dark:text-amber-300/70">:{entryPort}</span>
-              )}
-            </span>
-          </div>
-
-          <div className="flex items-baseline gap-2">
-            <span className="w-16 shrink-0 text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-400">
-              转换为
-            </span>
-            <span className="break-all text-amber-700 dark:text-amber-300">
-              {entry.rule.translatedPool}
-              {backendPort && <span className="text-amber-700/70 dark:text-amber-300/70">:{backendPort}</span>}
-            </span>
-          </div>
-
-
-        </div>
-      </HoverCardContent>
-    </HoverCard>
-  );
-}
-
-function fmtPort(p: string, showFull: boolean): string {
-  if (!p) return "";
-  if (!showFull && p === "1-65535") return "any";
-  return p;
 }

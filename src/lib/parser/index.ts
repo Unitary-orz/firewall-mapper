@@ -69,14 +69,12 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
     // ---------- address ----------
     if (head === "address" && t.length >= 2) {
       const name = t.slice(1).join(" ");
-      const obj: AddressObject =
-        addrMap.get(name) ?? { name, entries: [], lineNo };
+      const obj: AddressObject = addrMap.get(name) ?? { name, entries: [], lineNo };
       // 读子项
       let j = i + 1;
       while (j < rawLines.length && indent(rawLines[j]) > 0) {
         const sub = tokens(rawLines[j]);
-        if (sub[0] === "host-address" && sub[1])
-          obj.entries.push({ kind: "host", value: sub[1] });
+        if (sub[0] === "host-address" && sub[1]) obj.entries.push({ kind: "host", value: sub[1] });
         else if (sub[0] === "net-address" && sub[1])
           obj.entries.push({ kind: "net", value: sub[1] });
         else if (sub[0] === "range-address" && sub[1] && sub[2])
@@ -85,8 +83,7 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
           obj.entries.push({ kind: "domain", value: sub[1] });
         else if (sub[0] === "mac-address" && sub[1])
           obj.entries.push({ kind: "mac", value: sub[1] });
-        else if (sub[0] === "description")
-          obj.description = sub.slice(1).join(" ");
+        else if (sub[0] === "description") obj.description = sub.slice(1).join(" ");
         j++;
       }
       addrMap.set(name, obj);
@@ -97,15 +94,12 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
     // ---------- address-group ----------
     if (head === "address-group" && t.length >= 2) {
       const name = t.slice(1).join(" ");
-      const obj: AddressGroup =
-        agMap.get(name) ?? { name, members: [], lineNo };
+      const obj: AddressGroup = agMap.get(name) ?? { name, members: [], lineNo };
       let j = i + 1;
       while (j < rawLines.length && indent(rawLines[j]) > 0) {
         const sub = tokens(rawLines[j]);
-        if (sub[0] === "address-object" && sub[1])
-          obj.members.push(sub.slice(1).join(" "));
-        else if (sub[0] === "description")
-          obj.description = sub.slice(1).join(" ");
+        if (sub[0] === "address-object" && sub[1]) obj.members.push(sub.slice(1).join(" "));
+        else if (sub[0] === "description") obj.description = sub.slice(1).join(" ");
         j++;
       }
       agMap.set(name, obj);
@@ -116,8 +110,7 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
     // ---------- service ----------
     if (head === "service" && t.length >= 2) {
       const name = t.slice(1).join(" ");
-      const obj: ServiceObject =
-        svcMap.get(name) ?? { name, entries: [], lineNo };
+      const obj: ServiceObject = svcMap.get(name) ?? { name, entries: [], lineNo };
       let j = i + 1;
       while (j < rawLines.length && indent(rawLines[j]) > 0) {
         const sub = tokens(rawLines[j]);
@@ -159,15 +152,12 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
     // ---------- service-group ----------
     if (head === "service-group" && t.length >= 2) {
       const name = t.slice(1).join(" ");
-      const obj: ServiceGroup =
-        sgMap.get(name) ?? { name, members: [], lineNo };
+      const obj: ServiceGroup = sgMap.get(name) ?? { name, members: [], lineNo };
       let j = i + 1;
       while (j < rawLines.length && indent(rawLines[j]) > 0) {
         const sub = tokens(rawLines[j]);
-        if (sub[0] === "service-object" && sub[1])
-          obj.members.push(sub.slice(1).join(" "));
-        else if (sub[0] === "description")
-          obj.description = sub.slice(1).join(" ");
+        if (sub[0] === "service-object" && sub[1]) obj.members.push(sub.slice(1).join(" "));
+        else if (sub[0] === "description") obj.description = sub.slice(1).join(" ");
         j++;
       }
       sgMap.set(name, obj);
@@ -236,17 +226,13 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
         log = true;
         trimmed.pop();
       }
-      if (
-        trimmed.length >= 2 &&
-        trimmed[trimmed.length - 2] === "service"
-      ) {
+      if (trimmed.length >= 2 && trimmed[trimmed.length - 2] === "service") {
         servicePort = trimmed[trimmed.length - 1];
         trimmed.splice(trimmed.length - 2, 2);
       }
       // 剩 5 项：iface src origDstAddr origDstService translatedPool
       if (trimmed.length >= 5 && id) {
-        const [iface, srcAddr, origDstAddr, origDstService, translatedPool] =
-          trimmed;
+        const [iface, srcAddr, origDstAddr, origDstService, translatedPool] = trimmed;
         const rule: NatRule = {
           id,
           kind: "destination",
@@ -360,21 +346,11 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
     i++;
   }
 
-  out.addresses = [...addrMap.values()].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
-  out.addressGroups = [...agMap.values()].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
-  out.services = [...svcMap.values()].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
-  out.serviceGroups = [...sgMap.values()].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
-  out.natRules = [...natMap.values()].sort(
-    (a, b) => Number(b.id) - Number(a.id)
-  );
+  out.addresses = [...addrMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  out.addressGroups = [...agMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  out.services = [...svcMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  out.serviceGroups = [...sgMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+  out.natRules = [...natMap.values()].sort((a, b) => Number(b.id) - Number(a.id));
 
   out.intermediaries = detectIntermediaries(out);
   return out;
@@ -391,45 +367,37 @@ function detectIntermediaries(cfg: ParsedConfig): IntermediaryNode[] {
     nodes.push(n);
   };
 
-  const classify = (
-    name: string
-  ): IntermediaryNode["category"] | undefined => {
+  const classify = (name: string): IntermediaryNode["category"] | undefined => {
     const lower = name.toLowerCase();
     if (lower.includes("waf")) return "waf";
     if (name.includes("堡垒")) return "bastion";
     if (lower.includes("bastion")) return "bastion";
-    if (name.includes("数据库网关") || name.includes("api网关") || lower.includes("gateway") || lower.includes("api-")) return "gateway";
+    if (
+      name.includes("数据库网关") ||
+      name.includes("api网关") ||
+      lower.includes("gateway") ||
+      lower.includes("api-")
+    )
+      return "gateway";
     if (name.includes("代理") || lower.includes("proxy")) return "proxy";
     if (name.includes("负载") || lower.includes("lb") || lower.includes("slb")) return "lb";
     return undefined;
   };
 
   // 从地址对象 + 地址组 + nat 池里都尝试归类
-  const collectFrom = (
-    name: string,
-    address: string | undefined,
-    evidence: string
-  ) => {
+  const collectFrom = (name: string, address: string | undefined, evidence: string) => {
     const c = classify(name);
     if (c) push({ category: c, name, address, evidence: [evidence] });
   };
 
   cfg.addresses.forEach((a) =>
-    collectFrom(
-      a.name,
-      a.entries[0]?.value,
-      `address ${a.name} (line ${a.lineNo})`
-    )
+    collectFrom(a.name, a.entries[0]?.value, `address ${a.name} (line ${a.lineNo})`),
   );
   cfg.addressGroups.forEach((g) =>
-    collectFrom(g.name, undefined, `address-group ${g.name} (line ${g.lineNo})`)
+    collectFrom(g.name, undefined, `address-group ${g.name} (line ${g.lineNo})`),
   );
   cfg.natPools.forEach((p) =>
-    collectFrom(
-      p.name,
-      p.addressFrom,
-      `nat-pool ${p.name} (line ${p.lineNo})`
-    )
+    collectFrom(p.name, p.addressFrom, `nat-pool ${p.name} (line ${p.lineNo})`),
   );
 
   return nodes.sort((a, b) => a.category.localeCompare(b.category));
@@ -459,11 +427,7 @@ export function buildCrossRef(cfg: ParsedConfig): CrossRef {
   const serviceUsedBy = new Map<string, RefUsage[]>();
   const addressToValues = new Map<string, string[]>();
   const ipToNames = new Map<string, string[]>();
-  const add = (
-    map: Map<string, RefUsage[]>,
-    key: string,
-    u: RefUsage
-  ) => {
+  const add = (map: Map<string, RefUsage[]>, key: string, u: RefUsage) => {
     if (!key || key === "any") return;
     const arr = map.get(key) ?? [];
     arr.push(u);
@@ -477,7 +441,7 @@ export function buildCrossRef(cfg: ParsedConfig): CrossRef {
         id: g.name,
         detail: `地址组 ${g.name}`,
         lineNo: g.lineNo,
-      })
+      }),
     );
   });
   cfg.serviceGroups.forEach((g) => {
@@ -487,7 +451,7 @@ export function buildCrossRef(cfg: ParsedConfig): CrossRef {
         id: g.name,
         detail: `服务组 ${g.name}`,
         lineNo: g.lineNo,
-      })
+      }),
     );
   });
   cfg.policies.forEach((p) => {
@@ -497,7 +461,7 @@ export function buildCrossRef(cfg: ParsedConfig): CrossRef {
         id: p.id,
         detail: `策略 #${p.id} (${p.action})`,
         lineNo: p.lineNo,
-      })
+      }),
     );
     add(serviceUsedBy, p.service, {
       by: "policy",
@@ -541,7 +505,10 @@ export function buildCrossRef(cfg: ParsedConfig): CrossRef {
   });
 
   // helper to resolve group members recursively (avoid cycles)
-  const resolveGroup = (g: typeof cfg.addressGroups[number], seen = new Set<string>()): string[] => {
+  const resolveGroup = (
+    g: (typeof cfg.addressGroups)[number],
+    seen = new Set<string>(),
+  ): string[] => {
     if (seen.has(g.name)) return [];
     seen.add(g.name);
     const out: string[] = [];
@@ -630,9 +597,7 @@ export function runAudit(cfg: ParsedConfig, xr: CrossRef): AuditFinding[] {
         severity: "info",
         category: "未引用",
         title: `服务对象未被引用：${s.name}`,
-        detail: s.entries
-          .map((e) => `${e.protocol}/${e.destPort ?? ""}`)
-          .join(", "),
+        detail: s.entries.map((e) => `${e.protocol}/${e.destPort ?? ""}`).join(", "),
         refLine: s.lineNo,
         refKind: "service",
         refName: s.name,
@@ -656,9 +621,7 @@ export function runAudit(cfg: ParsedConfig, xr: CrossRef): AuditFinding[] {
 
   // 宽松策略
   cfg.policies.forEach((p) => {
-    const anyCount = [p.srcAddr, p.dstAddr, p.service].filter(
-      (x) => x === "any"
-    ).length;
+    const anyCount = [p.srcAddr, p.dstAddr, p.service].filter((x) => x === "any").length;
     if (p.action === "permit" && anyCount >= 2) {
       out.push({
         id: id(),
@@ -676,9 +639,7 @@ export function runAudit(cfg: ParsedConfig, xr: CrossRef): AuditFinding[] {
   // 命名混乱：同 IP 不同名
   const ipToNames = new Map<string, string[]>();
   cfg.addresses.forEach((a) => {
-    const hosts = a.entries
-      .filter((e) => e.kind === "host")
-      .map((e) => e.value);
+    const hosts = a.entries.filter((e) => e.kind === "host").map((e) => e.value);
     hosts.forEach((ip) => {
       const arr = ipToNames.get(ip) ?? [];
       arr.push(a.name);

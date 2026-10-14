@@ -1,9 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Badge } from "@/components/DataTable";
 import { useConfigStore } from "@/lib/store";
 import type { RefUsage } from "@/lib/parser";
@@ -18,12 +14,7 @@ const byLabel: Record<RefUsage["by"], string> = {
   "service-group": "服务组",
 };
 
-const sectionOrder: RefUsage["by"][] = [
-  "policy",
-  "nat",
-  "address-group",
-  "service-group",
-];
+const sectionOrder: RefUsage["by"][] = ["policy", "nat", "address-group", "service-group"];
 
 const actionLabel: Record<string, string> = {
   permit: "允许",
@@ -73,14 +64,11 @@ function H({ hit, value }: { hit: string; value: string }) {
 
 function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
   const action = actionLabel[p.action] ?? p.action;
-  const actionTone =
-    p.action === "permit" ? "ok" : p.action === "deny" ? "danger" : "muted";
+  const actionTone = p.action === "permit" ? "ok" : p.action === "deny" ? "danger" : "muted";
   const showSchedule = p.schedule && p.schedule !== "always" && p.schedule !== "-";
   const [showZonePref] = useShowPolicyZone();
   const showZone =
-    showZonePref &&
-    (p.srcZone || p.dstZone) &&
-    !(p.srcZone === "any" && p.dstZone === "any");
+    showZonePref && (p.srcZone || p.dstZone) && !(p.srcZone === "any" && p.dstZone === "any");
   const hasMeta = showZone || showSchedule || p.id;
   return (
     <div className="space-y-0.5">
@@ -105,7 +93,9 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
             </span>
           )}
         </div>
-        <span className="shrink-0"><Badge tone={actionTone}>{action}</Badge></span>
+        <span className="shrink-0">
+          <Badge tone={actionTone}>{action}</Badge>
+        </span>
       </div>
       {(showZone || p.id) && (
         <div className="flex items-baseline gap-x-3 gap-y-0.5 flex-wrap text-[11px] text-muted-foreground pl-0.5">
@@ -136,19 +126,17 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
             <H hit={hit} value={n.srcAddr} />
             <span className="text-muted-foreground">→</span>
             <H hit={hit} value={n.origDstAddr} />
-            {n.origDstService && (
-              <span className="text-muted-foreground">:{n.origDstService}</span>
-            )}
+            {n.origDstService && <span className="text-muted-foreground">:{n.origDstService}</span>}
           </span>
           <span className="flex items-baseline gap-1 min-w-0">
             <L>转换为</L>
             <H hit={hit} value={n.translatedPool} />
-            {n.servicePort && (
-              <span className="text-muted-foreground">:{n.servicePort}</span>
-            )}
+            {n.servicePort && <span className="text-muted-foreground">:{n.servicePort}</span>}
           </span>
         </div>
-        <span className="shrink-0"><Badge tone="default">{k}</Badge></span>
+        <span className="shrink-0">
+          <Badge tone="default">{k}</Badge>
+        </span>
       </div>
       {hasMeta && (
         <div className="flex items-baseline gap-x-3 gap-y-0.5 flex-wrap text-[11px] text-muted-foreground pl-0.5">
@@ -188,9 +176,7 @@ function GroupLine({
           <Badge tone="muted">成员 {count}</Badge>
         </span>
       </div>
-      {description && (
-        <DescQuote className="text-[11px] line-clamp-2">{description}</DescQuote>
-      )}
+      {description && <DescQuote className="text-[11px] line-clamp-2">{description}</DescQuote>}
     </div>
   );
 }
@@ -213,20 +199,13 @@ interface IndirectSection {
   anyAnyCount: number;
 }
 
-export function RefsPreview({
-  name,
-  kind,
-}: {
-  name: string;
-  kind: "address" | "service";
-}) {
+export function RefsPreview({ name, kind }: { name: string; kind: "address" | "service" }) {
   const { cfg, xr } = useConfigStore();
-  const refs =
-    xr
-      ? kind === "service"
-        ? xr.serviceUsedBy.get(name) ?? []
-        : xr.addressUsedBy.get(name) ?? []
-      : [];
+  const refs = xr
+    ? kind === "service"
+      ? (xr.serviceUsedBy.get(name) ?? [])
+      : (xr.addressUsedBy.get(name) ?? [])
+    : [];
 
   const sections = useMemo<Section[]>(() => {
     if (!cfg) return [];
@@ -276,14 +255,10 @@ export function RefsPreview({
 
   const indirectSections = useMemo<IndirectSection[]>(() => {
     if (!cfg || !xr) return [];
-    const groupKey: RefUsage["by"] =
-      kind === "service" ? "service-group" : "address-group";
-    const usedByMap =
-      kind === "service" ? xr.serviceUsedBy : xr.addressUsedBy;
+    const groupKey: RefUsage["by"] = kind === "service" ? "service-group" : "address-group";
+    const usedByMap = kind === "service" ? xr.serviceUsedBy : xr.addressUsedBy;
     const directKeys = new Set(
-      refs
-        .filter((r) => r.by === "policy" || r.by === "nat")
-        .map((r) => `${r.by}#${r.id}`),
+      refs.filter((r) => r.by === "policy" || r.by === "nat").map((r) => `${r.by}#${r.id}`),
     );
     // groupName -> (by#id -> viaGroups accumulator)
     const acc = new Map<string, IndirectItem>();
@@ -296,8 +271,7 @@ export function RefsPreview({
         if (directKeys.has(key)) continue;
         const existing = acc.get(key);
         if (existing) {
-          if (!existing.viaGroups.includes(gname))
-            existing.viaGroups.push(gname);
+          if (!existing.viaGroups.includes(gname)) existing.viaGroups.push(gname);
         } else {
           acc.set(key, { by: u.by, id: u.id, viaGroups: [gname] });
         }
@@ -340,16 +314,11 @@ export function RefsPreview({
   if (!xr) return null;
   if (refs.length === 0) return <Badge tone="warn">未引用</Badge>;
 
-  const summary = sections
-    .map((s) => `${byLabel[s.by]} ${s.items.length}`)
-    .join(" · ");
+  const summary = sections.map((s) => `${byLabel[s.by]} ${s.items.length}`).join(" · ");
   const indirectSummary = indirectSections
     .map((s) => `${byLabel[s.by]} ${s.items.length}`)
     .join(" · ");
-  const indirectTotal = indirectSections.reduce(
-    (n, s) => n + s.items.length,
-    0,
-  );
+  const indirectTotal = indirectSections.reduce((n, s) => n + s.items.length, 0);
 
   return (
     <HoverCard openDelay={120} closeDelay={80}>
@@ -357,17 +326,11 @@ export function RefsPreview({
         <span className="text-xs cursor-help underline decoration-dotted underline-offset-2 text-primary">
           {refs.length} 处 · {summary}
           {indirectTotal > 0 && (
-            <span className="text-muted-foreground">
-              {" "}
-              · 间接 {indirectTotal}
-            </span>
+            <span className="text-muted-foreground"> · 间接 {indirectTotal}</span>
           )}
         </span>
       </HoverCardTrigger>
-      <HoverCardContent
-        className="w-[40rem] max-h-[28rem] overflow-auto"
-        align="start"
-      >
+      <HoverCardContent className="w-[40rem] max-h-[28rem] overflow-auto" align="start">
         <div className="space-y-3">
           <div className="text-sm">
             <span className="font-semibold">{name}</span>
@@ -381,16 +344,9 @@ export function RefsPreview({
           ))}
           {indirectSections.length > 0 && (
             <div className="space-y-2 pt-1 border-t border-border/40">
-              <div className="text-xs font-medium text-muted-foreground">
-                通过组的间接引用
-              </div>
+              <div className="text-xs font-medium text-muted-foreground">通过组的间接引用</div>
               {indirectSections.map((s) => (
-                <IndirectSectionBlock
-                  key={s.by}
-                  section={s}
-                  hit={name}
-                  cfg={cfg!}
-                />
+                <IndirectSectionBlock key={s.by} section={s} hit={name} cfg={cfg!} />
               ))}
             </div>
           )}
@@ -402,9 +358,7 @@ export function RefsPreview({
 
 function ViaBadge({ groups }: { groups: string[] }) {
   return (
-    <span className="text-[10px] text-muted-foreground font-mono">
-      via {groups.join(", ")}
-    </span>
+    <span className="text-[10px] text-muted-foreground font-mono">via {groups.join(", ")}</span>
   );
 }
 
@@ -419,9 +373,7 @@ function IndirectSectionBlock({
 }) {
   const [showAny, setShowAny] = useState(false);
   const { by, items, anyAnyCount } = section;
-  const visibleItems = showAny
-    ? items
-    : items.filter((_, i) => i < items.length - anyAnyCount);
+  const visibleItems = showAny ? items : items.filter((_, i) => i < items.length - anyAnyCount);
   const max = 30;
   const shown = visibleItems.slice(0, max);
   return (
@@ -444,26 +396,24 @@ function IndirectSectionBlock({
         <ul className="divide-y divide-border/40 rounded-md border border-border/40">
           {shown.map((r, i) => (
             <li key={i} className="py-1.5 px-2 space-y-0.5">
-              {by === "policy" && (() => {
-                const p = cfg.policies.find((x) => x.id === r.id);
-                return p ? (
-                  <PolicyLine p={p} hit={hit} />
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    策略 #{r.id}
-                  </span>
-                );
-              })()}
-              {by === "nat" && (() => {
-                const n = cfg.natRules.find((x) => x.id === r.id);
-                return n ? (
-                  <NatLine n={n} hit={hit} />
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    NAT #{r.id}
-                  </span>
-                );
-              })()}
+              {by === "policy" &&
+                (() => {
+                  const p = cfg.policies.find((x) => x.id === r.id);
+                  return p ? (
+                    <PolicyLine p={p} hit={hit} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">策略 #{r.id}</span>
+                  );
+                })()}
+              {by === "nat" &&
+                (() => {
+                  const n = cfg.natRules.find((x) => x.id === r.id);
+                  return n ? (
+                    <NatLine n={n} hit={hit} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">NAT #{r.id}</span>
+                  );
+                })()}
               <div className="pl-0.5">
                 <ViaBadge groups={r.viaGroups} />
               </div>
@@ -526,48 +476,48 @@ function SectionBlock({
         <ul className="divide-y divide-border/40 rounded-md border border-border/40">
           {shown.map((r, i) => (
             <li key={i} className="py-1.5 px-2">
-              {by === "policy" && (() => {
-                const p = cfg.policies.find((x) => x.id === r.id);
-                return p ? (
-                  <PolicyLine p={p} hit={hit} />
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    策略 #{r.id}
-                  </span>
-                );
-              })()}
-              {by === "nat" && (() => {
-                const n = cfg.natRules.find((x) => x.id === r.id);
-                return n ? (
-                  <NatLine n={n} hit={hit} />
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    NAT #{r.id}
-                  </span>
-                );
-              })()}
-              {by === "address-group" && (() => {
-                const g = cfg.addressGroups.find((x) => x.name === r.id);
-                return (
-                  <GroupLine
-                    name={g?.name ?? r.id}
-                    count={g?.members.length ?? 0}
-                    description={g?.description}
-                    hit={hit}
-                  />
-                );
-              })()}
-              {by === "service-group" && (() => {
-                const g = cfg.serviceGroups.find((x) => x.name === r.id);
-                return (
-                  <GroupLine
-                    name={g?.name ?? r.id}
-                    count={g?.members.length ?? 0}
-                    description={g?.description}
-                    hit={hit}
-                  />
-                );
-              })()}
+              {by === "policy" &&
+                (() => {
+                  const p = cfg.policies.find((x) => x.id === r.id);
+                  return p ? (
+                    <PolicyLine p={p} hit={hit} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">策略 #{r.id}</span>
+                  );
+                })()}
+              {by === "nat" &&
+                (() => {
+                  const n = cfg.natRules.find((x) => x.id === r.id);
+                  return n ? (
+                    <NatLine n={n} hit={hit} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">NAT #{r.id}</span>
+                  );
+                })()}
+              {by === "address-group" &&
+                (() => {
+                  const g = cfg.addressGroups.find((x) => x.name === r.id);
+                  return (
+                    <GroupLine
+                      name={g?.name ?? r.id}
+                      count={g?.members.length ?? 0}
+                      description={g?.description}
+                      hit={hit}
+                    />
+                  );
+                })()}
+              {by === "service-group" &&
+                (() => {
+                  const g = cfg.serviceGroups.find((x) => x.name === r.id);
+                  return (
+                    <GroupLine
+                      name={g?.name ?? r.id}
+                      count={g?.members.length ?? 0}
+                      description={g?.description}
+                      hit={hit}
+                    />
+                  );
+                })()}
             </li>
           ))}
           {visibleItems.length > shown.length && (
