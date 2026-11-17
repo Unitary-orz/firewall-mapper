@@ -3,7 +3,7 @@ import type { CrossRef } from "@/lib/parser";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, LineLink } from "@/components/DataTable";
 import { useShowFullPortRange, useShowLineNumbers, useShowPolicyZone } from "@/lib/uiPrefs";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Command,
   CommandEmpty,
@@ -320,7 +320,10 @@ export function DnatLabel({
   const backendGroup = entry.backendKind === "service-group" ? entry.backendPort : "";
   const backendSame = entry.backendPort === entry.entryPort;
   const groupMembers = useMemo(
-    () => (cfg && (entryGroup || backendGroup) ? serviceGroupMembers(entryGroup || backendGroup, cfg) : []),
+    () =>
+      cfg && (entryGroup || backendGroup)
+        ? serviceGroupMembers(entryGroup || backendGroup, cfg)
+        : [],
     [cfg, entryGroup, backendGroup],
   );
   const svcTok = (group: string, ports: string, count: number) =>
@@ -334,6 +337,51 @@ export function DnatLabel({
       <span className="text-amber-700/70 dark:text-amber-300/70">:{ports}</span>
     ) : null;
   const entryCount = entryGroup ? groupMembers.length : 0;
+  const [open, setOpen] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const suppressOpenRef = useRef(false);
+
+  // Hover remains transient; a click pins the same card so touch users and
+  // keyboard users can read it without keeping the pointer over the label.
+  useEffect(() => {
+    if (!pinned) return;
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (triggerRef.current?.contains(target) || contentRef.current?.contains(target)) return;
+      setPinned(false);
+      setOpen(false);
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+    };
+  }, [pinned]);
+
+  const handleOpenChange = (next: boolean) => {
+    // Escape closes the card even while it is focused or hovered. Do not let
+    // that same focus/hover immediately open it again.
+    if (next && suppressOpenRef.current) return;
+    // Radix asks to close on pointer leave; ignore that while click-pinned.
+    if (!next && pinned) return;
+    setOpen(next);
+  };
+  const togglePinned = () => {
+    // Unpinning while hovered must not immediately reopen the transient card.
+    suppressOpenRef.current = pinned;
+    setPinned(!pinned);
+    setOpen(!pinned);
+  };
+  const handleEscape = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressOpenRef.current = true;
+    setPinned(false);
+    setOpen(false);
+  };
   const trigger = (
     <span
       className={cn(
@@ -349,18 +397,42 @@ export function DnatLabel({
       <ArrowRight className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
       <span className="min-w-0 truncate text-amber-700 dark:text-amber-300">
         {entry.rule.translatedPool}
-        {!backendSame && backendPorts !== entryPorts && svcTok(backendGroup, backendPorts, backendGroup && !entryGroup ? groupMembers.length : 0)}
+        {!backendSame &&
+          backendPorts !== entryPorts &&
+          svcTok(backendGroup, backendPorts, backendGroup && !entryGroup ? groupMembers.length : 0)}
       </span>
       {entry.rule.disabled && <Badge tone="warn">disabled</Badge>}
     </span>
   );
 
   return (
-    <HoverCard openDelay={120} closeDelay={80}>
+    <HoverCard open={open} onOpenChange={handleOpenChange} openDelay={120} closeDelay={80}>
       <HoverCardTrigger asChild>
-        <span className="cursor-help">{trigger}</span>
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-label={`${kind} #${entry.rule.id} 详情，点击固定`}
+          aria-expanded={open}
+          title="悬停查看详情，点击固定"
+          onClick={togglePinned}
+          onKeyDown={handleEscape}
+          onPointerLeave={() => {
+            suppressOpenRef.current = false;
+          }}
+          onBlur={() => {
+            if (!triggerRef.current?.matches(":hover")) suppressOpenRef.current = false;
+          }}
+          className={cn("min-w-0 max-w-full cursor-pointer text-left", block && "w-full")}
+        >
+          {trigger}
+        </button>
       </HoverCardTrigger>
-      <HoverCardContent align="start" className="w-[26rem] p-3">
+      <HoverCardContent
+        ref={contentRef}
+        onKeyDown={handleEscape}
+        align="start"
+        className="max-h-[70vh] w-[26rem] max-w-[calc(100vw-2rem)] overflow-y-auto p-3"
+      >
         <div className="mb-2 flex items-center gap-2">
           <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
             {kind} #{entry.rule.id}
@@ -433,7 +505,6 @@ export function fmtPort(p: string, showFull: boolean): string {
   if (!showFull && p === "1-65535") return "any";
   return p;
 }
-
 
 /** Compact port list for the pill: already-resolved ports, full ranges folded
  *  to `any` (and hidden), long lists shortened to `first +N`. */
