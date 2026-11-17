@@ -376,6 +376,14 @@ export function DnatLabel({
     setPinned(!pinned);
     setOpen(!pinned);
   };
+  const handleEscape = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    setPinned(false);
+    setOpen(false);
+    triggerRef.current?.focus();
+  };
   const trigger = (
     <span
       className={cn(
@@ -409,6 +417,8 @@ export function DnatLabel({
           aria-expanded={open}
           title="悬停查看详情，点击固定"
           onClick={togglePinned}
+          onKeyDown={handleEscape}
+          data-pinned={pinned}
           className={cn("min-w-0 max-w-full cursor-pointer text-left", block && "w-full")}
         >
           {trigger}
@@ -416,6 +426,7 @@ export function DnatLabel({
       </HoverCardTrigger>
       <HoverCardContent
         ref={contentRef}
+        onKeyDown={handleEscape}
         align="start"
         className="max-h-[70vh] w-[26rem] max-w-[calc(100vw-2rem)] overflow-y-auto p-3"
       >
