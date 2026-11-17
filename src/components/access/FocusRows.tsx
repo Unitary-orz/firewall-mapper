@@ -320,7 +320,10 @@ export function DnatLabel({
   const backendGroup = entry.backendKind === "service-group" ? entry.backendPort : "";
   const backendSame = entry.backendPort === entry.entryPort;
   const groupMembers = useMemo(
-    () => (cfg && (entryGroup || backendGroup) ? serviceGroupMembers(entryGroup || backendGroup, cfg) : []),
+    () =>
+      cfg && (entryGroup || backendGroup)
+        ? serviceGroupMembers(entryGroup || backendGroup, cfg)
+        : [],
     [cfg, entryGroup, backendGroup],
   );
   const svcTok = (group: string, ports: string, count: number) =>
@@ -388,7 +391,9 @@ export function DnatLabel({
       <ArrowRight className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
       <span className="min-w-0 truncate text-amber-700 dark:text-amber-300">
         {entry.rule.translatedPool}
-        {!backendSame && backendPorts !== entryPorts && svcTok(backendGroup, backendPorts, backendGroup && !entryGroup ? groupMembers.length : 0)}
+        {!backendSame &&
+          backendPorts !== entryPorts &&
+          svcTok(backendGroup, backendPorts, backendGroup && !entryGroup ? groupMembers.length : 0)}
       </span>
       {entry.rule.disabled && <Badge tone="warn">disabled</Badge>}
     </span>
