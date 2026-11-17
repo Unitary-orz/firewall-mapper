@@ -1,11 +1,12 @@
 import { useSyncExternalStore } from "react";
 
-type PrefKey = "cfg.showLineNo" | "cfg.showFullPortRange" | "cfg.showPolicyZone";
+type PrefKey = "cfg.showLineNo" | "cfg.showFullPortRange" | "cfg.showPolicyZone" | "cfg.showDisabled";
 
 const defaults: Record<PrefKey, boolean> = {
   "cfg.showLineNo": false,
   "cfg.showFullPortRange": false,
   "cfg.showPolicyZone": false,
+  "cfg.showDisabled": false,
 };
 
 function read(key: PrefKey): boolean {
@@ -76,3 +77,6 @@ export const useShowFullPortRange = () => useBoolPref("cfg.showFullPortRange");
 
 export const setShowPolicyZone = (v: boolean) => setPref("cfg.showPolicyZone", v);
 export const useShowPolicyZone = () => useBoolPref("cfg.showPolicyZone");
+
+export const setShowDisabled = (v: boolean) => setPref("cfg.showDisabled", v);
+export const useShowDisabled = () => useBoolPref("cfg.showDisabled");
