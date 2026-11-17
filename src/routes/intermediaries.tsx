@@ -314,7 +314,8 @@ function NodeCard({ node }: { node: NodeAggregate }) {
   const ports = useMemo(() => {
     const set = new Set<string>();
     node.exposedPorts.forEach((p) => {
-      set.add(!showFull && p === "1-65535" ? "any" : p);
+      const bare = p.includes("/") ? p.slice(p.indexOf("/") + 1) : p;
+      set.add(!showFull && bare === "1-65535" ? "any" : p);
     });
     return [...set];
   }, [node.exposedPorts, showFull]);

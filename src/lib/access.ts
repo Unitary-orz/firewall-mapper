@@ -372,8 +372,14 @@ export function buildNodeAggregates(cfg: ParsedConfig, showDisabled = false): No
     const n = map.get(r.translatedPool);
     if (n) {
       n.inboundDnat.push(r);
-      const port = r.servicePort ?? r.origDstService;
-      if (port && !n.exposedPorts.includes(port)) n.exposedPorts.push(port);
+      // Exposed ports are the real ports behind the service token: a service
+      // group name must not show up where a port is expected.
+      const token = r.servicePort ?? r.origDstService;
+      if (token) {
+        serviceToPorts(token, cfg).forEach((p) => {
+          if (!n.exposedPorts.includes(p)) n.exposedPorts.push(p);
+        });
+      }
     }
   });
 
