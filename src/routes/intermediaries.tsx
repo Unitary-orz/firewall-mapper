@@ -509,6 +509,12 @@ function PolicyMiniList({
   rows: import("@/lib/parser/types").PolicyRule[];
   sideLabel: "src" | "dst";
 }) {
+  const { cfg } = useConfigStore();
+  const [showFull] = useShowFullPortRange();
+  // Show what the service token actually opens: a service group's name reads
+  // like an address, its ports do not.
+  const portsOf = (name?: string) =>
+    !name || name === "any" || !cfg ? "" : fmtPortList(serviceToPorts(name, cfg), showFull);
   const max = 6;
   const shown = rows.slice(0, max);
   return (
@@ -526,7 +532,9 @@ function PolicyMiniList({
           </span>
           <ArrowRight className="h-3 w-3 text-muted-foreground/60" />
           <span>{sideLabel === "src" ? p.dstAddr : p.srcAddr}</span>
-          <span className="text-muted-foreground/60">· {p.service}</span>
+          <span className="text-muted-foreground/60">
+            · {portsOf(p.service) || p.service}
+          </span>
           <span className="ml-auto">
             <LineLink line={p.lineNo} />
           </span>
