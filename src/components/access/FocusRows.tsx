@@ -341,6 +341,7 @@ export function DnatLabel({
   const [pinned, setPinned] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const suppressOpenRef = useRef(false);
 
   // Hover remains transient; a click pins the same card so touch users and
   // keyboard users can read it without keeping the pointer over the label.
@@ -417,6 +418,12 @@ export function DnatLabel({
           title="悬停查看详情，点击固定"
           onClick={togglePinned}
           onKeyDown={handleEscape}
+          onPointerLeave={() => {
+            suppressOpenRef.current = false;
+          }}
+          onBlur={() => {
+            if (!triggerRef.current?.matches(":hover")) suppressOpenRef.current = false;
+          }}
           data-pinned={pinned}
           className={cn("min-w-0 max-w-full cursor-pointer text-left", block && "w-full")}
         >
