@@ -395,11 +395,25 @@ export function DnatLabel({
   );
 
   return (
-    <HoverCard openDelay={120} closeDelay={80}>
+    <HoverCard open={open} onOpenChange={handleOpenChange} openDelay={120} closeDelay={80}>
       <HoverCardTrigger asChild>
-        <span className="cursor-help">{trigger}</span>
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-label={`${kind} #${entry.rule.id} 详情，点击固定`}
+          aria-expanded={open}
+          title="悬停查看详情，点击固定"
+          onClick={togglePinned}
+          className={cn("min-w-0 max-w-full cursor-pointer text-left", block && "w-full")}
+        >
+          {trigger}
+        </button>
       </HoverCardTrigger>
-      <HoverCardContent align="start" className="w-[26rem] p-3">
+      <HoverCardContent
+        ref={contentRef}
+        align="start"
+        className="max-h-[70vh] w-[26rem] max-w-[calc(100vw-2rem)] overflow-y-auto p-3"
+      >
         <div className="mb-2 flex items-center gap-2">
           <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
             {kind} #{entry.rule.id}
