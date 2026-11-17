@@ -369,7 +369,8 @@ export function DnatLabel({
     setOpen(next);
   };
   const togglePinned = () => {
-    suppressOpenRef.current = false;
+    // Unpinning while hovered must not immediately reopen the transient card.
+    suppressOpenRef.current = pinned;
     setPinned(!pinned);
     setOpen(!pinned);
   };
