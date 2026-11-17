@@ -528,7 +528,7 @@ function SearchPage() {
         <div className="space-y-0.5">
           <ObjectName name={r.origDstAddr} />
           <div>
-            <ObjectName name={r.origDstService} />
+            <ObjectName name={r.origDstService} prefer="service" />
           </div>
         </div>
       ),
