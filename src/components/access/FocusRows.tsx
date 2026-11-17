@@ -357,7 +357,6 @@ export function DnatLabel({
       if (event.key !== "Escape") return;
       setPinned(false);
       setOpen(false);
-      triggerRef.current?.focus();
     };
     document.addEventListener("pointerdown", dismiss);
     document.addEventListener("keydown", escape, true);
