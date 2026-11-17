@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getNodeAggregates } from "@/lib/access";
 import { downloadExcel, type ExportTable } from "@/lib/export";
+import { useShowDisabled } from "@/lib/uiPrefs";
 import type { ParsedConfig } from "@/lib/parser/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -31,6 +32,7 @@ function IndexPage() {
   const { cfg, audit, loadText, fileName, updatedAt } = useConfigStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  const [showDisabled] = useShowDisabled();
 
   const onFile = async (f: File) => {
     setLoading(true);
@@ -265,7 +267,16 @@ function IndexPage() {
               <Stat label="服务对象" value={cfg.services.length} to="/services" />
               <Stat label="服务组" value={cfg.serviceGroups.length} to="/services" />
               <Stat label="策略" value={cfg.policies.length} to="/policies" />
-              <Stat label="NAT 规则" value={cfg.natRules.length} to="/nat" />
+              <Stat
+                label="NAT 规则"
+                value={cfg.natRules.filter((r) => showDisabled || !r.disabled).length}
+                to="/nat"
+                hint={
+                  !showDisabled && cfg.natRules.some((r) => r.disabled)
+                    ? `已禁用 ${cfg.natRules.filter((r) => r.disabled).length} 条，默认隐藏`
+                    : undefined
+                }
+              />
               <Stat label="NAT 池" value={cfg.natPools.length} to="/nat" />
               <Stat label="中间节点" value={cfg.intermediaries.length} to="/intermediaries" />
             </div>
@@ -302,7 +313,17 @@ function IndexPage() {
   );
 }
 
-function Stat({ label, value, to }: { label: string; value: number; to: string }) {
+function Stat({
+  label,
+  value,
+  to,
+  hint,
+}: {
+  label: string;
+  value: number;
+  to: string;
+  hint?: string;
+}) {
   return (
     <Link
       to={to}
@@ -310,6 +331,7 @@ function Stat({ label, value, to }: { label: string; value: number; to: string }
     >
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="mt-1 font-mono text-2xl font-semibold">{value}</div>
+      {hint && <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>}
     </Link>
   );
 }

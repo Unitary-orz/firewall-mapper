@@ -95,7 +95,7 @@ function NatPage() {
 
   const dnatCols: Column<NatRule>[] = [
     idCol,
-    statusCol,
+    ...(showDisabled ? [statusCol] : []),
     ifaceCol,
     {
       key: "src",
@@ -138,7 +138,7 @@ function NatPage() {
 
   const snatCols: Column<NatRule>[] = [
     idCol,
-    statusCol,
+    ...(showDisabled ? [statusCol] : []),
     ifaceCol,
     {
       key: "src",
