@@ -334,6 +334,45 @@ export function DnatLabel({
       <span className="text-amber-700/70 dark:text-amber-300/70">:{ports}</span>
     ) : null;
   const entryCount = entryGroup ? groupMembers.length : 0;
+  const [open, setOpen] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Hover remains transient; a click pins the same card so touch users and
+  // keyboard users can read it without keeping the pointer over the label.
+  useEffect(() => {
+    if (!pinned) return;
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (triggerRef.current?.contains(target) || contentRef.current?.contains(target)) return;
+      setPinned(false);
+      setOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setPinned(false);
+      setOpen(false);
+      triggerRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [pinned]);
+
+  const handleOpenChange = (next: boolean) => {
+    // Radix asks to close on pointer leave; ignore that while click-pinned.
+    if (!next && pinned) return;
+    setOpen(next);
+  };
+  const togglePinned = () => {
+    setPinned(!pinned);
+    setOpen(!pinned);
+  };
   const trigger = (
     <span
       className={cn(
