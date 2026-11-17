@@ -29,6 +29,7 @@ import {
   type FocusCandidate,
   type FlowDnatEntry,
   type SvcRefKind,
+  serviceGroupMembers,
 } from "@/lib/access";
 import { ObjectName } from "@/components/ObjectPreview";
 import { cn } from "@/lib/utils";
@@ -314,7 +315,25 @@ export function DnatLabel({
   // group both show the real ports they stand for instead of their name.
   const entryPorts = fmtPortList(entry.entryPorts, showFull);
   const backendPorts = fmtPortList(entry.backendPorts, showFull);
-  const isGroup = entry.entryKind === "service-group" || entry.backendKind === "service-group";
+  const { cfg } = useConfigStore();
+  const entryGroup = entry.entryKind === "service-group" ? entry.entryPort : "";
+  const backendGroup = entry.backendKind === "service-group" ? entry.backendPort : "";
+  const backendSame = entry.backendPort === entry.entryPort;
+  const groupMembers = useMemo(
+    () => (cfg && (entryGroup || backendGroup) ? serviceGroupMembers(entryGroup || backendGroup, cfg) : []),
+    [cfg, entryGroup, backendGroup],
+  );
+  const svcTok = (group: string, ports: string, count: number) =>
+    group ? (
+      <span className="text-amber-700/70 dark:text-amber-300/70">
+        :<span className="mx-0.5 rounded bg-amber-500/15 px-1 text-[10px]">组</span>
+        {group}
+        {count > 0 && <span className="opacity-70"> ·{count}</span>}
+      </span>
+    ) : ports ? (
+      <span className="text-amber-700/70 dark:text-amber-300/70">:{ports}</span>
+    ) : null;
+  const entryCount = entryGroup ? groupMembers.length : 0;
   const trigger = (
     <span
       className={cn(
@@ -325,23 +344,13 @@ export function DnatLabel({
       <span className="shrink-0 font-semibold text-amber-700 dark:text-amber-300">{kind}</span>
       <span className="min-w-0 truncate text-muted-foreground">
         {entry.entryAddr}
-        {entryPorts && (
-          <span className="text-amber-700/70 dark:text-amber-300/70">:{entryPorts}</span>
-        )}
+        {svcTok(entryGroup, entryPorts, entryCount)}
       </span>
       <ArrowRight className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
       <span className="min-w-0 truncate text-amber-700 dark:text-amber-300">
         {entry.rule.translatedPool}
-        {backendPorts && backendPorts !== entryPorts && (
-          <span className="text-amber-700/70 dark:text-amber-300/70">:{backendPorts}</span>
-        )}
+        {!backendSame && backendPorts !== entryPorts && svcTok(backendGroup, backendPorts, backendGroup && !entryGroup ? groupMembers.length : 0)}
       </span>
-
-      {isGroup && (
-        <span className="shrink-0 rounded bg-amber-500/15 px-1 text-[10px] text-amber-700 dark:text-amber-300">
-          组
-        </span>
-      )}
       {entry.rule.disabled && <Badge tone="warn">disabled</Badge>}
     </span>
   );
@@ -373,9 +382,7 @@ export function DnatLabel({
             </span>
             <span className="break-all text-muted-foreground">
               {entry.entryAddr}
-              {entryPorts && (
-                <span className="text-amber-700/70 dark:text-amber-300/70">:{entryPorts}</span>
-              )}
+              {svcTok(entryGroup, entryPorts, 0)}
             </span>
           </div>
 
@@ -385,28 +392,36 @@ export function DnatLabel({
             </span>
             <span className="break-all text-amber-700 dark:text-amber-300">
               {entry.rule.translatedPool}
-              {backendPorts && (
-                <span className="text-amber-700/70 dark:text-amber-300/70">:{backendPorts}</span>
+              {backendSame ? (
+                <span className="ml-2 text-muted-foreground">（服务不变）</span>
+              ) : (
+                svcTok(backendGroup, backendPorts, 0)
               )}
             </span>
           </div>
 
-          <div className="flex items-baseline gap-2">
-            <span className="w-16 shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
-              服务
-            </span>
-            <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <Badge tone={entry.entryKind === "service-group" ? "default" : "muted"}>
-                {svcKindLabel[entry.entryKind]}
-              </Badge>
-              <ObjectName name={entry.rule.origDstService || "any"} prefer="service" />
-              {entry.rule.servicePort && (
-                <span className="text-muted-foreground">
-                  后端 service {entry.rule.servicePort}
-                </span>
-              )}
-            </span>
-          </div>
+          {groupMembers.length > 0 && (
+            <div className="flex items-baseline gap-2">
+              <span className="w-16 shrink-0 text-[10px] tracking-wide text-muted-foreground">
+                服务组成员
+              </span>
+              <div className="min-w-0 flex-1 space-y-0.5">
+                {groupMembers.slice(0, 6).map((m) => (
+                  <div key={m.name} className="flex items-baseline justify-between gap-3">
+                    <span className="min-w-0 truncate">
+                      <ObjectName name={m.name} prefer="service" />
+                    </span>
+                    <span className="shrink-0 text-amber-700/70 dark:text-amber-300/70">
+                      {m.ports.map((p) => fmtPort(p, showFull)).join(", ")}
+                    </span>
+                  </div>
+                ))}
+                {groupMembers.length > 6 && (
+                  <div className="text-muted-foreground">+{groupMembers.length - 6} 个</div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </HoverCardContent>
     </HoverCard>
@@ -419,12 +434,6 @@ export function fmtPort(p: string, showFull: boolean): string {
   return p;
 }
 
-const svcKindLabel: Record<SvcRefKind, string> = {
-  service: "服务对象",
-  "service-group": "服务组",
-  literal: "字面端口",
-  any: "通配",
-};
 
 /** Compact port list for the pill: already-resolved ports, full ranges folded
  *  to `any` (and hidden), long lists shortened to `first +N`. */

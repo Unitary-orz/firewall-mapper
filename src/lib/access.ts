@@ -1035,3 +1035,23 @@ export function sortFlows(flows: Flow[]): Flow[] {
     (a, b) => score(a) - score(b) || a.src.localeCompare(b.src) || a.dst.localeCompare(b.dst),
   );
 }
+
+/** Leaf service objects behind a service group (nested groups flattened),
+ *  each paired with its real ports. */
+export function serviceGroupMembers(
+  name: string,
+  cfg: ParsedConfig,
+): { name: string; ports: string[] }[] {
+  const i = lookupIndex(cfg);
+  const out: { name: string; ports: string[] }[] = [];
+  const seen = new Set<string>();
+  const walk = (n: string) => {
+    if (seen.has(n)) return;
+    seen.add(n);
+    const g = i.svcGrpByName.get(n);
+    if (g) return g.members.forEach(walk);
+    out.push({ name: n, ports: serviceToPorts(n, cfg) });
+  };
+  walk(name);
+  return out;
+}
