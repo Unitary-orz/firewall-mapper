@@ -354,25 +354,22 @@ export function DnatLabel({
       setPinned(false);
       setOpen(false);
     };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setPinned(false);
-      setOpen(false);
-    };
     document.addEventListener("pointerdown", dismiss);
-    document.addEventListener("keydown", escape, true);
     return () => {
       document.removeEventListener("pointerdown", dismiss);
-      document.removeEventListener("keydown", escape, true);
     };
   }, [pinned]);
 
   const handleOpenChange = (next: boolean) => {
+    // Escape closes the card even while it is focused or hovered. Do not let
+    // that same focus/hover immediately open it again.
+    if (next && suppressOpenRef.current) return;
     // Radix asks to close on pointer leave; ignore that while click-pinned.
     if (!next && pinned) return;
     setOpen(next);
   };
   const togglePinned = () => {
+    suppressOpenRef.current = false;
     setPinned(!pinned);
     setOpen(!pinned);
   };
@@ -380,9 +377,9 @@ export function DnatLabel({
     if (event.key !== "Escape") return;
     event.preventDefault();
     event.stopPropagation();
+    suppressOpenRef.current = true;
     setPinned(false);
     setOpen(false);
-    triggerRef.current?.focus();
   };
   const trigger = (
     <span
