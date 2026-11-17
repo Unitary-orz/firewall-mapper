@@ -422,7 +422,6 @@ export function DnatLabel({
           onBlur={() => {
             if (!triggerRef.current?.matches(":hover")) suppressOpenRef.current = false;
           }}
-          data-pinned={pinned}
           className={cn("min-w-0 max-w-full cursor-pointer text-left", block && "w-full")}
         >
           {trigger}
