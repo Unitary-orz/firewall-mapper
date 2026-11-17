@@ -492,7 +492,6 @@ export function fmtPort(p: string, showFull: boolean): string {
   return p;
 }
 
-
 /** Compact port list for the pill: already-resolved ports, full ranges folded
  *  to `any` (and hidden), long lists shortened to `first +N`. */
 export function fmtPortList(ports: string[], showFull: boolean): string {
