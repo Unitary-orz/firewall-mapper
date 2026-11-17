@@ -201,16 +201,29 @@ interface IndirectSection {
 
 export function RefsPreview({ name, kind }: { name: string; kind: "address" | "service" }) {
   const { cfg, xr } = useConfigStore();
+  const [showDisabled] = useShowDisabled();
   const refs = xr
     ? kind === "service"
       ? (xr.serviceUsedBy.get(name) ?? [])
       : (xr.addressUsedBy.get(name) ?? [])
     : [];
 
+  // Disabled NAT rules are hidden by default, so their references (direct or
+  // via a group) stay out of the preview until the display option is turned on.
+  const disabledNatIds = useMemo(
+    () =>
+      showDisabled || !cfg
+        ? new Set<string>()
+        : new Set(cfg.natRules.filter((r) => r.disabled).map((r) => r.id)),
+    [cfg, showDisabled],
+  );
+  const isHiddenNat = (by: string, id: string) => by === "nat" && disabledNatIds.has(id);
+
   const sections = useMemo<Section[]>(() => {
     if (!cfg) return [];
     const groups = new Map<RefUsage["by"], RefUsage[]>();
     refs.forEach((r) => {
+      if (isHiddenNat(r.by, r.id)) return;
       const arr = groups.get(r.by) ?? [];
       arr.push(r);
       groups.set(r.by, arr);
@@ -251,7 +264,7 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
         }
         return { by, items, anyAnyCount };
       });
-  }, [cfg, refs]);
+  }, [cfg, refs, disabledNatIds]);
 
   const indirectSections = useMemo<IndirectSection[]>(() => {
     if (!cfg || !xr) return [];
@@ -267,6 +280,7 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
       const usages = usedByMap.get(gname) ?? [];
       for (const u of usages) {
         if (u.by !== "policy" && u.by !== "nat") continue;
+        if (isHiddenNat(u.by, u.id)) continue;
         const key = `${u.by}#${u.id}`;
         if (directKeys.has(key)) continue;
         const existing = acc.get(key);

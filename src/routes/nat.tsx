@@ -5,6 +5,8 @@ import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, DataTable, LineLink, type Column } from "@/components/DataTable";
 import { ObjectName } from "@/components/ObjectPreview";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { useShowDisabled, setShowDisabled } from "@/lib/uiPrefs";
 import type { NatRule } from "@/lib/parser/types";
 
 export const Route = createFileRoute("/nat")({
@@ -22,12 +24,24 @@ export const Route = createFileRoute("/nat")({
 
 function NatPage() {
   const { cfg, xr } = useConfigStore();
+  const [showDisabled] = useShowDisabled();
 
   const dnatRules = useMemo(
-    () => cfg?.natRules.filter((r) => r.kind === "destination" || r.kind === "static") ?? [],
-    [cfg],
+    () =>
+      cfg?.natRules.filter(
+        (r) => (r.kind === "destination" || r.kind === "static") && (showDisabled || !r.disabled),
+      ) ?? [],
+    [cfg, showDisabled],
   );
-  const snatRules = useMemo(() => cfg?.natRules.filter((r) => r.kind === "source") ?? [], [cfg]);
+  const snatRules = useMemo(
+    () =>
+      cfg?.natRules.filter((r) => r.kind === "source" && (showDisabled || !r.disabled)) ?? [],
+    [cfg, showDisabled],
+  );
+  const hiddenCount = useMemo(
+    () => (cfg && !showDisabled ? cfg.natRules.filter((r) => r.disabled).length : 0),
+    [cfg, showDisabled],
+  );
 
   if (!cfg) return <EmptyConfig />;
 
@@ -199,6 +213,19 @@ function NatPage() {
         防火墙看到的源/目的与业务理解的可能不同。NAT 规则把外部访问映射到内部 IP，
         或把内部源改写为对外可路由地址，是「源地址不一致」的根源。
       </p>
+      {hiddenCount > 0 && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>已隐藏 {hiddenCount} 条已禁用规则</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-xs"
+            onClick={() => setShowDisabled(true)}
+          >
+            显示
+          </Button>
+        </div>
+      )}
       <Tabs defaultValue="dnat">
         <TabsList>
           <TabsTrigger value="dnat">目的 NAT ({dnatRules.length})</TabsTrigger>

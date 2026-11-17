@@ -85,6 +85,7 @@ function SearchPage() {
   const urlSearch = useSearch({ strict: false }) as SearchParams;
   const inputRef = useRef<HTMLInputElement>(null);
   const [showFull] = useShowFullPortRange();
+  const [showDisabled] = useShowDisabled();
 
   const query = urlSearch.q ?? "";
 
@@ -196,7 +197,7 @@ function SearchPage() {
       natRules,
       natPools,
     };
-  }, [query, cfg, xr]);
+  }, [query, cfg, xr, showDisabled]);
 
   /* ---- compute tabs ---- */
 
