@@ -8,7 +8,7 @@ import { RefsPreview } from "@/components/RefsPreview";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useShowFullPortRange } from "@/lib/uiPrefs";
+import { useShowFullPortRange, useShowDisabled } from "@/lib/uiPrefs";
 import { isIpLiteral, serviceToPorts, findAddressesContainingIp } from "@/lib/access";
 import { Search, X } from "lucide-react";
 import type {
@@ -166,6 +166,7 @@ function SearchPage() {
 
     // NAT rules
     const natRules = cfg.natRules.filter((r) => {
+      if (!showDisabled && r.disabled) return false;
       if (matchesText(r.id) || matchesText(r.iface) || matchesText(r.kind)) return true;
       if (matchesText(r.description)) return true;
       const addressHit =

@@ -3,7 +3,12 @@ import { useConfigStore } from "@/lib/store";
 import type { CrossRef } from "@/lib/parser";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, LineLink } from "@/components/DataTable";
-import { useShowFullPortRange, useShowLineNumbers, useShowPolicyZone } from "@/lib/uiPrefs";
+import {
+  useShowFullPortRange,
+  useShowLineNumbers,
+  useShowPolicyZone,
+  useShowDisabled,
+} from "@/lib/uiPrefs";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Command,
@@ -114,7 +119,8 @@ function AccessGraphPage() {
     });
   };
 
-  const allLines = useMemo(() => (cfg ? getFocusLines(cfg) : []), [cfg]);
+  const [showDisabled] = useShowDisabled();
+  const allLines = useMemo(() => (cfg ? getFocusLines(cfg, showDisabled) : []), [cfg, showDisabled]);
   const candidates = useMemo(() => focusCandidates(allLines, focus), [allLines, focus]);
   const lines = useMemo(
     () => (cfg ? filterLinesByFocus(allLines, focus, id, cfg) : []),

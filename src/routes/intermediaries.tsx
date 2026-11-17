@@ -27,7 +27,7 @@ import {
   type NodeAggregate,
   isIpLiteral,
 } from "@/lib/access";
-import { useShowFullPortRange } from "@/lib/uiPrefs";
+import { useShowFullPortRange, useShowDisabled } from "@/lib/uiPrefs";
 
 export const Route = createFileRoute("/intermediaries")({
   head: () => ({
@@ -121,7 +121,11 @@ function IntermediariesPage() {
   const [q, setQ] = useState("");
   const [activeCat, setActiveCat] = useState<IntermediaryCat | null>(null);
 
-  const nodes = useMemo(() => (cfg ? getNodeAggregates(cfg) : []), [cfg]);
+  const [showDisabled] = useShowDisabled();
+  const nodes = useMemo(
+    () => (cfg ? getNodeAggregates(cfg, showDisabled) : []),
+    [cfg, showDisabled],
+  );
 
   const filtered = useMemo(() => {
     const needleRaw = q.trim();
