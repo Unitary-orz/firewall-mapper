@@ -310,8 +310,11 @@ export function DnatLabel({
 }) {
   const [showLineNo] = useShowLineNumbers();
   const kind = entry.rule.kind === "source" ? "SNAT" : "DNAT";
-  const entryPort = entry.entryPort ? fmtPort(entry.entryPort, showFull) : "";
-  const backendPort = entry.backendPort ? fmtPort(entry.backendPort, showFull) : "";
+  // Ports are resolved from the service token, so a service object or a service
+  // group both show the real ports they stand for instead of their name.
+  const entryPorts = fmtPortList(entry.entryPorts, showFull);
+  const backendPorts = fmtPortList(entry.backendPorts, showFull);
+  const isGroup = entry.entryKind === "service-group" || entry.backendKind === "service-group";
   const trigger = (
     <span
       className={cn(
@@ -322,18 +325,23 @@ export function DnatLabel({
       <span className="shrink-0 font-semibold text-amber-700 dark:text-amber-300">{kind}</span>
       <span className="min-w-0 truncate text-muted-foreground">
         {entry.entryAddr}
-        {entryPort && (
-          <span className="text-amber-700/70 dark:text-amber-300/70">:{entryPort}</span>
+        {entryPorts && (
+          <span className="text-amber-700/70 dark:text-amber-300/70">:{entryPorts}</span>
         )}
       </span>
       <ArrowRight className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
       <span className="min-w-0 truncate text-amber-700 dark:text-amber-300">
         {entry.rule.translatedPool}
-        {backendPort && backendPort !== entryPort && (
-          <span className="text-amber-700/70 dark:text-amber-300/70">:{backendPort}</span>
+        {backendPorts && backendPorts !== entryPorts && (
+          <span className="text-amber-700/70 dark:text-amber-300/70">:{backendPorts}</span>
         )}
       </span>
 
+      {isGroup && (
+        <span className="shrink-0 rounded bg-amber-500/15 px-1 text-[10px] text-amber-700 dark:text-amber-300">
+          组
+        </span>
+      )}
       {entry.rule.disabled && <Badge tone="warn">disabled</Badge>}
     </span>
   );
@@ -365,8 +373,8 @@ export function DnatLabel({
             </span>
             <span className="break-all text-muted-foreground">
               {entry.entryAddr}
-              {entryPort && (
-                <span className="text-amber-700/70 dark:text-amber-300/70">:{entryPort}</span>
+              {entryPorts && (
+                <span className="text-amber-700/70 dark:text-amber-300/70">:{entryPorts}</span>
               )}
             </span>
           </div>
@@ -377,8 +385,25 @@ export function DnatLabel({
             </span>
             <span className="break-all text-amber-700 dark:text-amber-300">
               {entry.rule.translatedPool}
-              {backendPort && (
-                <span className="text-amber-700/70 dark:text-amber-300/70">:{backendPort}</span>
+              {backendPorts && (
+                <span className="text-amber-700/70 dark:text-amber-300/70">:{backendPorts}</span>
+              )}
+            </span>
+          </div>
+
+          <div className="flex items-baseline gap-2">
+            <span className="w-16 shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
+              服务
+            </span>
+            <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <Badge tone={entry.entryKind === "service-group" ? "default" : "muted"}>
+                {svcKindLabel[entry.entryKind]}
+              </Badge>
+              <ObjectName name={entry.rule.origDstService || "any"} prefer="service" />
+              {entry.rule.servicePort && (
+                <span className="text-muted-foreground">
+                  后端 service {entry.rule.servicePort}
+                </span>
               )}
             </span>
           </div>
@@ -392,4 +417,32 @@ export function fmtPort(p: string, showFull: boolean): string {
   if (!p) return "";
   if (!showFull && p === "1-65535") return "any";
   return p;
+}
+
+const svcKindLabel: Record<SvcRefKind, string> = {
+  service: "服务对象",
+  "service-group": "服务组",
+  literal: "字面端口",
+  any: "通配",
+};
+
+/** Compact port list for the pill: already-resolved ports, full ranges folded
+ *  to `any` (and hidden), long lists shortened to `first +N`. */
+export function fmtPortList(ports: string[], showFull: boolean): string {
+  const out: string[] = [];
+  for (const p of ports) {
+    const slash = p.indexOf("/");
+    const proto = slash > 0 ? p.slice(0, slash) : "";
+    const port = slash > 0 ? p.slice(slash + 1) : p;
+    if (!showFull && port === "1-65535") {
+      if (!out.includes("any")) out.push("any");
+      continue;
+    }
+    const shown = proto ? `${proto}/${port}` : port;
+    if (!out.includes(shown)) out.push(shown);
+  }
+  const real = out.filter((p) => p !== "any");
+  if (real.length === 0) return "";
+  if (real.length === 1) return real[0];
+  return `${real[0]} +${real.length - 1}`;
 }
