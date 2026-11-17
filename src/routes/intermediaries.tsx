@@ -422,7 +422,11 @@ function NodeDetail({ node }: { node: NodeAggregate }) {
   // Service tokens (object or group names) render as the real ports they stand
   // for, so a service-group name never reads as a port.
   const portsOf = (name?: string) =>
-    !name || name === "any" || !cfg ? "" : fmtPortList(serviceToPorts(name, cfg), showFull);
+    !name || name === "any" || !cfg
+      ? ""
+      : cfg.serviceGroups.some((g) => g.name === name)
+        ? `组 ${name}`
+        : fmtPortList(serviceToPorts(name, cfg), showFull);
 
   return (
     <div className="space-y-3 text-xs">
@@ -515,7 +519,11 @@ function PolicyMiniList({
   // Show what the service token actually opens: a service group's name reads
   // like an address, its ports do not.
   const portsOf = (name?: string) =>
-    !name || name === "any" || !cfg ? "" : fmtPortList(serviceToPorts(name, cfg), showFull);
+    !name || name === "any" || !cfg
+      ? ""
+      : cfg.serviceGroups.some((g) => g.name === name)
+        ? `组 ${name}`
+        : fmtPortList(serviceToPorts(name, cfg), showFull);
   const max = 6;
   const shown = rows.slice(0, max);
   return (
