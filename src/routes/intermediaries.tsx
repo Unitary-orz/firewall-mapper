@@ -23,10 +23,12 @@ import {
 import {
   getNodeAggregates,
   CAT_LABEL,
+  serviceToPorts,
   type IntermediaryCat,
   type NodeAggregate,
   isIpLiteral,
 } from "@/lib/access";
+import { fmtPortList } from "@/components/access/FocusRows";
 import { useShowFullPortRange, useShowDisabled } from "@/lib/uiPrefs";
 
 export const Route = createFileRoute("/intermediaries")({
@@ -414,8 +416,12 @@ function NodeCard({ node }: { node: NodeAggregate }) {
 // ---------- NodeDetail ----------
 
 function NodeDetail({ node }: { node: NodeAggregate }) {
+  const { cfg } = useConfigStore();
   const [showFull] = useShowFullPortRange();
-  const fmtPort = (p?: string) => (!p ? "" : !showFull && p === "1-65535" ? "any" : p);
+  // Service tokens (object or group names) render as the real ports they stand
+  // for, so a service-group name never reads as a port.
+  const portsOf = (name?: string) =>
+    !name || name === "any" || !cfg ? "" : fmtPortList(serviceToPorts(name, cfg), showFull);
 
   return (
     <div className="space-y-3 text-xs">
@@ -434,13 +440,13 @@ function NodeDetail({ node }: { node: NodeAggregate }) {
               >
                 <Badge tone="muted">#{r.id}</Badge>
                 <span>{r.origDstAddr}</span>
-                {r.origDstService && r.origDstService !== "any" && (
-                  <span className="text-muted-foreground">:{fmtPort(r.origDstService)}</span>
+                {portsOf(r.origDstService) && (
+                  <span className="text-muted-foreground">:{portsOf(r.origDstService)}</span>
                 )}
                 <ArrowRight className="h-3 w-3 text-muted-foreground" />
                 <span className="font-medium">{r.translatedPool}</span>
-                {r.servicePort && (
-                  <span className="text-muted-foreground">:{fmtPort(r.servicePort)}</span>
+                {portsOf(r.servicePort) && (
+                  <span className="text-muted-foreground">:{portsOf(r.servicePort)}</span>
                 )}
                 <span className="ml-auto">
                   <LineLink line={r.lineNo} />

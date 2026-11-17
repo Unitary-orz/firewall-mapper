@@ -6,6 +6,7 @@ import type { RefUsage } from "@/lib/parser";
 import { L, DescQuote } from "@/components/previewAtoms";
 import type { NatRule, PolicyRule } from "@/lib/parser/types";
 import { useShowPolicyZone, useShowDisabled } from "@/lib/uiPrefs";
+import { serviceRefKind } from "@/lib/access";
 
 const byLabel: Record<RefUsage["by"], string> = {
   policy: "策略",
@@ -115,7 +116,12 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
 }
 
 function NatLine({ n, hit }: { n: NatRule; hit: string }) {
+  const { cfg } = useConfigStore();
   const k = natKindLabel[n.kind] ?? n.kind;
+  // A service token can be a group; say so instead of letting the name sit in
+  // the port position unexplained.
+  const svcIsGroup =
+    cfg ? serviceRefKind(n.origDstService ?? "", cfg) === "service-group" : false;
   const hasMeta = n.disabled || n.log || n.description || n.id;
   return (
     <div className="space-y-0.5">
@@ -126,7 +132,16 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
             <H hit={hit} value={n.srcAddr} />
             <span className="text-muted-foreground">→</span>
             <H hit={hit} value={n.origDstAddr} />
-            {n.origDstService && <span className="text-muted-foreground">:{n.origDstService}</span>}
+            {n.origDstService && (
+              <span className="text-muted-foreground">
+                :<H hit={hit} value={n.origDstService} />
+                {svcIsGroup && (
+                  <span className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                    服务组
+                  </span>
+                )}
+              </span>
+            )}
           </span>
           <span className="flex items-baseline gap-1 min-w-0">
             <L>转换为</L>
