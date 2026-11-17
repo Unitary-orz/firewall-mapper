@@ -8,7 +8,7 @@ import { RefsPreview } from "@/components/RefsPreview";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useShowFullPortRange } from "@/lib/uiPrefs";
+import { useShowFullPortRange, useShowDisabled } from "@/lib/uiPrefs";
 import { isIpLiteral, serviceToPorts, findAddressesContainingIp } from "@/lib/access";
 import { Search, X } from "lucide-react";
 import type {
@@ -85,6 +85,7 @@ function SearchPage() {
   const urlSearch = useSearch({ strict: false }) as SearchParams;
   const inputRef = useRef<HTMLInputElement>(null);
   const [showFull] = useShowFullPortRange();
+  const [showDisabled] = useShowDisabled();
 
   const query = urlSearch.q ?? "";
 
@@ -166,6 +167,7 @@ function SearchPage() {
 
     // NAT rules
     const natRules = cfg.natRules.filter((r) => {
+      if (!showDisabled && r.disabled) return false;
       if (matchesText(r.id) || matchesText(r.iface) || matchesText(r.kind)) return true;
       if (matchesText(r.description)) return true;
       const addressHit =
@@ -195,7 +197,7 @@ function SearchPage() {
       natRules,
       natPools,
     };
-  }, [query, cfg, xr]);
+  }, [query, cfg, xr, showDisabled]);
 
   /* ---- compute tabs ---- */
 
@@ -526,7 +528,7 @@ function SearchPage() {
         <div className="space-y-0.5">
           <ObjectName name={r.origDstAddr} />
           <div>
-            <ObjectName name={r.origDstService} />
+            <ObjectName name={r.origDstService} prefer="service" />
           </div>
         </div>
       ),

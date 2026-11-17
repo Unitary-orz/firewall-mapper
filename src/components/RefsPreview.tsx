@@ -5,7 +5,8 @@ import { useConfigStore } from "@/lib/store";
 import type { RefUsage } from "@/lib/parser";
 import { L, DescQuote } from "@/components/previewAtoms";
 import type { NatRule, PolicyRule } from "@/lib/parser/types";
-import { useShowPolicyZone } from "@/lib/uiPrefs";
+import { useShowPolicyZone, useShowDisabled } from "@/lib/uiPrefs";
+import { serviceRefKind } from "@/lib/access";
 
 const byLabel: Record<RefUsage["by"], string> = {
   policy: "策略",
@@ -115,7 +116,12 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
 }
 
 function NatLine({ n, hit }: { n: NatRule; hit: string }) {
+  const { cfg } = useConfigStore();
   const k = natKindLabel[n.kind] ?? n.kind;
+  // A service token can be a group; say so instead of letting the name sit in
+  // the port position unexplained.
+  const svcIsGroup =
+    cfg ? serviceRefKind(n.origDstService ?? "", cfg) === "service-group" : false;
   const hasMeta = n.disabled || n.log || n.description || n.id;
   return (
     <div className="space-y-0.5">
@@ -126,7 +132,16 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
             <H hit={hit} value={n.srcAddr} />
             <span className="text-muted-foreground">→</span>
             <H hit={hit} value={n.origDstAddr} />
-            {n.origDstService && <span className="text-muted-foreground">:{n.origDstService}</span>}
+            {n.origDstService && (
+              <span className="text-muted-foreground">
+                :<H hit={hit} value={n.origDstService} />
+                {svcIsGroup && (
+                  <span className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                    服务组
+                  </span>
+                )}
+              </span>
+            )}
           </span>
           <span className="flex items-baseline gap-1 min-w-0">
             <L>转换为</L>
@@ -201,16 +216,29 @@ interface IndirectSection {
 
 export function RefsPreview({ name, kind }: { name: string; kind: "address" | "service" }) {
   const { cfg, xr } = useConfigStore();
+  const [showDisabled] = useShowDisabled();
   const refs = xr
     ? kind === "service"
       ? (xr.serviceUsedBy.get(name) ?? [])
       : (xr.addressUsedBy.get(name) ?? [])
     : [];
 
+  // Disabled NAT rules are hidden by default, so their references (direct or
+  // via a group) stay out of the preview until the display option is turned on.
+  const disabledNatIds = useMemo(
+    () =>
+      showDisabled || !cfg
+        ? new Set<string>()
+        : new Set(cfg.natRules.filter((r) => r.disabled).map((r) => r.id)),
+    [cfg, showDisabled],
+  );
+  const isHiddenNat = (by: string, id: string) => by === "nat" && disabledNatIds.has(id);
+
   const sections = useMemo<Section[]>(() => {
     if (!cfg) return [];
     const groups = new Map<RefUsage["by"], RefUsage[]>();
     refs.forEach((r) => {
+      if (isHiddenNat(r.by, r.id)) return;
       const arr = groups.get(r.by) ?? [];
       arr.push(r);
       groups.set(r.by, arr);
@@ -251,7 +279,7 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
         }
         return { by, items, anyAnyCount };
       });
-  }, [cfg, refs]);
+  }, [cfg, refs, disabledNatIds]);
 
   const indirectSections = useMemo<IndirectSection[]>(() => {
     if (!cfg || !xr) return [];
@@ -267,6 +295,7 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
       const usages = usedByMap.get(gname) ?? [];
       for (const u of usages) {
         if (u.by !== "policy" && u.by !== "nat") continue;
+        if (isHiddenNat(u.by, u.id)) continue;
         const key = `${u.by}#${u.id}`;
         if (directKeys.has(key)) continue;
         const existing = acc.get(key);

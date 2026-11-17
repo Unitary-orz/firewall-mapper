@@ -39,9 +39,11 @@ interface AccessIndex {
   expandAddr: Map<string, Set<string>>;
   expandSvc: Map<string, Set<string>>;
   addrContainsIp: Map<string, string[]>;
-  flows?: Flow[];
-  focusLines?: FocusLine[];
-  nodeAggregates?: NodeAggregate[];
+  // Cached per "show disabled NAT" state so toggling the display option does
+  // not invalidate the name/endpoints indexes above.
+  flowsByDisabled?: Map<boolean, Flow[]>;
+  focusLinesByDisabled?: Map<boolean, FocusLine[]>;
+  nodeAggregatesByDisabled?: Map<boolean, NodeAggregate[]>;
 }
 
 const indexCache = new WeakMap<ParsedConfig, AccessIndex>();
@@ -71,24 +73,47 @@ export function lookupIndex(cfg: ParsedConfig) {
   return idx(cfg);
 }
 
+/** NAT rules the current display state should surface. Disabled rules stay
+ *  hidden unless the caller opts in, so a `disable`d rule never creates a
+ *  flow branch, a node aggregate entry or a list row by default. */
+export function visibleNatRules(cfg: ParsedConfig, showDisabled = false): NatRule[] {
+  return showDisabled ? cfg.natRules : cfg.natRules.filter((r) => !r.disabled);
+}
+
 /** Cached top-level flow + focus-line builders so navigating away and back
- *  does not re-run buildFlows / buildFocusLines from scratch. */
-export function getFlows(cfg: ParsedConfig): Flow[] {
+ *  does not re-run buildFlows / buildFocusLines from scratch. Results are
+ *  keyed on the "show disabled NAT" display option. */
+export function getFlows(cfg: ParsedConfig, showDisabled = false): Flow[] {
   const i = idx(cfg);
-  if (!i.flows) i.flows = buildFlows(cfg);
-  return i.flows;
+  let m = i.flowsByDisabled;
+  if (!m) m = i.flowsByDisabled = new Map();
+  const hit = m.get(showDisabled);
+  if (hit) return hit;
+  const v = buildFlows(cfg, showDisabled);
+  m.set(showDisabled, v);
+  return v;
 }
 
-export function getFocusLines(cfg: ParsedConfig): FocusLine[] {
+export function getFocusLines(cfg: ParsedConfig, showDisabled = false): FocusLine[] {
   const i = idx(cfg);
-  if (!i.focusLines) i.focusLines = buildFocusLines(getFlows(cfg), cfg);
-  return i.focusLines;
+  let m = i.focusLinesByDisabled;
+  if (!m) m = i.focusLinesByDisabled = new Map();
+  const hit = m.get(showDisabled);
+  if (hit) return hit;
+  const v = buildFocusLines(getFlows(cfg, showDisabled), cfg);
+  m.set(showDisabled, v);
+  return v;
 }
 
-export function getNodeAggregates(cfg: ParsedConfig): NodeAggregate[] {
+export function getNodeAggregates(cfg: ParsedConfig, showDisabled = false): NodeAggregate[] {
   const i = idx(cfg);
-  if (!i.nodeAggregates) i.nodeAggregates = buildNodeAggregates(cfg);
-  return i.nodeAggregates;
+  let m = i.nodeAggregatesByDisabled;
+  if (!m) m = i.nodeAggregatesByDisabled = new Map();
+  const hit = m.get(showDisabled);
+  if (hit) return hit;
+  const v = buildNodeAggregates(cfg, showDisabled);
+  m.set(showDisabled, v);
+  return v;
 }
 
 export function classifyIntermediary(name: string): IntermediaryCat | undefined {
@@ -295,7 +320,7 @@ export interface NodeAggregate {
   exposedPorts: string[];
 }
 
-export function buildNodeAggregates(cfg: ParsedConfig): NodeAggregate[] {
+export function buildNodeAggregates(cfg: ParsedConfig, showDisabled = false): NodeAggregate[] {
   const map = new Map<string, NodeAggregate>();
   const ensure = (name: string, cat: IntermediaryCat, address?: string, lineNo?: number) => {
     const cur = map.get(name);
@@ -343,18 +368,37 @@ export function buildNodeAggregates(cfg: ParsedConfig): NodeAggregate[] {
     const b = map.get(p.dstAddr);
     if (b) b.inboundPolicies.push(p);
   });
-  cfg.natRules.forEach((r) => {
+  visibleNatRules(cfg, showDisabled).forEach((r) => {
     const n = map.get(r.translatedPool);
     if (n) {
       n.inboundDnat.push(r);
-      const port = r.servicePort ?? r.origDstService;
-      if (port && !n.exposedPorts.includes(port)) n.exposedPorts.push(port);
+      // Exposed ports are the real ports behind the service token: a service
+      // group name must not show up where a port is expected.
+      const token = r.servicePort ?? r.origDstService;
+      if (token) {
+        serviceToPorts(token, cfg).forEach((p) => {
+          if (!n.exposedPorts.includes(p)) n.exposedPorts.push(p);
+        });
+      }
     }
   });
 
   return [...map.values()].sort(
     (a, b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name),
   );
+}
+
+export type SvcRefKind = "service" | "service-group" | "literal" | "any";
+
+/** What a service token really refers to: a service object, a service group
+ *  (several objects), a literal port/protocol, or the `any` wildcard. The UI
+ *  uses this so a group name like `172.23.51.9` never reads as a port. */
+export function serviceRefKind(name: string, cfg: ParsedConfig): SvcRefKind {
+  if (!name || name === "any") return "any";
+  const i = lookupIndex(cfg);
+  if (i.svcByName.has(name)) return "service";
+  if (i.svcGrpByName.has(name)) return "service-group";
+  return "literal";
 }
 
 // ---------- flow model: aggregate src→dst with DNAT + policies ----------
@@ -364,6 +408,12 @@ export interface FlowDnatEntry {
   entryAddr: string;
   entryPort: string; // "" if any
   backendPort: string; // "" if not translated; equals entryPort when no port change
+  /** Literal ports behind entryPort / backendPort (["any"] when unrestricted). */
+  entryPorts: string[];
+  backendPorts: string[];
+  /** Whether each service token is an object, a group, a literal or `any`. */
+  entryKind: SvcRefKind;
+  backendKind: SvcRefKind;
 }
 
 export interface FlowPolicySegment {
@@ -420,7 +470,7 @@ export function serviceToPorts(name: string, cfg: ParsedConfig, seen?: Set<strin
   return [name]; // literal "tcp/443" or unknown
 }
 
-export function buildFlows(cfg: ParsedConfig): Flow[] {
+export function buildFlows(cfg: ParsedConfig, showDisabled = false): Flow[] {
   const map = new Map<string, Flow>();
   const ensure = (src: string, dst: string): Flow => {
     const k = `${src}\t${dst}`;
@@ -442,20 +492,25 @@ export function buildFlows(cfg: ParsedConfig): Flow[] {
     return f;
   };
 
-  cfg.natRules.forEach((n) => {
+  visibleNatRules(cfg, showDisabled).forEach((n) => {
     if (n.kind !== "destination" && n.kind !== "static") return;
     if (!n.translatedPool) return;
     const entryPort = n.origDstService && n.origDstService !== "any" ? n.origDstService : "";
     const backendPort = n.servicePort || entryPort;
+    const entryPorts = entryPort ? serviceToPorts(entryPort, cfg) : ["any"];
+    const backendPorts = backendPort ? serviceToPorts(backendPort, cfg) : ["any"];
     const f = ensure(n.srcAddr || "any", n.translatedPool);
     f.dnat.push({
       rule: n,
       entryAddr: n.origDstAddr,
       entryPort,
       backendPort,
+      entryPorts,
+      backendPorts,
+      entryKind: serviceRefKind(entryPort, cfg),
+      backendKind: serviceRefKind(backendPort, cfg),
     });
-    const expanded = backendPort ? serviceToPorts(backendPort, cfg) : ["any"];
-    expanded.forEach((p) => f.allPorts.add(p));
+    backendPorts.forEach((p) => f.allPorts.add(p));
   });
 
   cfg.policies.forEach((p) => {
