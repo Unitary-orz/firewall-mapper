@@ -28,6 +28,7 @@ import {
   type FocusType,
   type FocusCandidate,
   type FlowDnatEntry,
+  type SvcRefKind,
 } from "@/lib/access";
 import { ObjectName } from "@/components/ObjectPreview";
 import { cn } from "@/lib/utils";

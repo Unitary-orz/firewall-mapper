@@ -382,6 +382,19 @@ export function buildNodeAggregates(cfg: ParsedConfig, showDisabled = false): No
   );
 }
 
+export type SvcRefKind = "service" | "service-group" | "literal" | "any";
+
+/** What a service token really refers to: a service object, a service group
+ *  (several objects), a literal port/protocol, or the `any` wildcard. The UI
+ *  uses this so a group name like `172.23.51.9` never reads as a port. */
+export function serviceRefKind(name: string, cfg: ParsedConfig): SvcRefKind {
+  if (!name || name === "any") return "any";
+  const i = lookupIndex(cfg);
+  if (i.svcByName.has(name)) return "service";
+  if (i.svcGrpByName.has(name)) return "service-group";
+  return "literal";
+}
+
 // ---------- flow model: aggregate src→dst with DNAT + policies ----------
 
 export interface FlowDnatEntry {
@@ -389,6 +402,12 @@ export interface FlowDnatEntry {
   entryAddr: string;
   entryPort: string; // "" if any
   backendPort: string; // "" if not translated; equals entryPort when no port change
+  /** Literal ports behind entryPort / backendPort (["any"] when unrestricted). */
+  entryPorts: string[];
+  backendPorts: string[];
+  /** Whether each service token is an object, a group, a literal or `any`. */
+  entryKind: SvcRefKind;
+  backendKind: SvcRefKind;
 }
 
 export interface FlowPolicySegment {
@@ -472,15 +491,20 @@ export function buildFlows(cfg: ParsedConfig, showDisabled = false): Flow[] {
     if (!n.translatedPool) return;
     const entryPort = n.origDstService && n.origDstService !== "any" ? n.origDstService : "";
     const backendPort = n.servicePort || entryPort;
+    const entryPorts = entryPort ? serviceToPorts(entryPort, cfg) : ["any"];
+    const backendPorts = backendPort ? serviceToPorts(backendPort, cfg) : ["any"];
     const f = ensure(n.srcAddr || "any", n.translatedPool);
     f.dnat.push({
       rule: n,
       entryAddr: n.origDstAddr,
       entryPort,
       backendPort,
+      entryPorts,
+      backendPorts,
+      entryKind: serviceRefKind(entryPort, cfg),
+      backendKind: serviceRefKind(backendPort, cfg),
     });
-    const expanded = backendPort ? serviceToPorts(backendPort, cfg) : ["any"];
-    expanded.forEach((p) => f.allPorts.add(p));
+    backendPorts.forEach((p) => f.allPorts.add(p));
   });
 
   cfg.policies.forEach((p) => {
