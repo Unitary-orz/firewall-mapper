@@ -790,14 +790,34 @@ export function addrMatches(a: string, b: string, cfg: ParsedConfig): boolean {
 export function svcMatches(policySvc: string, natPort: string, cfg: ParsedConfig): boolean {
   if (!policySvc || !natPort) return false;
   if (policySvc === "any" || natPort === "any") return true;
-  const polPorts = new Set(serviceToPorts(policySvc, cfg));
-  if (polPorts.has("any")) return true;
+  const polPorts = serviceToPorts(policySvc, cfg);
   const natPorts = serviceToPorts(natPort, cfg);
-  for (const p of natPorts) {
-    if (p === "any") return true;
-    if (polPorts.has(p)) return true;
-  }
-  return false;
+  return natPorts.some((n) => polPorts.some((q) => portCovers(q, n)));
+}
+
+function portRange(port: string): [number, number] | null {
+  if (!port || port === "any") return [0, 65535];
+  const m = /^(\d+)(?:-(\d+))?$/.exec(port.trim());
+  if (!m) return null;
+  const a = Number(m[1]);
+  const b = m[2] ? Number(m[2]) : a;
+  return [Math.min(a, b), Math.max(a, b)];
+}
+
+/** True if literal port `outer` (e.g. "tcp/30000-40000", "ip", "any") overlaps
+ *  literal port `inner` (e.g. "tcp/32081"). Protocol must agree unless one side
+ *  is a wildcard protocol (any / ip). */
+export function portCovers(outer: string, inner: string): boolean {
+  if (outer === inner) return true;
+  const o = parsePortStr(outer);
+  const n = parsePortStr(inner);
+  const wild = (x: string) => x === "any" || x === "ip";
+  if (!wild(o.proto) && !wild(n.proto) && o.proto.toLowerCase() !== n.proto.toLowerCase())
+    return false;
+  const ro = portRange(o.port);
+  const rn = portRange(n.port);
+  if (!ro || !rn) return o.port === n.port;
+  return ro[0] <= rn[1] && rn[0] <= ro[1];
 }
 
 /** Find permit policies whose src+dst+service cover this DNAT under the given flow source. */
@@ -976,7 +996,11 @@ export function filterLinesByFocus(
       }
       return false;
     }
-    return l.service === id;
+    if (l.service === id) return true;
+    // A service object / group name, or a literal port inside a range, still
+    // selects the lines whose real ports it overlaps.
+    if (!cfg || id === "any" || l.service === "any") return false;
+    return serviceToPorts(id, cfg).some((p) => portCovers(p, l.service) || portCovers(l.service, p));
   });
 }
 

@@ -146,7 +146,16 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
           <span className="flex items-baseline gap-1 min-w-0">
             <L>转换为</L>
             <H hit={hit} value={n.translatedPool} />
-            {n.servicePort && <span className="text-muted-foreground">:{n.servicePort}</span>}
+            {n.servicePort && (
+              <span className="text-muted-foreground">
+                :<H hit={hit} value={n.servicePort} />
+                {cfg && serviceRefKind(n.servicePort, cfg) === "service-group" && (
+                  <span className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                    服务组
+                  </span>
+                )}
+              </span>
+            )}
           </span>
         </div>
         <span className="shrink-0">

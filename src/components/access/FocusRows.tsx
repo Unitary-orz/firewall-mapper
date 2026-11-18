@@ -241,7 +241,7 @@ export function PolicyCountBadge({ policies }: { policies: FocusLine["policies"]
               <span>{p.srcAddr}</span>
               <ArrowRight className="h-3 w-3 text-muted-foreground" />
               <span>{p.dstAddr}</span>
-              <span className="text-muted-foreground">[{p.service}]</span>
+              <span className="text-muted-foreground">[<ObjectName name={p.service} prefer="service" />]</span>
               {showLineNo && (
                 <span className="ml-auto">
                   <LineLink line={p.lineNo} />
