@@ -12,6 +12,13 @@ export const Route = createFileRoute("/audit")({
         name: "description",
         content: "宽松策略、未引用对象、重复定义、命名混乱等审计提示。",
       },
+      { property: "og:title", content: "审计 · 防火墙配置审计台" },
+      {
+        property: "og:description",
+        content: "宽松策略、未引用对象、重复定义、命名混乱等审计提示。",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuditPage,

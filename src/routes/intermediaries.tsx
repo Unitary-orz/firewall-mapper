@@ -39,6 +39,13 @@ export const Route = createFileRoute("/intermediaries")({
         name: "description",
         content: "按命名识别 WAF / 网关 / 代理 / 堡垒机 / 负载均衡，并展示每个节点的上下游引用。",
       },
+      { property: "og:title", content: "中间节点 · 防火墙配置审计台" },
+      {
+        property: "og:description",
+        content: "按命名识别 WAF / 网关 / 代理 / 堡垒机 / 负载均衡，并展示每个节点的上下游引用。",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: IntermediariesPage,
@@ -541,9 +548,7 @@ function PolicyMiniList({
           </span>
           <ArrowRight className="h-3 w-3 text-muted-foreground/60" />
           <span>{sideLabel === "src" ? p.dstAddr : p.srcAddr}</span>
-          <span className="text-muted-foreground/60">
-            · {portsOf(p.service) || p.service}
-          </span>
+          <span className="text-muted-foreground/60">· {portsOf(p.service) || p.service}</span>
           <span className="ml-auto">
             <LineLink line={p.lineNo} />
           </span>

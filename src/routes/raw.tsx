@@ -15,6 +15,10 @@ export const Route = createFileRoute("/raw")({
     meta: [
       { title: "原文 · 防火墙配置审计台" },
       { name: "description", content: "查看带行号的原始配置文本，可跳转高亮指定行。" },
+      { property: "og:title", content: "原文 · 防火墙配置审计台" },
+      { property: "og:description", content: "查看带行号的原始配置文本，可跳转高亮指定行。" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   validateSearch: searchSchema,

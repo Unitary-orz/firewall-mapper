@@ -17,6 +17,13 @@ export const Route = createFileRoute("/")({
         name: "description",
         content: "上传防火墙配置文件，查看对象、策略、NAT、中间节点统计与风险概览。",
       },
+      { property: "og:title", content: "概览 · 防火墙配置审计台" },
+      {
+        property: "og:description",
+        content: "上传防火墙配置文件，查看对象、策略、NAT、中间节点统计与风险概览。",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: IndexPage,

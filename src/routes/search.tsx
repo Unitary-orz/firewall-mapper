@@ -35,6 +35,13 @@ export const Route = createFileRoute("/search")({
         name: "description",
         content: "跨模块搜索 IP、对象名、服务名或端口号，定位相关配置。",
       },
+      { property: "og:title", content: "全局搜索 · 防火墙配置审计台" },
+      {
+        property: "og:description",
+        content: "跨模块搜索 IP、对象名、服务名或端口号，定位相关配置。",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   validateSearch: (s: Record<string, unknown>): SearchParams => ({

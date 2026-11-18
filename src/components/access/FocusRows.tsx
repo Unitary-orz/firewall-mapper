@@ -241,7 +241,9 @@ export function PolicyCountBadge({ policies }: { policies: FocusLine["policies"]
               <span>{p.srcAddr}</span>
               <ArrowRight className="h-3 w-3 text-muted-foreground" />
               <span>{p.dstAddr}</span>
-              <span className="text-muted-foreground">[<ObjectName name={p.service} prefer="service" />]</span>
+              <span className="text-muted-foreground">
+                [<ObjectName name={p.service} prefer="service" />]
+              </span>
               {showLineNo && (
                 <span className="ml-auto">
                   <LineLink line={p.lineNo} />
@@ -326,11 +328,11 @@ export function DnatLabel({
         : [],
     [cfg, entryGroup, backendGroup],
   );
-  const svcTok = (group: string, ports: string, count: number) =>
+  const svcTok = (group: string, ports: string, count: number, preview = false) =>
     group ? (
       <span className="text-amber-700/70 dark:text-amber-300/70">
         :<span className="mx-0.5 rounded bg-amber-500/15 px-1 text-[10px]">组</span>
-        {group}
+        {preview ? <ObjectName name={group} prefer="service" className="text-inherit" /> : group}
         {count > 0 && <span className="opacity-70"> ·{count}</span>}
       </span>
     ) : ports ? (
@@ -454,7 +456,7 @@ export function DnatLabel({
             </span>
             <span className="break-all text-muted-foreground">
               {entry.entryAddr}
-              {svcTok(entryGroup, entryPorts, 0)}
+              {svcTok(entryGroup, entryPorts, 0, true)}
             </span>
           </div>
 
@@ -467,7 +469,7 @@ export function DnatLabel({
               {backendSame ? (
                 <span className="ml-2 text-muted-foreground">（服务不变）</span>
               ) : (
-                svcTok(backendGroup, backendPorts, 0)
+                svcTok(backendGroup, backendPorts, 0, true)
               )}
             </span>
           </div>

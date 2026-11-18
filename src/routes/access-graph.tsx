@@ -56,6 +56,13 @@ export const Route = createFileRoute("/access-graph")({
         name: "description",
         content: "三入口（源/目的/服务）+ 横向 Focus Graph，按 FlowGroup 聚合策略与 NAT。",
       },
+      { property: "og:title", content: "访问路径分析 · 防火墙配置审计台" },
+      {
+        property: "og:description",
+        content: "三入口（源/目的/服务）+ 横向 Focus Graph，按 FlowGroup 聚合策略与 NAT。",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   validateSearch: (s: Record<string, unknown>): SearchParams => {
@@ -120,7 +127,10 @@ function AccessGraphPage() {
   };
 
   const [showDisabled] = useShowDisabled();
-  const allLines = useMemo(() => (cfg ? getFocusLines(cfg, showDisabled) : []), [cfg, showDisabled]);
+  const allLines = useMemo(
+    () => (cfg ? getFocusLines(cfg, showDisabled) : []),
+    [cfg, showDisabled],
+  );
   const candidates = useMemo(() => focusCandidates(allLines, focus), [allLines, focus]);
   const lines = useMemo(
     () => (cfg ? filterLinesByFocus(allLines, focus, id, cfg) : []),

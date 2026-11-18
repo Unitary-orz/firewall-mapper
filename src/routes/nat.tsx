@@ -17,6 +17,13 @@ export const Route = createFileRoute("/nat")({
         name: "description",
         content: "查看 NAT 池、目的 NAT (DNAT) 与源 NAT (SNAT) 规则。",
       },
+      { property: "og:title", content: "NAT · 防火墙配置审计台" },
+      {
+        property: "og:description",
+        content: "查看 NAT 池、目的 NAT (DNAT) 与源 NAT (SNAT) 规则。",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: NatPage,
@@ -34,8 +41,7 @@ function NatPage() {
     [cfg, showDisabled],
   );
   const snatRules = useMemo(
-    () =>
-      cfg?.natRules.filter((r) => r.kind === "source" && (showDisabled || !r.disabled)) ?? [],
+    () => cfg?.natRules.filter((r) => r.kind === "source" && (showDisabled || !r.disabled)) ?? [],
     [cfg, showDisabled],
   );
   const hiddenCount = useMemo(
