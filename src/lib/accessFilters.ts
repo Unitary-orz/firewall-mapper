@@ -1,44 +1,73 @@
-import type { FocusLine } from "./access";
+import type { ParsedConfig } from "./parser/types";
+import { addrMatches, expandAddressNames, isIpLiteral, type FocusLine } from "./access";
 
-export type NatFilter = "all" | "nat" | "direct";
-export type AssociationFilter = "all" | "associated" | "unassociated";
-export type ActionFilter = "all" | "permit" | "deny";
-
-export interface AccessLineFilter {
-  nat: NatFilter;
-  association: AssociationFilter;
-  action: ActionFilter;
+function includesQuery(value: string | undefined, query: string): boolean {
+  return !!value && value.toLowerCase().includes(query);
 }
 
-export const DEFAULT_ACCESS_LINE_FILTER: AccessLineFilter = {
-  nat: "all",
-  association: "all",
-  action: "all",
-};
+/** Filter only by the source/destination objects shown in the path graph.
+ * Service, NAT, policy and action fields deliberately do not participate. */
+export function filterAccessLinesByObject(
+  lines: FocusLine[],
+  query: string,
+  cfg?: ParsedConfig,
+): FocusLine[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return lines;
 
-export function countActiveAccessFilters(filter: AccessLineFilter): number {
-  return (
-    Number(filter.nat !== "all") +
-    Number(filter.association !== "all") +
-    Number(filter.action !== "all")
-  );
-}
+  if (cfg && isIpLiteral(q)) {
+    return lines.filter(
+      (line) =>
+        (line.src !== "any" && addrMatches(line.src, q, cfg)) ||
+        (line.dst !== "any" && addrMatches(line.dst, q, cfg)),
+    );
+  }
 
-export function filterAccessLines(lines: FocusLine[], filter: AccessLineFilter): FocusLine[] {
-  if (countActiveAccessFilters(filter) === 0) return lines;
+  // Like global search, object descriptions and literal address entries can
+  // also find an object. Include every parent group of a matching object.
+  const matchingNames = new Set<string>();
+  if (cfg) {
+    const addWithParents = (name: string) => {
+      expandAddressNames(name, cfg).forEach((item) => matchingNames.add(item));
+    };
+    cfg.addresses.forEach((address) => {
+      if (
+        includesQuery(address.name, q) ||
+        includesQuery(address.description, q) ||
+        address.entries.some((entry) => includesQuery(entry.value, q))
+      ) {
+        addWithParents(address.name);
+      }
+    });
+    cfg.addressGroups.forEach((group) => {
+      if (
+        includesQuery(group.name, q) ||
+        includesQuery(group.description, q) ||
+        group.members.some((member) => includesQuery(member, q))
+      ) {
+        addWithParents(group.name);
+      }
+    });
+    cfg.natPools.forEach((pool) => {
+      if (
+        includesQuery(pool.name, q) ||
+        includesQuery(pool.description, q) ||
+        includesQuery(pool.addressFrom, q) ||
+        includesQuery(pool.addressTo, q)
+      ) {
+        addWithParents(pool.name);
+      }
+    });
+  }
+
   return lines.filter((line) => {
-    if (filter.nat === "nat" && line.nat.length === 0) return false;
-    if (filter.nat === "direct" && line.nat.length > 0) return false;
-
-    const associated = line.policies.length > 0;
-    if (filter.association === "associated" && !associated) return false;
-    if (filter.association === "unassociated" && associated) return false;
-
-    // A DNAT line marked "associated" is, by definition, covered by a permit
-    // policy, so it belongs to the permit result set as well.
-    const permitted = line.action === "permit" || line.action === "associated";
-    if (filter.action === "permit" && !permitted) return false;
-    if (filter.action === "deny" && line.action !== "deny") return false;
-    return true;
+    const source = line.src.toLowerCase();
+    const destination = line.dst.toLowerCase();
+    return (
+      source.includes(q) ||
+      destination.includes(q) ||
+      matchingNames.has(line.src) ||
+      matchingNames.has(line.dst)
+    );
   });
 }

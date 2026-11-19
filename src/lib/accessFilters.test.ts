@@ -1,81 +1,69 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { FocusLine } from "./access";
-import {
-  DEFAULT_ACCESS_LINE_FILTER,
-  countActiveAccessFilters,
-  filterAccessLines,
-} from "./accessFilters";
+import { parseConfig } from "./parser/index";
+import { filterAccessLinesByObject } from "./accessFilters";
 
-function line(key: string, action: string, natCount: number, policyCount: number): FocusLine {
+function line(key: string, src: string, dst: string): FocusLine {
   return {
     key,
-    src: "source",
-    dst: "destination",
+    src,
+    dst,
     proto: "tcp",
     port: "443",
     service: "tcp/443",
-    action,
-    policies: Array.from({ length: policyCount }, () => ({ id: key })) as FocusLine["policies"],
-    nat: Array.from({ length: natCount }, () => ({})) as FocusLine["nat"],
+    action: "associated",
+    policies: [],
+    nat: [],
     coverageKind: "ok",
   };
 }
 
 const lines = [
-  line("direct-permit", "permit", 0, 1),
-  line("direct-deny", "deny", 0, 1),
-  line("nat-associated", "associated", 1, 1),
-  line("nat-unassociated", "unassociated", 1, 0),
+  line("office-api", "办公网", "API网关"),
+  line("branch-web", "Branch-Office", "Web服务器"),
+  line("other", "数据中心", "数据库"),
 ];
 
-test("默认筛选保留全部访问路径", () => {
-  assert.equal(filterAccessLines(lines, DEFAULT_ACCESS_LINE_FILTER), lines);
-  assert.equal(countActiveAccessFilters(DEFAULT_ACCESS_LINE_FILTER), 0);
+test("空对象筛选保留全部访问路径", () => {
+  assert.equal(filterAccessLinesByObject(lines, "  "), lines);
 });
 
-test("NAT 与直连筛选互斥", () => {
+test("按来源或目的对象名称进行不区分大小写的模糊筛选", () => {
   assert.deepEqual(
-    filterAccessLines(lines, { ...DEFAULT_ACCESS_LINE_FILTER, nat: "nat" }).map((l) => l.key),
-    ["nat-associated", "nat-unassociated"],
+    filterAccessLinesByObject(lines, "办公").map((item) => item.key),
+    ["office-api"],
   );
   assert.deepEqual(
-    filterAccessLines(lines, { ...DEFAULT_ACCESS_LINE_FILTER, nat: "direct" }).map((l) => l.key),
-    ["direct-permit", "direct-deny"],
-  );
-});
-
-test("策略关联筛选按是否存在关联策略判断", () => {
-  assert.deepEqual(
-    filterAccessLines(lines, { ...DEFAULT_ACCESS_LINE_FILTER, association: "associated" }).map(
-      (l) => l.key,
-    ),
-    ["direct-permit", "direct-deny", "nat-associated"],
+    filterAccessLinesByObject(lines, "api").map((item) => item.key),
+    ["office-api"],
   );
   assert.deepEqual(
-    filterAccessLines(lines, { ...DEFAULT_ACCESS_LINE_FILTER, association: "unassociated" }).map(
-      (l) => l.key,
-    ),
-    ["nat-unassociated"],
+    filterAccessLinesByObject(lines, "branch").map((item) => item.key),
+    ["branch-web"],
   );
 });
 
-test("permit 包含被放行策略覆盖的 NAT 路径，deny 只保留拒绝路径", () => {
-  assert.deepEqual(
-    filterAccessLines(lines, { ...DEFAULT_ACCESS_LINE_FILTER, action: "permit" }).map((l) => l.key),
-    ["direct-permit", "nat-associated"],
+test("IP 命中包含它的地址对象以及引用该对象的地址组", () => {
+  const cfg = parseConfig(
+    [
+      "address branch-host",
+      "  host-address 10.0.0.8",
+      "address-group branch-group",
+      "  address-object branch-host",
+    ].join("\n"),
   );
+  const ipLines = [line("object", "any", "branch-host"), line("group", "branch-group", "other")];
   assert.deepEqual(
-    filterAccessLines(lines, { ...DEFAULT_ACCESS_LINE_FILTER, action: "deny" }).map((l) => l.key),
-    ["direct-deny"],
+    filterAccessLinesByObject(ipLines, "10.0.0.8", cfg).map((item) => item.key),
+    ["object", "group"],
   );
 });
 
-test("多个条件同时生效并准确计算已启用筛选数", () => {
-  const filter = { nat: "nat", association: "associated", action: "permit" } as const;
-  assert.deepEqual(
-    filterAccessLines(lines, filter).map((l) => l.key),
-    ["nat-associated"],
-  );
-  assert.equal(countActiveAccessFilters(filter), 3);
+test("只筛选来源和目的对象，不匹配服务、NAT 或策略字段", () => {
+  const item = line("other-fields", "source", "destination");
+  item.nat = [{ entryAddr: "needle" } as FocusLine["nat"][number]];
+  item.policies = [{ srcAddr: "needle" } as FocusLine["policies"][number]];
+  assert.deepEqual(filterAccessLinesByObject([item], "needle"), []);
+  assert.deepEqual(filterAccessLinesByObject([item], "443"), []);
 });
