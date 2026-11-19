@@ -2,9 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { FocusLine } from "./access";
 import { parseConfig } from "./parser/index";
-import { filterAccessLinesByObject } from "./accessFilters";
+import {
+  countUnassociatedLines,
+  filterAccessLinesByAssociation,
+  filterAccessLinesByObject,
+} from "./accessFilters";
 
-function line(key: string, src: string, dst: string): FocusLine {
+function line(key: string, src: string, dst: string, action = "associated"): FocusLine {
   return {
     key,
     src,
@@ -12,7 +16,7 @@ function line(key: string, src: string, dst: string): FocusLine {
     proto: "tcp",
     port: "443",
     service: "tcp/443",
-    action: "associated",
+    action,
     policies: [],
     nat: [],
     coverageKind: "ok",
@@ -66,4 +70,40 @@ test("只筛选来源和目的对象，不匹配服务、NAT 或策略字段", (
   item.policies = [{ srcAddr: "needle" } as FocusLine["policies"][number]];
   assert.deepEqual(filterAccessLinesByObject([item], "needle"), []);
   assert.deepEqual(filterAccessLinesByObject([item], "443"), []);
+});
+
+test("未勾选时保留未关联策略的路径，并只统计这类行", () => {
+  const rows = [
+    line("permit-one", "办公网", "API网关", "permit"),
+    line("orphan-one", "办公网", "API网关", "unassociated"),
+    line("deny-one", "分支网", "API网关", "deny"),
+  ];
+  assert.equal(countUnassociatedLines(rows), 1);
+  assert.deepEqual(filterAccessLinesByAssociation(rows, false), rows);
+});
+
+test("勾选隐藏未关联策略后，仅移除未关联行，保留 permit 与 deny", () => {
+  const rows = [
+    line("permit-one", "办公网", "API网关", "permit"),
+    line("orphan-one", "办公网", "API网关", "unassociated"),
+    line("deny-one", "分支网", "API网关", "deny"),
+  ];
+  assert.deepEqual(
+    filterAccessLinesByAssociation(rows, true).map((item) => item.key),
+    ["permit-one", "deny-one"],
+  );
+});
+
+test("隐藏未关联策略与对象筛选叠加时，条数只统计两者交集", () => {
+  const rows = [
+    line("office-orphan", "办公网", "API网关", "unassociated"),
+    line("branch-orphan", "分支网", "API网关", "unassociated"),
+    line("office-permit", "办公网", "API网关", "permit"),
+  ];
+  const objectFiltered = filterAccessLinesByObject(rows, "办公");
+  assert.equal(countUnassociatedLines(objectFiltered), 1);
+  assert.deepEqual(
+    filterAccessLinesByAssociation(objectFiltered, true).map((item) => item.key),
+    ["office-permit"],
+  );
 });

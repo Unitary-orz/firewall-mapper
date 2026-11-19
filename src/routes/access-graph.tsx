@@ -8,6 +8,7 @@ import {
   useShowLineNumbers,
   useShowPolicyZone,
   useShowDisabled,
+  useHideUnassociated,
 } from "@/lib/uiPrefs";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -22,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight, Check, ChevronsUpDown, ChevronDown, X, Layers, Search } from "lucide-react";
 import {
   getFlows,
@@ -40,7 +42,11 @@ import { ObjectName } from "@/components/ObjectPreview";
 import { cn } from "@/lib/utils";
 
 import { groupBy, FocusLineRow, NodeChip, SvcChip } from "@/components/access/FocusRows";
-import { filterAccessLinesByObject } from "@/lib/accessFilters";
+import {
+  countUnassociatedLines,
+  filterAccessLinesByAssociation,
+  filterAccessLinesByObject,
+} from "@/lib/accessFilters";
 interface SearchParams {
   focus?: FocusType;
   id?: string;
@@ -129,6 +135,7 @@ function AccessGraphPage() {
   };
 
   const [showDisabled] = useShowDisabled();
+  const [hideUnassociated, setHideUnassociated] = useHideUnassociated();
   const [objectQuery, setObjectQuery] = useState("");
   const allLines = useMemo(
     () => (cfg ? getFocusLines(cfg, showDisabled) : []),
@@ -139,9 +146,14 @@ function AccessGraphPage() {
     () => (cfg ? filterLinesByFocus(allLines, focus, id, cfg) : []),
     [allLines, focus, id, cfg],
   );
-  const lines = useMemo(
+  const objectFiltered = useMemo(
     () => filterAccessLinesByObject(focusedLines, objectQuery, cfg ?? undefined),
     [focusedLines, objectQuery, cfg],
+  );
+  const unassociatedCount = useMemo(() => countUnassociatedLines(objectFiltered), [objectFiltered]);
+  const lines = useMemo(
+    () => filterAccessLinesByAssociation(objectFiltered, hideUnassociated),
+    [objectFiltered, hideUnassociated],
   );
 
   if (!cfg) return <EmptyConfig />;
@@ -163,7 +175,8 @@ function AccessGraphPage() {
           {id && (
             <span className="text-xs text-muted-foreground">
               显示 <b className="text-foreground">{lines.length}</b>
-              {objectQuery.trim() && ` / ${focusedLines.length}`} 条 FlowGroup
+              {(objectQuery.trim() || hideUnassociated) && ` / ${focusedLines.length}`} 条 FlowGroup
+              {hideUnassociated && unassociatedCount > 0 && ` · 已隐藏未关联 ${unassociatedCount}`}
             </span>
           )}
           <span className="ml-auto text-xs text-muted-foreground">
@@ -196,6 +209,26 @@ function AccessGraphPage() {
             </Button>
           )}
         </div>
+        {(unassociatedCount > 0 || hideUnassociated) && (
+          <label
+            className="flex cursor-pointer select-none items-center gap-2 px-1 text-sm"
+            title={
+              hideUnassociated
+                ? `取消勾选后恢复显示 ${unassociatedCount} 条未关联策略的访问路径`
+                : `勾选后隐藏 ${unassociatedCount} 条未关联策略的访问路径`
+            }
+          >
+            <Checkbox
+              aria-label="隐藏未关联策略"
+              checked={hideUnassociated}
+              onCheckedChange={(checked) => setHideUnassociated(checked === true)}
+            />
+            <span>隐藏未关联策略</span>
+            {unassociatedCount > 0 && (
+              <span className="text-xs text-muted-foreground">{unassociatedCount}</span>
+            )}
+          </label>
+        )}
       </div>
 
       {!id ? (
@@ -205,8 +238,14 @@ function AccessGraphPage() {
           focus={focus}
           id={id}
           lines={lines}
-          filteredOut={focusedLines.length > 0 && objectQuery.trim().length > 0}
-          onClearFilters={() => setObjectQuery("")}
+          filteredOut={
+            focusedLines.length > 0 &&
+            (objectQuery.trim().length > 0 || (hideUnassociated && unassociatedCount > 0))
+          }
+          onClearFilters={() => {
+            setObjectQuery("");
+            setHideUnassociated(false);
+          }}
         />
       )}
     </div>
@@ -422,9 +461,9 @@ function FocusGraph({
       <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
         {filteredOut ? (
           <div className="space-y-3">
-            <p>当前对象筛选下没有匹配的访问路径。</p>
+            <p>当前筛选下没有匹配的访问路径。</p>
             <Button size="sm" variant="outline" onClick={onClearFilters}>
-              清除对象筛选
+              清除筛选
             </Button>
           </div>
         ) : (

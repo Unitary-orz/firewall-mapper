@@ -71,3 +71,21 @@ export function filterAccessLinesByObject(
     );
   });
 }
+
+/** 访问路径中「未关联策略」的行：既不是 permit 也不是 deny，只是没有策略覆盖。 */
+export function isUnassociatedLine(line: FocusLine): boolean {
+  return line.action === "unassociated";
+}
+
+export function countUnassociatedLines(lines: FocusLine[]): number {
+  return lines.filter(isUnassociatedLine).length;
+}
+
+/** 勾选「隐藏未关联策略」后，只保留有策略结论（permit / deny / 已关联）的路径。 */
+export function filterAccessLinesByAssociation(
+  lines: FocusLine[],
+  hideUnassociated: boolean,
+): FocusLine[] {
+  if (!hideUnassociated) return lines;
+  return lines.filter((line) => !isUnassociatedLine(line));
+}

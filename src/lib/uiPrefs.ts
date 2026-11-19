@@ -5,7 +5,8 @@ type PrefKey =
   | "cfg.showFullPortRange"
   | "cfg.showPolicyZone"
   | "cfg.showDisabled"
-  | "cfg.hideDisabledRows";
+  | "cfg.hideDisabledRows"
+  | "cfg.hideUnassociated";
 
 const defaults: Record<PrefKey, boolean> = {
   "cfg.showLineNo": false,
@@ -13,6 +14,7 @@ const defaults: Record<PrefKey, boolean> = {
   "cfg.showPolicyZone": false,
   "cfg.showDisabled": false,
   "cfg.hideDisabledRows": true,
+  "cfg.hideUnassociated": false,
 };
 
 function read(key: PrefKey): boolean {
@@ -105,3 +107,7 @@ export const useHideDisabledRows = (): [boolean, (v: boolean) => void] => {
   const [showDisabled, setShowDisabled] = useShowDisabled();
   return [!showDisabled, (v: boolean) => setShowDisabled(!v)];
 };
+
+// 访问关系中「未关联策略」的流量是否隐藏；默认不勾选，即照常显示。
+export const setHideUnassociated = (v: boolean) => setPref("cfg.hideUnassociated", v);
+export const useHideUnassociated = () => useBoolPref("cfg.hideUnassociated");
