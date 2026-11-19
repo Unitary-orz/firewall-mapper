@@ -196,8 +196,9 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
           field8: t[8],
           schedule: t[9],
           action: t[10] as PolicyRule["action"],
-          // 策略默认启用；状态行可能出现在策略定义之前或之后。
-          disabled: policyDisabled.get(t[1]) ?? false,
+          // 该配置格式仅导出 enable 子行的策略处于启用状态；无状态子行即未启用。
+          // 独立状态行可能出现在策略定义之前或之后。
+          disabled: policyDisabled.get(t[1]) ?? true,
           lineNo,
           raw: line.trim(),
         };
