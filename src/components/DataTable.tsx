@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useMemo, useState, type ReactNode } from "react";
 import { useHideDisabledRows, useShowLineNumbers } from "@/lib/uiPrefs";
 import { splitRowsByDisabled } from "@/lib/tableRows";
@@ -126,21 +127,23 @@ export function DataTable<T>({
         </span>
         <div className="flex-1" />
         {isDisabledRow && hiddenCount > 0 && (
-          <Button
-            size="sm"
-            variant={hideDisabled ? "outline" : "secondary"}
-            onClick={() => {
-              setHideDisabled(!hideDisabled);
-              setPage(0);
-            }}
+          <label
+            className="flex cursor-pointer select-none items-center gap-2 px-1 text-sm"
             title={
               hideDisabled
-                ? `显示 ${hiddenCount} 条已禁用记录（导出也会包含）`
-                : `隐藏 ${hiddenCount} 条已禁用记录（导出也会隐藏）`
+                ? `勾选后显示 ${hiddenCount} 条已禁用记录，导出也会包含`
+                : `取消勾选后隐藏 ${hiddenCount} 条已禁用记录，导出也会隐藏`
             }
           >
-            {hideDisabled ? "显示已禁用" : "隐藏已禁用"}
-          </Button>
+            <Checkbox
+              checked={!hideDisabled}
+              onCheckedChange={(checked) => {
+                setHideDisabled(checked !== true);
+                setPage(0);
+              }}
+            />
+            <span>显示已禁用</span>
+          </label>
         )}
         <Button size="sm" variant="outline" onClick={exportCsv}>
           导出 CSV
