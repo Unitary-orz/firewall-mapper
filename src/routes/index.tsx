@@ -106,9 +106,10 @@ function IndexPage() {
       },
       {
         label: "策略",
-        headers: ["ID", "源", "目的", "服务", "期限", "动作", "行号"],
+        headers: ["ID", "状态", "源", "目的", "服务", "期限", "动作", "行号"],
         rows: cfg.policies.map((p) => [
           p.id,
+          p.disabled ? "已禁用" : "已启用",
           p.srcAddr,
           p.dstAddr,
           p.service,
@@ -273,7 +274,16 @@ function IndexPage() {
               <Stat label="地址组" value={cfg.addressGroups.length} to="/objects" />
               <Stat label="服务对象" value={cfg.services.length} to="/services" />
               <Stat label="服务组" value={cfg.serviceGroups.length} to="/services" />
-              <Stat label="策略" value={cfg.policies.length} to="/policies" />
+              <Stat
+                label="策略"
+                value={cfg.policies.length}
+                to="/policies"
+                hint={
+                  cfg.policies.some((p) => p.disabled)
+                    ? `已禁用 ${cfg.policies.filter((p) => p.disabled).length} 条`
+                    : "全部已启用"
+                }
+              />
               <Stat
                 label="NAT 规则"
                 value={cfg.natRules.filter((r) => showDisabled || !r.disabled).length}

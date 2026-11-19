@@ -28,6 +28,8 @@ function PoliciesPage() {
   const [showZone] = useShowPolicyZone();
   if (!cfg) return <EmptyConfig />;
 
+  const enabledCount = cfg.policies.filter((p) => !p.disabled).length;
+  const disabledCount = cfg.policies.length - enabledCount;
   const cols: Column<(typeof cfg.policies)[number]>[] = [
     {
       key: "id",
@@ -35,6 +37,14 @@ function PoliciesPage() {
       cell: (p) => <span className="font-mono">{p.id}</span>,
       search: (p) => p.id,
       className: "w-16",
+    },
+    {
+      key: "status",
+      header: "状态",
+      cell: (p) =>
+        p.disabled ? <Badge tone="muted">已禁用</Badge> : <Badge tone="ok">已启用</Badge>,
+      search: (p) => (p.disabled ? "disabled 已禁用" : "enabled 已启用"),
+      className: "w-20",
     },
     {
       key: "action",
@@ -101,7 +111,8 @@ function PoliciesPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">策略</h1>
       <p className="text-sm text-muted-foreground">
-        共 {cfg.policies.length} 条。表内策略按导出顺序排列。
+        共 {cfg.policies.length} 条：已启用 {enabledCount}，已禁用 {disabledCount}。 permit/deny
+        是处理动作，不代表启停状态；表内按导出顺序排列。
       </p>
       <DataTable rows={cfg.policies} columns={cols} filename="policies.csv" />
     </div>

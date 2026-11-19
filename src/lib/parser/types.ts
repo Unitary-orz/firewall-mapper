@@ -52,6 +52,8 @@ export interface PolicyRule {
   field8: string;
   schedule: string;
   action: "permit" | "deny" | string;
+  /** 策略默认启用；原文出现 disable 时才为 true。 */
+  disabled?: boolean;
   lineNo: number;
   raw: string;
 }

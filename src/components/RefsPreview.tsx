@@ -94,7 +94,8 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
             </span>
           )}
         </div>
-        <span className="shrink-0">
+        <span className="flex shrink-0 items-center gap-1">
+          <Badge tone={p.disabled ? "muted" : "ok"}>{p.disabled ? "已禁用" : "已启用"}</Badge>
           <Badge tone={actionTone}>{action}</Badge>
         </span>
       </div>
@@ -120,8 +121,7 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
   const k = natKindLabel[n.kind] ?? n.kind;
   // A service token can be a group; say so instead of letting the name sit in
   // the port position unexplained.
-  const svcIsGroup =
-    cfg ? serviceRefKind(n.origDstService ?? "", cfg) === "service-group" : false;
+  const svcIsGroup = cfg ? serviceRefKind(n.origDstService ?? "", cfg) === "service-group" : false;
   const hasMeta = n.disabled || n.log || n.description || n.id;
   return (
     <div className="space-y-0.5">

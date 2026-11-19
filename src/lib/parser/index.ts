@@ -45,6 +45,8 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
   const svcMap = new Map<string, ServiceObject>();
   const sgMap = new Map<string, ServiceGroup>();
   const natMap = new Map<string, NatRule>();
+  const policyMap = new Map<string, PolicyRule>();
+  const policyDisabled = new Map<string, boolean>();
 
   let i = 0;
   while (i < rawLines.length) {
@@ -165,6 +167,20 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
       continue;
     }
 
+    // ---------- policy <id> enable/disable（状态续行） ----------
+    if (
+      head === "policy" &&
+      /^\d+$/.test(t[1] ?? "") &&
+      (t[2] === "disable" || t[2] === "enable")
+    ) {
+      const disabled = t[2] === "disable";
+      policyDisabled.set(t[1], disabled);
+      const p = policyMap.get(t[1]);
+      if (p) p.disabled = disabled;
+      i++;
+      continue;
+    }
+
     // ---------- policy 单行 ----------
     if (head === "policy" && /^\d+$/.test(t[1] ?? "")) {
       // policy ID srcZone dstZone srcAddr dstAddr service f7 f8 schedule action
@@ -180,10 +196,26 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
           field8: t[8],
           schedule: t[9],
           action: t[10] as PolicyRule["action"],
+          // 策略默认启用；状态行可能出现在策略定义之前或之后。
+          disabled: policyDisabled.get(t[1]) ?? false,
           lineNo,
           raw: line.trim(),
         };
         out.policies.push(p);
+        policyMap.set(p.id, p);
+
+        // 同时兼容策略定义后的缩进 enable/disable 子行。
+        let j = i + 1;
+        while (j < rawLines.length && indent(rawLines[j]) > 0) {
+          const sub = tokens(rawLines[j]);
+          if (sub[0] === "disable" || sub[0] === "enable") {
+            p.disabled = sub[0] === "disable";
+            policyDisabled.set(p.id, p.disabled);
+          }
+          j++;
+        }
+        i = j;
+        continue;
       }
       i++;
       continue;
@@ -622,7 +654,7 @@ export function runAudit(cfg: ParsedConfig, xr: CrossRef): AuditFinding[] {
   // 宽松策略
   cfg.policies.forEach((p) => {
     const anyCount = [p.srcAddr, p.dstAddr, p.service].filter((x) => x === "any").length;
-    if (p.action === "permit" && anyCount >= 2) {
+    if (!p.disabled && p.action === "permit" && anyCount >= 2) {
       out.push({
         id: id(),
         severity: anyCount === 3 ? "high" : "warn",

@@ -164,6 +164,7 @@ function SearchPage() {
     // policies
     const policies = cfg.policies.filter((p) => {
       if (matchesText(p.id) || matchesText(p.action)) return true;
+      if (matchesText(p.disabled ? "disabled 已禁用" : "enabled 已启用")) return true;
       if (matchesText(p.srcZone) || matchesText(p.dstZone) || matchesText(p.schedule)) return true;
       return (
         matchesAddressName(p.srcAddr) ||
@@ -427,6 +428,14 @@ function SearchPage() {
       cell: (p) => <span className="font-mono">{p.id}</span>,
       search: (p) => p.id,
       className: "w-16",
+    },
+    {
+      key: "status",
+      header: "状态",
+      cell: (p) =>
+        p.disabled ? <Badge tone="muted">已禁用</Badge> : <Badge tone="ok">已启用</Badge>,
+      search: (p) => (p.disabled ? "disabled 已禁用" : "enabled 已启用"),
+      className: "w-20",
     },
     {
       key: "action",

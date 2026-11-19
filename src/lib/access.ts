@@ -513,16 +513,19 @@ export function buildFlows(cfg: ParsedConfig, showDisabled = false): Flow[] {
     backendPorts.forEach((p) => f.allPorts.add(p));
   });
 
-  cfg.policies.forEach((p) => {
-    const f = ensure(p.srcAddr, p.dstAddr);
-    const ports = serviceToPorts(p.service, cfg);
-    f.policies.push({ policy: p, ports });
-    ports.forEach((port) => {
-      f.allPorts.add(port);
-      if (p.action === "permit") f.permitPorts.add(port);
-      else if (p.action === "deny") f.denyPorts.add(port);
+  // 禁用策略仍保留在策略列表和对象引用中，但不能形成有效访问路径。
+  cfg.policies
+    .filter((p) => !p.disabled)
+    .forEach((p) => {
+      const f = ensure(p.srcAddr, p.dstAddr);
+      const ports = serviceToPorts(p.service, cfg);
+      f.policies.push({ policy: p, ports });
+      ports.forEach((port) => {
+        f.allPorts.add(port);
+        if (p.action === "permit") f.permitPorts.add(port);
+        else if (p.action === "deny") f.denyPorts.add(port);
+      });
     });
-  });
 
   map.forEach((f) => {
     f.policies.sort(
@@ -831,6 +834,7 @@ export function findCoveringPolicies(
   const src = flowSrc || "any";
   return cfg.policies.filter(
     (p) =>
+      !p.disabled &&
       p.action === "permit" &&
       addrMatches(p.srcAddr, src, cfg) &&
       addrMatches(p.dstAddr, target, cfg) &&
@@ -1000,7 +1004,9 @@ export function filterLinesByFocus(
     // A service object / group name, or a literal port inside a range, still
     // selects the lines whose real ports it overlaps.
     if (!cfg || id === "any" || l.service === "any") return false;
-    return serviceToPorts(id, cfg).some((p) => portCovers(p, l.service) || portCovers(l.service, p));
+    return serviceToPorts(id, cfg).some(
+      (p) => portCovers(p, l.service) || portCovers(l.service, p),
+    );
   });
 }
 
