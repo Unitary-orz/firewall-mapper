@@ -40,3 +40,16 @@ test("全部禁用且选择隐藏时表格为空", () => {
   assert.deepEqual(visible, []);
   assert.equal(hiddenCount, 1);
 });
+
+test("策略和 NAT 表格默认使用相同的禁用行过滤规则", () => {
+  const policies = [{ id: 74, disabled: true }, { id: 229 }];
+  const natRules = [{ id: 169, disabled: true }, { id: 171 }];
+  assert.deepEqual(
+    splitRowsByDisabled(policies, isDisabled, true).visible.map((r) => r.id),
+    [229],
+  );
+  assert.deepEqual(
+    splitRowsByDisabled(natRules, isDisabled, true).visible.map((r) => r.id),
+    [171],
+  );
+});

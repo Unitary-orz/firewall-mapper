@@ -276,12 +276,14 @@ function IndexPage() {
               <Stat label="服务组" value={cfg.serviceGroups.length} to="/services" />
               <Stat
                 label="策略"
-                value={cfg.policies.length}
+                value={cfg.policies.filter((p) => showDisabled || !p.disabled).length}
                 to="/policies"
                 hint={
-                  cfg.policies.some((p) => p.disabled)
-                    ? `已禁用 ${cfg.policies.filter((p) => p.disabled).length} 条`
-                    : "全部已启用"
+                  !showDisabled && cfg.policies.some((p) => p.disabled)
+                    ? `已禁用 ${cfg.policies.filter((p) => p.disabled).length} 条，默认隐藏`
+                    : cfg.policies.some((p) => p.disabled)
+                      ? `已禁用 ${cfg.policies.filter((p) => p.disabled).length} 条`
+                      : "全部已启用"
                 }
               />
               <Stat

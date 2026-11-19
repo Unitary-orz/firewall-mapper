@@ -34,16 +34,12 @@ function NatPage() {
   const [showDisabled] = useShowDisabled();
 
   const dnatRules = useMemo(
-    () =>
-      cfg?.natRules.filter(
-        (r) => (r.kind === "destination" || r.kind === "static") && (showDisabled || !r.disabled),
-      ) ?? [],
-    [cfg, showDisabled],
+    () => cfg?.natRules.filter((r) => r.kind === "destination" || r.kind === "static") ?? [],
+    [cfg],
   );
-  const snatRules = useMemo(
-    () => cfg?.natRules.filter((r) => r.kind === "source" && (showDisabled || !r.disabled)) ?? [],
-    [cfg, showDisabled],
-  );
+  const snatRules = useMemo(() => cfg?.natRules.filter((r) => r.kind === "source") ?? [], [cfg]);
+  const visibleDnatCount = dnatRules.filter((r) => showDisabled || !r.disabled).length;
+  const visibleSnatCount = snatRules.filter((r) => showDisabled || !r.disabled).length;
   const hiddenCount = useMemo(
     () => (cfg && !showDisabled ? cfg.natRules.filter((r) => r.disabled).length : 0),
     [cfg, showDisabled],
@@ -234,15 +230,25 @@ function NatPage() {
       )}
       <Tabs defaultValue="dnat">
         <TabsList>
-          <TabsTrigger value="dnat">目的 NAT ({dnatRules.length})</TabsTrigger>
-          <TabsTrigger value="snat">源 NAT ({snatRules.length})</TabsTrigger>
+          <TabsTrigger value="dnat">目的 NAT ({visibleDnatCount})</TabsTrigger>
+          <TabsTrigger value="snat">源 NAT ({visibleSnatCount})</TabsTrigger>
           <TabsTrigger value="pools">NAT 池 ({cfg.natPools.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="dnat" className="mt-4">
-          <DataTable rows={dnatRules} columns={dnatCols} filename="nat-destination.csv" />
+          <DataTable
+            rows={dnatRules}
+            columns={dnatCols}
+            filename="nat-destination.csv"
+            isDisabledRow={(r) => !!r.disabled}
+          />
         </TabsContent>
         <TabsContent value="snat" className="mt-4">
-          <DataTable rows={snatRules} columns={snatCols} filename="nat-source.csv" />
+          <DataTable
+            rows={snatRules}
+            columns={snatCols}
+            filename="nat-source.csv"
+            isDisabledRow={(r) => !!r.disabled}
+          />
         </TabsContent>
         <TabsContent value="pools" className="mt-4">
           <DataTable rows={cfg.natPools} columns={poolCols} filename="nat-pools.csv" />

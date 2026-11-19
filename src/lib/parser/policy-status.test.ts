@@ -81,4 +81,8 @@ test("禁用的 permit 策略不能把 DNAT 标记为已关联", () => {
   );
   assert.equal(enabledLines[0]?.action, "associated");
   assert.equal(enabledLines[0]?.policies[0]?.id, "9");
+
+  const allDisabled = parseConfig(`${raw}\nip nat 70 disable`);
+  assert.equal(getFocusLines(allDisabled, false).length, 0);
+  assert.equal(getFocusLines(allDisabled, true).length, 1);
 });

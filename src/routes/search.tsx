@@ -8,7 +8,7 @@ import { RefsPreview } from "@/components/RefsPreview";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useShowFullPortRange, useShowDisabled } from "@/lib/uiPrefs";
+import { useShowFullPortRange } from "@/lib/uiPrefs";
 import { isIpLiteral, serviceToPorts, findAddressesContainingIp } from "@/lib/access";
 import { Search, X } from "lucide-react";
 import type {
@@ -92,7 +92,6 @@ function SearchPage() {
   const urlSearch = useSearch({ strict: false }) as SearchParams;
   const inputRef = useRef<HTMLInputElement>(null);
   const [showFull] = useShowFullPortRange();
-  const [showDisabled] = useShowDisabled();
 
   const query = urlSearch.q ?? "";
 
@@ -173,9 +172,8 @@ function SearchPage() {
       );
     });
 
-    // NAT rules
+    // NAT rules：保留全部命中项，由表格的统一开关控制禁用行显隐。
     const natRules = cfg.natRules.filter((r) => {
-      if (!showDisabled && r.disabled) return false;
       if (matchesText(r.id) || matchesText(r.iface) || matchesText(r.kind)) return true;
       if (matchesText(r.description)) return true;
       const addressHit =
@@ -205,7 +203,7 @@ function SearchPage() {
       natRules,
       natPools,
     };
-  }, [query, cfg, xr, showDisabled]);
+  }, [query, cfg, xr]);
 
   /* ---- compute tabs ---- */
 
@@ -753,6 +751,7 @@ function SearchPage() {
                   columns={policyCols}
                   filename="search-policies.csv"
                   emptyText="无匹配策略"
+                  isDisabledRow={(p) => !!p.disabled}
                 />
               </TabsContent>
             )}
@@ -763,6 +762,7 @@ function SearchPage() {
                   columns={dnatCols}
                   filename="search-dnat.csv"
                   emptyText="无匹配 DNAT 规则"
+                  isDisabledRow={(r) => !!r.disabled}
                 />
               </TabsContent>
             )}
@@ -773,6 +773,7 @@ function SearchPage() {
                   columns={snatCols}
                   filename="search-snat.csv"
                   emptyText="无匹配 SNAT 规则"
+                  isDisabledRow={(r) => !!r.disabled}
                 />
               </TabsContent>
             )}

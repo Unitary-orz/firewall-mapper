@@ -226,28 +226,33 @@ interface IndirectSection {
 export function RefsPreview({ name, kind }: { name: string; kind: "address" | "service" }) {
   const { cfg, xr } = useConfigStore();
   const [showDisabled] = useShowDisabled();
-  const refs = xr
-    ? kind === "service"
-      ? (xr.serviceUsedBy.get(name) ?? [])
-      : (xr.addressUsedBy.get(name) ?? [])
-    : [];
-
-  // Disabled NAT rules are hidden by default, so their references (direct or
-  // via a group) stay out of the preview until the display option is turned on.
-  const disabledNatIds = useMemo(
+  const refs = useMemo(
     () =>
-      showDisabled || !cfg
-        ? new Set<string>()
-        : new Set(cfg.natRules.filter((r) => r.disabled).map((r) => r.id)),
-    [cfg, showDisabled],
+      xr
+        ? kind === "service"
+          ? (xr.serviceUsedBy.get(name) ?? [])
+          : (xr.addressUsedBy.get(name) ?? [])
+        : [],
+    [xr, kind, name],
   );
-  const isHiddenNat = (by: string, id: string) => by === "nat" && disabledNatIds.has(id);
+
+  // 禁用的策略和 NAT 都不计入直接、间接引用，与列表和访问关系保持一致。
+  const hiddenRefKeys = useMemo(() => {
+    if (showDisabled || !cfg) return new Set<string>();
+    return new Set([
+      ...cfg.policies.filter((p) => p.disabled).map((p) => `policy#${p.id}`),
+      ...cfg.natRules.filter((r) => r.disabled).map((r) => `nat#${r.id}`),
+    ]);
+  }, [cfg, showDisabled]);
+  const visibleRefs = useMemo(
+    () => refs.filter((r) => !hiddenRefKeys.has(`${r.by}#${r.id}`)),
+    [refs, hiddenRefKeys],
+  );
 
   const sections = useMemo<Section[]>(() => {
     if (!cfg) return [];
     const groups = new Map<RefUsage["by"], RefUsage[]>();
-    refs.forEach((r) => {
-      if (isHiddenNat(r.by, r.id)) return;
+    visibleRefs.forEach((r) => {
       const arr = groups.get(r.by) ?? [];
       arr.push(r);
       groups.set(r.by, arr);
@@ -288,23 +293,23 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
         }
         return { by, items, anyAnyCount };
       });
-  }, [cfg, refs, disabledNatIds]);
+  }, [cfg, visibleRefs]);
 
   const indirectSections = useMemo<IndirectSection[]>(() => {
     if (!cfg || !xr) return [];
     const groupKey: RefUsage["by"] = kind === "service" ? "service-group" : "address-group";
     const usedByMap = kind === "service" ? xr.serviceUsedBy : xr.addressUsedBy;
     const directKeys = new Set(
-      refs.filter((r) => r.by === "policy" || r.by === "nat").map((r) => `${r.by}#${r.id}`),
+      visibleRefs.filter((r) => r.by === "policy" || r.by === "nat").map((r) => `${r.by}#${r.id}`),
     );
     // groupName -> (by#id -> viaGroups accumulator)
     const acc = new Map<string, IndirectItem>();
-    const groupNames = refs.filter((r) => r.by === groupKey).map((r) => r.id);
+    const groupNames = visibleRefs.filter((r) => r.by === groupKey).map((r) => r.id);
     for (const gname of groupNames) {
       const usages = usedByMap.get(gname) ?? [];
       for (const u of usages) {
         if (u.by !== "policy" && u.by !== "nat") continue;
-        if (isHiddenNat(u.by, u.id)) continue;
+        if (hiddenRefKeys.has(`${u.by}#${u.id}`)) continue;
         const key = `${u.by}#${u.id}`;
         if (directKeys.has(key)) continue;
         const existing = acc.get(key);
@@ -347,10 +352,10 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
       out.push({ by, items, anyAnyCount });
     }
     return out;
-  }, [cfg, xr, refs, kind]);
+  }, [cfg, xr, visibleRefs, kind, hiddenRefKeys]);
 
   if (!xr) return null;
-  if (refs.length === 0) return <Badge tone="warn">未引用</Badge>;
+  if (visibleRefs.length === 0) return <Badge tone="warn">未引用</Badge>;
 
   const summary = sections.map((s) => `${byLabel[s.by]} ${s.items.length}`).join(" · ");
   const indirectSummary = indirectSections
@@ -362,7 +367,7 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
     <HoverCard openDelay={120} closeDelay={80}>
       <HoverCardTrigger asChild>
         <span className="text-xs cursor-help underline decoration-dotted underline-offset-2 text-primary">
-          {refs.length} 处 · {summary}
+          {visibleRefs.length} 处 · {summary}
           {indirectTotal > 0 && (
             <span className="text-muted-foreground"> · 间接 {indirectTotal}</span>
           )}
@@ -373,7 +378,7 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
           <div className="text-sm">
             <span className="font-semibold">{name}</span>
             <span className="ml-2 text-xs font-normal text-muted-foreground">
-              共 {refs.length} 处直接引用 · {summary}
+              共 {visibleRefs.length} 处直接引用 · {summary}
               {indirectTotal > 0 && ` · 间接 ${indirectTotal}（${indirectSummary}）`}
             </span>
           </div>

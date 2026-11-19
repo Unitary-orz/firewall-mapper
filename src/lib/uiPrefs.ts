@@ -18,6 +18,12 @@ const defaults: Record<PrefKey, boolean> = {
 function read(key: PrefKey): boolean {
   if (typeof window === "undefined") return defaults[key];
   try {
+    // cfg.hideDisabledRows 是策略表格曾使用的旧键。优先读取它，保留用户
+    // 上一次的选择；之后两个键会一起写入，全站共用 cfg.showDisabled。
+    if (key === "cfg.showDisabled") {
+      const legacy = window.localStorage.getItem("cfg.hideDisabledRows");
+      if (legacy !== null) return legacy === "0";
+    }
     const v = window.localStorage.getItem(key);
     if (v === null) return defaults[key];
     return v === "1";
@@ -60,10 +66,16 @@ function setPref(key: PrefKey, v: boolean) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(key, v ? "1" : "0");
+    if (key === "cfg.showDisabled") {
+      window.localStorage.setItem("cfg.hideDisabledRows", v ? "0" : "1");
+    }
   } catch {
     // ignore
   }
   getListeners(key).forEach((cb) => cb());
+  if (key === "cfg.showDisabled") {
+    getListeners("cfg.hideDisabledRows").forEach((cb) => cb());
+  }
 }
 
 function useBoolPref(key: PrefKey): [boolean, (v: boolean) => void] {
@@ -87,5 +99,9 @@ export const useShowPolicyZone = () => useBoolPref("cfg.showPolicyZone");
 export const setShowDisabled = (v: boolean) => setPref("cfg.showDisabled", v);
 export const useShowDisabled = () => useBoolPref("cfg.showDisabled");
 
-export const setHideDisabledRows = (v: boolean) => setPref("cfg.hideDisabledRows", v);
-export const useHideDisabledRows = () => useBoolPref("cfg.hideDisabledRows");
+// 兼容策略表格的“隐藏”语义，底层与 NAT、搜索和关系图共用同一偏好。
+export const setHideDisabledRows = (v: boolean) => setPref("cfg.showDisabled", !v);
+export const useHideDisabledRows = (): [boolean, (v: boolean) => void] => {
+  const [showDisabled, setShowDisabled] = useShowDisabled();
+  return [!showDisabled, (v: boolean) => setShowDisabled(!v)];
+};
