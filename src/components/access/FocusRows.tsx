@@ -473,29 +473,6 @@ export function DnatLabel({
               )}
             </span>
           </div>
-
-          {groupMembers.length > 0 && (
-            <div className="flex items-baseline gap-2">
-              <span className="w-16 shrink-0 text-[10px] tracking-wide text-muted-foreground">
-                服务组成员
-              </span>
-              <div className="min-w-0 flex-1 space-y-0.5">
-                {groupMembers.slice(0, 6).map((m) => (
-                  <div key={m.name} className="flex items-baseline justify-between gap-3">
-                    <span className="min-w-0 truncate">
-                      <ObjectName name={m.name} prefer="service" />
-                    </span>
-                    <span className="shrink-0 text-amber-700/70 dark:text-amber-300/70">
-                      {m.ports.map((p) => fmtPort(p, showFull)).join(", ")}
-                    </span>
-                  </div>
-                ))}
-                {groupMembers.length > 6 && (
-                  <div className="text-muted-foreground">+{groupMembers.length - 6} 个</div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </HoverCardContent>
     </HoverCard>
