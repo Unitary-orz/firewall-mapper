@@ -160,29 +160,6 @@ function AccessGraphPage() {
         <FocusTabs focus={focus} onChange={setFocus} />
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <FocusPicker focus={focus} value={id} options={candidates} onChange={setId} xr={xr} />
-          <div className="relative w-64">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              aria-label="筛选来源或目的对象"
-              placeholder="筛选对象 / IP"
-              value={objectQuery}
-              onChange={(event) => setObjectQuery(event.target.value)}
-              className="h-9 pl-8 pr-8 text-xs"
-            />
-            {objectQuery && (
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                aria-label="清除对象筛选"
-                title="清除对象筛选"
-                onClick={() => setObjectQuery("")}
-                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            )}
-          </div>
           {id && (
             <span className="text-xs text-muted-foreground">
               显示 <b className="text-foreground">{lines.length}</b>
@@ -192,6 +169,32 @@ function AccessGraphPage() {
           <span className="ml-auto text-xs text-muted-foreground">
             候选 {candidates.length} · 全量 FlowGroup {allLines.length}
           </span>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-80">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            aria-label="筛选来源或目的对象"
+            placeholder="筛选对象 / IP"
+            value={objectQuery}
+            onChange={(event) => setObjectQuery(event.target.value)}
+            className="h-9 pl-8 pr-8 text-xs"
+          />
+          {objectQuery && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              aria-label="清除对象筛选"
+              title="清除对象筛选"
+              onClick={() => setObjectQuery("")}
+              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       </div>
 
