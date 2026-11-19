@@ -1,7 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMemo, useState, type ReactNode } from "react";
-import { useShowLineNumbers } from "@/lib/uiPrefs";
+import { useHideDisabledRows, useShowLineNumbers } from "@/lib/uiPrefs";
+import { splitRowsByDisabled } from "@/lib/tableRows";
 
 export function LineLink({ line }: { line?: number }) {
   const [show] = useShowLineNumbers();
@@ -46,31 +47,39 @@ export function DataTable<T>({
   filename = "export.csv",
   emptyText = "无数据",
   pageSize = 50,
+  isDisabledRow,
 }: {
   rows: T[];
   columns: Column<T>[];
   filename?: string;
   emptyText?: string;
   pageSize?: number;
+  isDisabledRow?: (row: T) => boolean;
 }) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [showLineNo] = useShowLineNumbers();
+  const [hideDisabled, setHideDisabled] = useHideDisabledRows();
   const columns = useMemo(
     () => allColumns.filter((c) => showLineNo || !c.hiddenWhenNoLineNo),
     [allColumns, showLineNo],
   );
 
+  const { visible: baseRows, hiddenCount } = useMemo(
+    () => splitRowsByDisabled(rows, isDisabledRow, hideDisabled),
+    [rows, isDisabledRow, hideDisabled],
+  );
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((r) =>
+    if (!needle) return baseRows;
+    return baseRows.filter((r) =>
       columns.some((c) => {
         const v = c.search ? c.search(r) : typeof c.cell(r) === "string" ? String(c.cell(r)) : "";
         return v.toLowerCase().includes(needle);
       }),
     );
-  }, [q, rows, columns]);
+  }, [q, baseRows, columns]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const cur = Math.min(page, pages - 1);
@@ -112,9 +121,27 @@ export function DataTable<T>({
           className="max-w-xs"
         />
         <span className="text-xs text-muted-foreground">
-          共 {filtered.length} 条 · {rows.length} 总
+          共 {filtered.length} 条 · {baseRows.length} 总
+          {hiddenCount > 0 ? ` · 已禁用 ${hiddenCount}` : ""}
         </span>
         <div className="flex-1" />
+        {isDisabledRow && hiddenCount > 0 && (
+          <Button
+            size="sm"
+            variant={hideDisabled ? "outline" : "secondary"}
+            onClick={() => {
+              setHideDisabled(!hideDisabled);
+              setPage(0);
+            }}
+            title={
+              hideDisabled
+                ? `显示 ${hiddenCount} 条已禁用记录（导出也会包含）`
+                : `隐藏 ${hiddenCount} 条已禁用记录（导出也会隐藏）`
+            }
+          >
+            {hideDisabled ? "显示已禁用" : "隐藏已禁用"}
+          </Button>
+        )}
         <Button size="sm" variant="outline" onClick={exportCsv}>
           导出 CSV
         </Button>

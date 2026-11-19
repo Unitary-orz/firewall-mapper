@@ -114,7 +114,12 @@ function PoliciesPage() {
         共 {cfg.policies.length} 条：已启用 {enabledCount}，已禁用 {disabledCount}。 permit/deny
         是处理动作，不代表启停状态；表内按导出顺序排列。
       </p>
-      <DataTable rows={cfg.policies} columns={cols} filename="policies.csv" />
+      <DataTable
+        rows={cfg.policies}
+        columns={cols}
+        filename="policies.csv"
+        isDisabledRow={(p) => !!p.disabled}
+      />
     </div>
   );
 }
