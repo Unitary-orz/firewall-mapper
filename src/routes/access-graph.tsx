@@ -21,7 +21,16 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, ChevronsUpDown, ChevronDown, X, Layers } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  ArrowRight,
+  Check,
+  ChevronsUpDown,
+  ChevronDown,
+  X,
+  Layers,
+  ListFilter,
+} from "lucide-react";
 import {
   getFlows,
   getFocusLines,
@@ -39,6 +48,12 @@ import { ObjectName } from "@/components/ObjectPreview";
 import { cn } from "@/lib/utils";
 
 import { groupBy, FocusLineRow, NodeChip, SvcChip } from "@/components/access/FocusRows";
+import {
+  DEFAULT_ACCESS_LINE_FILTER,
+  countActiveAccessFilters,
+  filterAccessLines,
+  type AccessLineFilter,
+} from "@/lib/accessFilters";
 interface SearchParams {
   focus?: FocusType;
   id?: string;
@@ -126,16 +141,19 @@ function AccessGraphPage() {
     });
   };
 
-  const [showDisabled] = useShowDisabled();
+  const [showDisabled, setShowDisabled] = useShowDisabled();
+  const [filters, setFilters] = useState<AccessLineFilter>(DEFAULT_ACCESS_LINE_FILTER);
   const allLines = useMemo(
     () => (cfg ? getFocusLines(cfg, showDisabled) : []),
     [cfg, showDisabled],
   );
   const candidates = useMemo(() => focusCandidates(allLines, focus), [allLines, focus]);
-  const lines = useMemo(
+  const focusedLines = useMemo(
     () => (cfg ? filterLinesByFocus(allLines, focus, id, cfg) : []),
     [allLines, focus, id, cfg],
   );
+  const lines = useMemo(() => filterAccessLines(focusedLines, filters), [focusedLines, filters]);
+  const activeFilterCount = countActiveAccessFilters(filters);
 
   if (!cfg) return <EmptyConfig />;
 
@@ -153,9 +171,16 @@ function AccessGraphPage() {
         <FocusTabs focus={focus} onChange={setFocus} />
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <FocusPicker focus={focus} value={id} options={candidates} onChange={setId} xr={xr} />
+          <AccessFilter
+            value={filters}
+            onChange={setFilters}
+            showDisabled={showDisabled}
+            onShowDisabledChange={setShowDisabled}
+          />
           {id && (
             <span className="text-xs text-muted-foreground">
-              命中 <b className="text-foreground">{lines.length}</b> 条 FlowGroup
+              显示 <b className="text-foreground">{lines.length}</b>
+              {activeFilterCount > 0 && ` / ${focusedLines.length}`} 条 FlowGroup
             </span>
           )}
           <span className="ml-auto text-xs text-muted-foreground">
@@ -167,7 +192,13 @@ function AccessGraphPage() {
       {!id ? (
         <FocusEmpty focus={focus} candidates={candidates} onPick={setId} />
       ) : (
-        <FocusGraph focus={focus} id={id} lines={lines} />
+        <FocusGraph
+          focus={focus}
+          id={id}
+          lines={lines}
+          filteredOut={focusedLines.length > 0}
+          onClearFilters={() => setFilters(DEFAULT_ACCESS_LINE_FILTER)}
+        />
       )}
     </div>
   );
@@ -323,6 +354,134 @@ function FocusPicker({
   );
 }
 
+// ---------- additional path filters ----------
+
+function AccessFilter({
+  value,
+  onChange,
+  showDisabled,
+  onShowDisabledChange,
+}: {
+  value: AccessLineFilter;
+  onChange: (next: AccessLineFilter) => void;
+  showDisabled: boolean;
+  onShowDisabledChange: (show: boolean) => void;
+}) {
+  const activeCount = countActiveAccessFilters(value);
+  const patch = <K extends keyof AccessLineFilter>(key: K, next: AccessLineFilter[K]) =>
+    onChange({ ...value, [key]: next });
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          size="sm"
+          variant={activeCount > 0 ? "secondary" : "outline"}
+          className="h-9 gap-1.5"
+          aria-label="筛选访问路径"
+        >
+          <ListFilter className="h-3.5 w-3.5" />
+          筛选
+          {activeCount > 0 && (
+            <span className="rounded-full bg-primary px-1.5 text-[10px] leading-4 text-primary-foreground">
+              {activeCount}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-3">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-sm font-medium">筛选访问路径</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs"
+            disabled={activeCount === 0}
+            onClick={() => onChange(DEFAULT_ACCESS_LINE_FILTER)}
+          >
+            重置
+          </Button>
+        </div>
+        <div className="space-y-3">
+          <FilterChoices
+            label="路径类型"
+            value={value.nat}
+            onChange={(next) => patch("nat", next)}
+            options={[
+              { value: "all", label: "全部" },
+              { value: "nat", label: "仅 NAT" },
+              { value: "direct", label: "仅直连" },
+            ]}
+          />
+          <FilterChoices
+            label="策略关联"
+            value={value.association}
+            onChange={(next) => patch("association", next)}
+            options={[
+              { value: "all", label: "全部" },
+              { value: "associated", label: "已关联" },
+              { value: "unassociated", label: "未关联" },
+            ]}
+          />
+          <FilterChoices
+            label="策略动作"
+            value={value.action}
+            onChange={(next) => patch("action", next)}
+            options={[
+              { value: "all", label: "全部" },
+              { value: "permit", label: "permit" },
+              { value: "deny", label: "deny" },
+            ]}
+          />
+        </div>
+        <label className="mt-3 flex cursor-pointer select-none items-center gap-2 border-t border-border pt-3 text-sm">
+          <Checkbox
+            checked={showDisabled}
+            onCheckedChange={(checked) => onShowDisabledChange(checked === true)}
+          />
+          <span>显示已禁用</span>
+        </label>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function FilterChoices<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div role="group" aria-label={label}>
+      <div className="mb-1.5 text-xs text-muted-foreground">{label}</div>
+      <div className="grid grid-cols-3 gap-1 rounded-md bg-secondary/40 p-1">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={value === option.value}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              "h-7 rounded px-2 text-xs transition-colors",
+              value === option.value
+                ? "bg-background font-medium text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ---------- empty state with quick-pick ----------
 
 function FocusEmpty({
@@ -364,11 +523,34 @@ function FocusEmpty({
 
 // ---------- focus graph dispatcher ----------
 
-function FocusGraph({ focus, id, lines }: { focus: FocusType; id: string; lines: FocusLine[] }) {
+function FocusGraph({
+  focus,
+  id,
+  lines,
+  filteredOut,
+  onClearFilters,
+}: {
+  focus: FocusType;
+  id: string;
+  lines: FocusLine[];
+  filteredOut: boolean;
+  onClearFilters: () => void;
+}) {
   if (lines.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-        所选 <b className="font-mono">{id}</b> 没有任何 FlowGroup。
+        {filteredOut ? (
+          <div className="space-y-3">
+            <p>当前筛选条件下没有匹配的访问路径。</p>
+            <Button size="sm" variant="outline" onClick={onClearFilters}>
+              清除筛选
+            </Button>
+          </div>
+        ) : (
+          <>
+            所选 <b className="font-mono">{id}</b> 没有任何 FlowGroup。
+          </>
+        )}
       </div>
     );
   }
