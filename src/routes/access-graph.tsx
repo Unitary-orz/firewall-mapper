@@ -9,6 +9,7 @@ import {
   useShowPolicyZone,
   useShowDisabled,
   useHideUnassociated,
+  useShowFocusStats,
 } from "@/lib/uiPrefs";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -136,6 +137,7 @@ function AccessGraphPage() {
 
   const [showDisabled] = useShowDisabled();
   const [hideUnassociated, setHideUnassociated] = useHideUnassociated();
+  const [showFocusStats] = useShowFocusStats();
   const [objectQuery, setObjectQuery] = useState("");
   const allLines = useMemo(
     () => (cfg ? getFocusLines(cfg, showDisabled) : []),
@@ -171,7 +173,14 @@ function AccessGraphPage() {
       <div className="rounded-lg border border-border bg-card p-3">
         <FocusTabs focus={focus} onChange={setFocus} />
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <FocusPicker focus={focus} value={id} options={candidates} onChange={setId} xr={xr} />
+          <FocusPicker
+            focus={focus}
+            value={id}
+            options={candidates}
+            onChange={setId}
+            xr={xr}
+            showCounts={showFocusStats}
+          />
           {id && (
             <span className="text-xs text-muted-foreground">
               显示 <b className="text-foreground">{lines.length}</b>
@@ -179,9 +188,11 @@ function AccessGraphPage() {
               {hideUnassociated && unassociatedCount > 0 && ` · 已隐藏未关联 ${unassociatedCount}`}
             </span>
           )}
-          <span className="ml-auto text-xs text-muted-foreground">
-            候选 {candidates.length} · 全量 FlowGroup {allLines.length}
-          </span>
+          {showFocusStats && (
+            <span className="ml-auto text-xs text-muted-foreground">
+              候选 {candidates.length} · 全量 FlowGroup {allLines.length}
+            </span>
+          )}
         </div>
       </div>
 
@@ -246,7 +257,12 @@ function AccessGraphPage() {
       </div>
 
       {!id ? (
-        <FocusEmpty focus={focus} candidates={candidates} onPick={setId} />
+        <FocusEmpty
+          focus={focus}
+          candidates={candidates}
+          onPick={setId}
+          showCounts={showFocusStats}
+        />
       ) : (
         <FocusGraph
           focus={focus}
@@ -304,12 +320,14 @@ function FocusPicker({
   options,
   onChange,
   xr,
+  showCounts = true,
 }: {
   focus: FocusType;
   value: string;
   options: FocusCandidate[];
   onChange: (v: string) => void;
   xr?: CrossRef | null;
+  showCounts?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -393,7 +411,9 @@ function FocusPicker({
                     >
                       {o.id}
                     </span>
-                    <span className="ml-2 text-[10px] text-muted-foreground">{o.count}</span>
+                    {showCounts && (
+                      <span className="ml-2 text-[10px] text-muted-foreground">{o.count}</span>
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -422,10 +442,12 @@ function FocusEmpty({
   focus,
   candidates,
   onPick,
+  showCounts = true,
 }: {
   focus: FocusType;
   candidates: FocusCandidate[];
   onPick: (v: string) => void;
+  showCounts?: boolean;
 }) {
   const top = candidates.filter((c) => c.id !== "any").slice(0, 12);
   return (
@@ -435,7 +457,9 @@ function FocusEmpty({
       </p>
       {top.length > 0 && (
         <div className="mt-4">
-          <div className="mb-2 text-center text-xs text-muted-foreground">常用候选（按命中数）</div>
+          <div className="mb-2 text-center text-xs text-muted-foreground">
+            {showCounts ? "常用候选（按命中数）" : "常用候选"}
+          </div>
           <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-1.5">
             {top.map((c) => (
               <button
@@ -445,7 +469,9 @@ function FocusEmpty({
                 className="rounded-md border border-border bg-background px-2.5 py-1 font-mono text-xs hover:border-primary/50 hover:bg-primary/5"
               >
                 {c.id}
-                <span className="ml-1.5 text-[10px] text-muted-foreground">{c.count}</span>
+                {showCounts && (
+                  <span className="ml-1.5 text-[10px] text-muted-foreground">{c.count}</span>
+                )}
               </button>
             ))}
           </div>

@@ -6,7 +6,8 @@ type PrefKey =
   | "cfg.showPolicyZone"
   | "cfg.showDisabled"
   | "cfg.hideDisabledRows"
-  | "cfg.hideUnassociated";
+  | "cfg.hideUnassociated"
+  | "cfg.showFocusStats";
 
 const defaults: Record<PrefKey, boolean> = {
   "cfg.showLineNo": false,
@@ -15,6 +16,7 @@ const defaults: Record<PrefKey, boolean> = {
   "cfg.showDisabled": false,
   "cfg.hideDisabledRows": true,
   "cfg.hideUnassociated": false,
+  "cfg.showFocusStats": true,
 };
 
 function read(key: PrefKey): boolean {
@@ -111,3 +113,7 @@ export const useHideDisabledRows = (): [boolean, (v: boolean) => void] => {
 // 访问关系中「未关联策略」的流量是否隐藏；默认不勾选，即照常显示。
 export const setHideUnassociated = (v: boolean) => setPref("cfg.hideUnassociated", v);
 export const useHideUnassociated = () => useBoolPref("cfg.hideUnassociated");
+
+// 访问关系页的候选统计：顶部「候选 N · 全量 FlowGroup N」以及每个候选的命中数。
+export const setShowFocusStats = (v: boolean) => setPref("cfg.showFocusStats", v);
+export const useShowFocusStats = () => useBoolPref("cfg.showFocusStats");

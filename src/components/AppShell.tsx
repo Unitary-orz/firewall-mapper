@@ -10,6 +10,7 @@ import {
   useShowFullPortRange,
   useShowPolicyZone,
   useShowDisabled,
+  useShowFocusStats,
 } from "@/lib/uiPrefs";
 
 const nav = [
@@ -30,6 +31,7 @@ function DisplaySettings() {
   const [showFullPort, setShowFullPort] = useShowFullPortRange();
   const [showPolicyZone, setShowPolicyZone] = useShowPolicyZone();
   const [showDisabled, setShowDisabled] = useShowDisabled();
+  const [showFocusStats, setShowFocusStats] = useShowFocusStats();
   const activeCount = (showLineNo ? 1 : 0) + (showFullPort ? 1 : 0);
 
   return (
@@ -88,6 +90,19 @@ function DisplaySettings() {
               </div>
             </div>
             <Switch checked={showDisabled} onCheckedChange={setShowDisabled} className="mt-0.5" />
+          </label>
+          <label className="flex cursor-pointer select-none items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-sm">显示访问关系的候选统计</div>
+              <div className="text-xs text-muted-foreground">
+                候选数量、全量 FlowGroup 数以及每个候选的命中条数
+              </div>
+            </div>
+            <Switch
+              checked={showFocusStats}
+              onCheckedChange={setShowFocusStats}
+              className="mt-0.5"
+            />
           </label>
         </div>
       </PopoverContent>
