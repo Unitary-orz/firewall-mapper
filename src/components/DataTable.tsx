@@ -49,6 +49,7 @@ export function DataTable<T>({
   emptyText = "无数据",
   pageSize = 50,
   isDisabledRow,
+  searchPlaceholder = "筛选（任意列）",
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -56,6 +57,7 @@ export function DataTable<T>({
   emptyText?: string;
   pageSize?: number;
   isDisabledRow?: (row: T) => boolean;
+  searchPlaceholder?: string;
 }) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
@@ -113,7 +115,8 @@ export function DataTable<T>({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <Input
-          placeholder="筛选（任意列）"
+          placeholder={searchPlaceholder}
+          aria-label={searchPlaceholder}
           value={q}
           onChange={(e) => {
             setQ(e.target.value);

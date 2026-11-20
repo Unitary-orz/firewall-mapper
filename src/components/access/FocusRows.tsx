@@ -163,19 +163,20 @@ export function SvcChip({ svc, names = [] }: { svc: string; names?: string[] }) 
   const extraCount = serviceNames.length - 1;
   return (
     <span
-      className="inline-flex min-w-0 max-w-[20rem] items-center gap-1.5 rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-xs"
-      title={serviceNames.length > 0 ? `${serviceNames.join("、")} · ${svc}` : svc}
+      className="inline-flex min-w-0 max-w-[20rem] items-center gap-1.5 rounded-md border border-violet-500/30 bg-violet-500/[0.07] px-1.5 py-0.5 text-xs"
+      title={serviceNames.length > 0 ? `${serviceNames.join("、")}（${svc}）` : svc}
     >
       {primaryName && (
-        <>
-          <span className="min-w-0 truncate text-foreground/90">
-            {primaryName}
-            {extraCount > 0 && <span className="text-muted-foreground"> +{extraCount}</span>}
-          </span>
-          <span className="shrink-0 text-muted-foreground/50">·</span>
-        </>
+        <span className="min-w-0 truncate px-0.5 font-medium text-violet-800 dark:text-violet-300">
+          {primaryName}
+          {extraCount > 0 && (
+            <span className="ml-1 font-normal text-muted-foreground">+{extraCount}</span>
+          )}
+        </span>
       )}
-      <span className="shrink-0 font-mono text-muted-foreground">{svc}</span>
+      <span className="shrink-0 rounded border border-border/60 bg-background/70 px-1.5 py-px font-mono text-[10px] leading-4 text-muted-foreground">
+        {svc}
+      </span>
     </span>
   );
 }

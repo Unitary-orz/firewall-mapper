@@ -7,6 +7,7 @@ import { serviceToPorts } from "@/lib/access";
 import { useShowPolicyZone } from "@/lib/uiPrefs";
 import { PolicyStatusBadges } from "@/components/PolicyStatus";
 import { getPolicyExpiry, isPolicyExpired, policyStatusText } from "@/lib/policyStatus";
+import { policyIdSearchText } from "@/lib/policySearch";
 
 export const Route = createFileRoute("/policies")({
   head: () => ({
@@ -38,7 +39,7 @@ function PoliciesPage() {
       key: "id",
       header: "#ID",
       cell: (p) => <span className="font-mono">{p.id}</span>,
-      search: (p) => p.id,
+      search: (p) => policyIdSearchText(p.id),
       className: "w-16",
     },
     {
@@ -130,6 +131,7 @@ function PoliciesPage() {
         rows={cfg.policies}
         columns={cols}
         filename="policies.csv"
+        searchPlaceholder="搜索策略 ID（如 #274）、源、目的或服务"
         isDisabledRow={(p) => !!p.disabled}
       />
     </div>
