@@ -1,4 +1,6 @@
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/DataTable";
 import { useConfigStore } from "@/lib/store";
 import { lookupIndex } from "@/lib/access";
@@ -288,6 +290,7 @@ export function ObjectName({
   prefer?: ResolvePrefer;
 }) {
   const r = useResolve(name, prefer);
+  const isMobile = useIsMobile();
   const isEmpty = !name;
 
   if (isEmpty) {
@@ -303,52 +306,78 @@ export function ObjectName({
       ? "text-destructive"
       : "text-primary";
 
-  const trigger = (
-    <span className={`font-mono text-xs cursor-help ${colorCls} ${className}`}>{name}</span>
+  const details = (
+    <div className="space-y-2">
+      <div className="flex items-baseline gap-2">
+        <span className="min-w-0 flex-1 break-all text-sm font-semibold">{r.name}</span>
+        {!isLiteral && (
+          <span className="shrink-0">
+            <Badge tone={r.kind === "unknown" ? "danger" : "default"}>{kindLabel[r.kind]}</Badge>
+          </span>
+        )}
+      </div>
+      {r.literal && <div className="text-xs text-muted-foreground">{r.literal}</div>}
+      {r.description && <DescQuote>{r.description}</DescQuote>}
+      {r.addr && <AddressEntries a={r.addr} />}
+      {r.svc && <ServiceEntries s={r.svc} />}
+      {r.pool && <PoolDetail p={r.pool} />}
+      {r.addrGroup && (
+        <div>
+          <div className="mb-1 text-xs font-medium text-muted-foreground">
+            成员（{r.addrGroup.members.length}）
+          </div>
+          <GroupMembers members={r.addrGroup.members} />
+        </div>
+      )}
+      {r.svcGroup && (
+        <div>
+          <div className="mb-1 text-xs font-medium text-muted-foreground">
+            成员（{r.svcGroup.members.length}）
+          </div>
+          <GroupMembers members={r.svcGroup.members} prefer="service" />
+        </div>
+      )}
+      {r.kind === "unknown" && (
+        <div className="text-xs text-destructive">
+          在配置中找不到该名称的定义，可能引用了已删除的对象。
+        </div>
+      )}
+    </div>
   );
+
+  if (isMobile) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={`查看 ${name} 的详情`}
+            className={`inline max-w-full break-all text-left align-baseline font-mono text-xs ${colorCls} ${className}`}
+          >
+            {name}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          collisionPadding={8}
+          className="max-h-[70dvh] w-[calc(100vw-1.5rem)] max-w-sm overflow-y-auto p-3"
+        >
+          {details}
+        </PopoverContent>
+      </Popover>
+    );
+  }
 
   return (
     <HoverCard openDelay={120} closeDelay={80}>
-      <HoverCardTrigger asChild>{trigger}</HoverCardTrigger>
-      <HoverCardContent className="w-96 max-h-96 overflow-auto" align="start">
-        <div className="space-y-2">
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold break-all min-w-0 flex-1">{r.name}</span>
-            {!isLiteral && (
-              <span className="shrink-0">
-                <Badge tone={r.kind === "unknown" ? "danger" : "default"}>
-                  {kindLabel[r.kind]}
-                </Badge>
-              </span>
-            )}
-          </div>
-          {r.literal && <div className="text-xs text-muted-foreground">{r.literal}</div>}
-          {r.description && <DescQuote>{r.description}</DescQuote>}
-          {r.addr && <AddressEntries a={r.addr} />}
-          {r.svc && <ServiceEntries s={r.svc} />}
-          {r.pool && <PoolDetail p={r.pool} />}
-          {r.addrGroup && (
-            <div>
-              <div className="text-xs font-medium text-muted-foreground mb-1">
-                成员（{r.addrGroup.members.length}）
-              </div>
-              <GroupMembers members={r.addrGroup.members} />
-            </div>
-          )}
-          {r.svcGroup && (
-            <div>
-              <div className="text-xs font-medium text-muted-foreground mb-1">
-                成员（{r.svcGroup.members.length}）
-              </div>
-              <GroupMembers members={r.svcGroup.members} prefer="service" />
-            </div>
-          )}
-          {r.kind === "unknown" && (
-            <div className="text-xs text-destructive">
-              在配置中找不到该名称的定义，可能引用了已删除的对象。
-            </div>
-          )}
-        </div>
+      <HoverCardTrigger asChild>
+        <span className={`cursor-help font-mono text-xs ${colorCls} ${className}`}>{name}</span>
+      </HoverCardTrigger>
+      <HoverCardContent
+        className="max-h-96 w-96 max-w-[calc(100vw-1.5rem)] overflow-auto"
+        align="start"
+      >
+        {details}
       </HoverCardContent>
     </HoverCard>
   );

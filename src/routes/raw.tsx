@@ -42,17 +42,29 @@ function RawPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">原始配置</h1>
-      <div className="flex items-center gap-2">
+      <h1 className="text-xl font-semibold sm:text-2xl">原始配置</h1>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex">
         <Input
           placeholder="跳转到行号"
+          aria-label="跳转到行号"
+          inputMode="numeric"
           value={jump}
           onChange={(e) => setJump(e.target.value)}
-          className="max-w-xs"
+          onKeyDown={(e) => {
+            if (e.key !== "Enter") return;
+            const n = Number(jump);
+            if (n > 0) {
+              ref.current
+                ?.querySelector(`[data-line="${n}"]`)
+                ?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }}
+          className="h-10 sm:max-w-xs"
         />
         <Button
           variant="outline"
           size="sm"
+          className="h-10 px-4"
           onClick={() => {
             const n = Number(jump);
             if (n > 0) {
@@ -63,13 +75,13 @@ function RawPage() {
         >
           跳转
         </Button>
-        <span className="text-xs text-muted-foreground">
+        <span className="col-span-2 text-xs text-muted-foreground">
           共 {cfg.rawLines.length} 行{focusLine ? ` · 当前高亮 L${focusLine}` : ""}
         </span>
       </div>
       <div
         ref={ref}
-        className="max-h-[75vh] overflow-auto rounded-lg border border-border bg-card font-mono text-xs"
+        className="max-h-[72dvh] overflow-auto rounded-lg border border-border bg-card font-mono text-[11px] leading-relaxed sm:max-h-[75vh] sm:text-xs"
       >
         {cfg.rawLines.map((l, i) => {
           const n = i + 1;

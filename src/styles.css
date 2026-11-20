@@ -137,8 +137,30 @@
     border-color: var(--color-border);
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    overflow-x: hidden;
+  }
+
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+}
+
+@media (max-width: 639px) {
+  [data-slot="popover-content"],
+  [data-slot="hover-card-content"] {
+    max-width: calc(100vw - 1rem);
   }
 }

@@ -121,9 +121,9 @@ function ServicesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">服务对象</h1>
+      <h1 className="text-xl font-semibold sm:text-2xl">服务对象</h1>
       <Tabs defaultValue="svc">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2 sm:inline-flex sm:w-auto">
           <TabsTrigger value="svc">服务对象 ({cfg.services.length})</TabsTrigger>
           <TabsTrigger value="grp">服务组 ({cfg.serviceGroups.length})</TabsTrigger>
         </TabsList>

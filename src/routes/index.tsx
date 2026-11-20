@@ -213,7 +213,7 @@ function IndexPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div
-            className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-secondary/40 p-8 text-center"
+            className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-secondary/40 p-5 text-center sm:p-8"
             onDragOver={(e) => e.preventDefault()}
             onDrop={async (e) => {
               e.preventDefault();
@@ -270,7 +270,7 @@ function IndexPage() {
                 </span>
               )}
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
               <Stat label="地址对象" value={cfg.addresses.length} to="/objects" />
               <Stat label="地址组" value={cfg.addressGroups.length} to="/objects" />
               <Stat label="服务对象" value={cfg.services.length} to="/services" />

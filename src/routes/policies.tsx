@@ -123,7 +123,7 @@ function PoliciesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">策略</h1>
+      <h1 className="text-xl font-semibold sm:text-2xl">策略</h1>
       <p className="text-sm text-muted-foreground">
         共 {cfg.policies.length} 条：已启用 {enabledCount}，已禁用 {disabledCount}，已过期{" "}
         {expiredCount}。过期策略不参与有效访问关联；permit/deny 是处理动作，不代表启停状态。

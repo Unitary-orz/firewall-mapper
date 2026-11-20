@@ -70,7 +70,7 @@ function AuditPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">审计提示</h1>
+      <h1 className="text-xl font-semibold sm:text-2xl">审计提示</h1>
       <p className="text-sm text-muted-foreground">
         启发式规则：未被引用的对象、宽松到 any-any 的放行策略、同 IP 多次命名等。
       </p>

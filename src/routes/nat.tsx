@@ -209,7 +209,7 @@ function NatPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">NAT</h1>
+      <h1 className="text-xl font-semibold sm:text-2xl">NAT</h1>
       <p className="text-sm text-muted-foreground">
         防火墙看到的源/目的与业务理解的可能不同。NAT 规则把外部访问映射到内部 IP，
         或把内部源改写为对外可路由地址，是「源地址不一致」的根源。
@@ -220,7 +220,7 @@ function NatPage() {
         </div>
       )}
       <Tabs defaultValue="dnat">
-        <TabsList>
+        <TabsList className="grid h-auto w-full grid-cols-3 sm:inline-flex sm:w-auto">
           <TabsTrigger value="dnat">目的 NAT ({visibleDnatCount})</TabsTrigger>
           <TabsTrigger value="snat">源 NAT ({visibleSnatCount})</TabsTrigger>
           <TabsTrigger value="pools">NAT 池 ({cfg.natPools.length})</TabsTrigger>

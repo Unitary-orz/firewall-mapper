@@ -176,7 +176,7 @@ function IntermediariesPage() {
       {/* ---- page header ---- */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">中间节点</h1>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">中间节点</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             按命名识别 WAF、网关、堡垒机、代理、负载均衡等中间件，聚合展示每个节点的上下游策略与 NAT
             引用。
@@ -193,7 +193,7 @@ function IntermediariesPage() {
       </div>
 
       {/* ---- category stats ribbon ---- */}
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {CAT_ORDER.map((c) => {
           const Icon = CAT_ICON[c];
           const count = catCounts.get(c) ?? 0;
@@ -233,7 +233,7 @@ function IntermediariesPage() {
 
       {/* ---- search bar ---- */}
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="relative flex-1" style={{ minWidth: 200, maxWidth: 360 }}>
+        <div className="relative w-full flex-1 sm:max-w-[360px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="搜索名称或 IP…"
@@ -344,7 +344,7 @@ function NodeCard({ node }: { node: NodeAggregate }) {
       )}
     >
       <CollapsibleTrigger asChild>
-        <button className="flex w-full items-start gap-3 p-4 text-left">
+        <button className="flex min-h-11 w-full items-start gap-2.5 p-3 text-left sm:gap-3 sm:p-4">
           {/* left: icon */}
           <div
             className={cn(
@@ -360,7 +360,9 @@ function NodeCard({ node }: { node: NodeAggregate }) {
           {/* center: info */}
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-baseline gap-2">
-              <span className="truncate text-sm font-semibold">{node.name}</span>
+              <span className="min-w-0 break-all text-sm font-semibold [overflow-wrap:anywhere]">
+                {node.name}
+              </span>
               <Badge tone="muted">{CAT_LABEL[node.cat]}</Badge>
             </div>
 
@@ -413,7 +415,7 @@ function NodeCard({ node }: { node: NodeAggregate }) {
       </CollapsibleTrigger>
 
       {hasDetails && (
-        <CollapsibleContent className="border-t border-border/30 bg-background/40 px-4 pb-4 pt-3">
+        <CollapsibleContent className="border-t border-border/30 bg-background/40 px-3 pb-3 pt-3 sm:px-4 sm:pb-4">
           <NodeDetail node={node} />
         </CollapsibleContent>
       )}

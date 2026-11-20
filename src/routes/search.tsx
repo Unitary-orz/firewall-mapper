@@ -656,9 +656,9 @@ function SearchPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">全局搜索</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl">全局搜索</h1>
         <p className="text-sm text-muted-foreground">
-          输入 IP、对象名、服务名或端口号，跨全部模块定位相关配置。
+          输入 IP、对象名、服务名或端口号，定位相关配置。
         </p>
       </div>
 
@@ -707,7 +707,7 @@ function SearchPage() {
 
           {/* tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabKey)}>
-            <TabsList className="flex-wrap">
+            <TabsList className="h-auto max-w-full flex-nowrap justify-start overflow-x-auto sm:flex-wrap">
               {tabs.map((t) => (
                 <TabsTrigger key={t.key} value={t.key}>
                   {t.label} ({t.count})

@@ -167,13 +167,13 @@ function AccessGraphPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">访问路径分析</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl">访问路径分析</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           选择一个源、目的或服务，查看其访问路径与关联策略。
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-3">
+      <div className="rounded-lg border border-border bg-card p-2.5 sm:p-3">
         <FocusTabs focus={focus} onChange={setFocus} />
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <FocusPicker
@@ -203,15 +203,15 @@ function AccessGraphPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-80">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full sm:w-80">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             aria-label="筛选来源或目的对象"
             placeholder="筛选对象 / IP"
             value={objectQuery}
             onChange={(event) => setObjectQuery(event.target.value)}
-            className="h-9 pl-8 pr-8 text-xs"
+            className="h-10 pl-8 pr-8 text-base sm:h-9 sm:text-xs"
           />
           {objectQuery && (
             <Button
@@ -229,7 +229,7 @@ function AccessGraphPage() {
         </div>
         <label
           className={cn(
-            "ml-auto flex cursor-pointer select-none items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
+            "flex min-h-10 w-full cursor-pointer select-none items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs transition-colors sm:ml-auto sm:w-auto sm:justify-start",
             hideUnassociated
               ? "border-primary/40 bg-primary/5 text-foreground"
               : "border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground",
@@ -240,12 +240,14 @@ function AccessGraphPage() {
               : `勾选后隐藏 ${unassociatedCount} 条未关联策略的访问路径`
           }
         >
-          <Checkbox
-            aria-label="隐藏未关联策略"
-            checked={hideUnassociated}
-            onCheckedChange={(checked) => setHideUnassociated(checked === true)}
-          />
-          <span className="font-medium">隐藏未关联策略</span>
+          <span className="flex items-center gap-2">
+            <Checkbox
+              aria-label="隐藏未关联策略"
+              checked={hideUnassociated}
+              onCheckedChange={(checked) => setHideUnassociated(checked === true)}
+            />
+            <span className="font-medium">隐藏未关联策略</span>
+          </span>
           {unassociatedCount > 0 && (
             <span
               className={cn(
@@ -294,14 +296,14 @@ function FocusTabs({ focus, onChange }: { focus: FocusType; onChange: (f: FocusT
     { id: "svc", label: "Service", hint: "一个端口的暴露范围" },
   ];
   return (
-    <div className="inline-flex rounded-lg border border-border bg-secondary/30 p-1">
+    <div className="grid w-full grid-cols-3 rounded-lg border border-border bg-secondary/30 p-1 sm:inline-flex sm:w-auto">
       {tabs.map((t) => (
         <button
           key={t.id}
           type="button"
           onClick={() => onChange(t.id)}
           className={cn(
-            "flex flex-col items-start rounded-md px-3 py-1.5 text-left transition",
+            "flex min-w-0 flex-col items-center rounded-md px-1.5 py-2 text-center transition sm:items-start sm:px-3 sm:py-1.5 sm:text-left",
             focus === t.id
               ? "bg-background shadow-sm"
               : "text-muted-foreground hover:text-foreground",
@@ -350,28 +352,28 @@ function FocusPicker({
     (isIpLiteral(query) || /^[a-z]+\/\d+/i.test(query));
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex w-full min-w-0 items-center gap-1 sm:w-auto sm:flex-none">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-72 justify-between font-mono text-xs"
+            className="h-10 min-w-0 flex-1 justify-between px-3 font-mono text-xs sm:w-72 sm:flex-none"
           >
-            <span className={value ? "" : "text-muted-foreground"}>
+            <span className={cn("min-w-0 truncate", !value && "text-muted-foreground")}>
               {value || `选择${FOCUS_LABEL[focus]}…`}
             </span>
             <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-0">
+        <PopoverContent className="w-[calc(100vw-1.5rem)] max-w-80 p-0" collisionPadding={8}>
           <Command shouldFilter={false}>
             <CommandInput
               value={query}
               onValueChange={setQuery}
               placeholder={FOCUS_PLACEHOLDER[focus]}
-              className="h-9 text-xs"
+              className="h-10 text-base sm:text-xs"
             />
             <CommandList>
               <CommandEmpty className="py-4 text-xs">没有符合的选项</CommandEmpty>
@@ -428,7 +430,8 @@ function FocusPicker({
         <Button
           size="icon"
           variant="ghost"
-          className="h-7 w-7"
+          className="h-9 w-9 shrink-0"
+          aria-label="清除当前焦点"
           onClick={() => onChange("")}
           title="清除"
         >
@@ -454,7 +457,7 @@ function FocusEmpty({
 }) {
   const top = candidates.filter((c) => c.id !== "any").slice(0, 12);
   return (
-    <div className="rounded-lg border border-dashed border-border bg-card p-8">
+    <div className="rounded-lg border border-dashed border-border bg-card p-5 sm:p-8">
       <p className="text-center text-sm text-muted-foreground">
         选择一个 <b>{FOCUS_LABEL[focus]}</b>
       </p>
@@ -570,7 +573,7 @@ function GroupSummary({ rows }: { rows: FocusLine[] }) {
   if (denyRows > 0) parts.push({ label: `deny ${denyRows}`, cls: "text-destructive" });
   return (
     <span
-      className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground"
+      className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground sm:ml-auto"
       title="DNAT 转化后的目的+后端端口是否被任一 permit 策略覆盖"
     >
       {parts.map((p, i) => (
@@ -663,8 +666,8 @@ function FocusHeader({
   serviceNames?: string[];
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      <span className="text-muted-foreground">当前焦点</span>
+    <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
+      <span className="shrink-0 text-muted-foreground">当前焦点</span>
       {anchor.role === "svc" ? (
         <SvcChip svc={anchor.name} names={serviceNames} />
       ) : (
@@ -676,7 +679,9 @@ function FocusHeader({
 }
 
 function FocusCard({ children }: { children: React.ReactNode }) {
-  return <article className="rounded-lg border border-border bg-card p-3">{children}</article>;
+  return (
+    <article className="rounded-lg border border-border bg-card p-2 sm:p-3">{children}</article>
+  );
 }
 
 const COLLAPSE_THRESHOLD = 12;

@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useMemo, useState, type ReactNode } from "react";
 import { useHideDisabledRows, useShowLineNumbers } from "@/lib/uiPrefs";
 import { splitRowsByDisabled } from "@/lib/tableRows";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function LineLink({ line }: { line?: number }) {
   const [show] = useShowLineNumbers();
@@ -69,6 +70,7 @@ export function DataTable<T>({
   const [page, setPage] = useState(0);
   const [showLineNo] = useShowLineNumbers();
   const [globalHideDisabled, setGlobalHideDisabled] = useHideDisabledRows();
+  const isMobile = useIsMobile();
   const hideDisabled = controlledHideDisabled ?? globalHideDisabled;
   const setHideDisabled = onHideDisabledChange ?? setGlobalHideDisabled;
   const columns = useMemo(
@@ -92,9 +94,10 @@ export function DataTable<T>({
     );
   }, [q, baseRows, columns]);
 
-  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const effectivePageSize = isMobile ? Math.min(pageSize, 20) : pageSize;
+  const pages = Math.max(1, Math.ceil(filtered.length / effectivePageSize));
   const cur = Math.min(page, pages - 1);
-  const pageRows = filtered.slice(cur * pageSize, (cur + 1) * pageSize);
+  const pageRows = filtered.slice(cur * effectivePageSize, (cur + 1) * effectivePageSize);
 
   const exportCsv = () => {
     const lines = [
@@ -116,7 +119,7 @@ export function DataTable<T>({
     a.href = url;
     a.download = filename;
     a.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return (
@@ -125,91 +128,131 @@ export function DataTable<T>({
         <Input
           placeholder={searchPlaceholder}
           aria-label={searchPlaceholder}
+          enterKeyHint="search"
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
             setPage(0);
           }}
-          className="max-w-xs"
+          className="h-10 w-full sm:h-9 sm:max-w-xs"
         />
         <span className="text-xs text-muted-foreground">
           共 {filtered.length} 条 · {baseRows.length} 总
           {hiddenCount > 0 ? ` · 已禁用 ${hiddenCount}` : ""}
         </span>
-        <div className="flex-1" />
-        {isDisabledRow && showDisabledToggle && hiddenCount > 0 && (
-          <label
-            className="flex cursor-pointer select-none items-center gap-2 px-1 text-sm"
-            title={
-              hideDisabled
-                ? `勾选后显示 ${hiddenCount} 条已禁用记录，导出也会包含`
-                : `取消勾选后隐藏 ${hiddenCount} 条已禁用记录，导出也会隐藏`
-            }
-          >
-            <Checkbox
-              checked={!hideDisabled}
-              onCheckedChange={(checked) => {
-                setHideDisabled(checked !== true);
-                setPage(0);
-              }}
-            />
-            <span>显示已禁用</span>
-          </label>
-        )}
-        <Button size="sm" variant="outline" onClick={exportCsv}>
-          导出 CSV
-        </Button>
-      </div>
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="w-full text-sm">
-          <thead className="bg-secondary/60 text-xs uppercase text-muted-foreground">
-            <tr>
-              {columns.map((c) => (
-                <th key={c.key} className={`px-3 py-2 text-left font-medium ${c.className ?? ""}`}>
-                  {c.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {pageRows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-3 py-8 text-center text-muted-foreground"
-                >
-                  {emptyText}
-                </td>
-              </tr>
-            ) : (
-              pageRows.map((r, i) => (
-                <tr key={i} className="border-t border-border hover:bg-secondary/40">
-                  {columns.map((c) => (
-                    <td key={c.key} className={`px-3 py-1.5 align-top ${c.className ?? ""}`}>
-                      {c.cell(r)}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      {pages > 1 && (
-        <div className="flex items-center justify-end gap-2 text-sm">
-          <Button size="sm" variant="ghost" disabled={cur === 0} onClick={() => setPage(cur - 1)}>
-            ← 上一页
+        <div className="ml-auto flex items-center justify-end gap-2 max-sm:w-full">
+          {isDisabledRow && showDisabledToggle && hiddenCount > 0 && (
+            <label
+              className="mr-auto flex min-h-9 cursor-pointer select-none items-center gap-2 px-1 text-sm"
+              title={
+                hideDisabled
+                  ? `勾选后显示 ${hiddenCount} 条已禁用记录，导出也会包含`
+                  : `取消勾选后隐藏 ${hiddenCount} 条已禁用记录，导出也会隐藏`
+              }
+            >
+              <Checkbox
+                checked={!hideDisabled}
+                onCheckedChange={(checked) => {
+                  setHideDisabled(checked !== true);
+                  setPage(0);
+                }}
+              />
+              <span>显示已禁用</span>
+            </label>
+          )}
+          <Button size="sm" variant="outline" className="h-9 shrink-0" onClick={exportCsv}>
+            导出 CSV
           </Button>
-          <span className="text-muted-foreground">
-            {cur + 1} / {pages}
+        </div>
+      </div>
+
+      {isMobile ? (
+        <div className="space-y-2" aria-label="数据记录">
+          {pageRows.length === 0 ? (
+            <div className="rounded-lg border border-border bg-card px-3 py-8 text-center text-sm text-muted-foreground">
+              {emptyText}
+            </div>
+          ) : (
+            pageRows.map((r, i) => (
+              <article key={i} className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                <dl className="space-y-2.5">
+                  {columns.map((c) => (
+                    <div key={c.key} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2">
+                      <dt className="pt-0.5 text-[11px] font-medium text-muted-foreground">
+                        {c.header}
+                      </dt>
+                      <dd className="min-w-0 break-words text-sm [overflow-wrap:anywhere]">
+                        {c.cell(r)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </article>
+            ))
+          )}
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <table className="w-full text-sm">
+            <thead className="bg-secondary/60 text-xs uppercase text-muted-foreground">
+              <tr>
+                {columns.map((c) => (
+                  <th
+                    key={c.key}
+                    className={`px-3 py-2 text-left font-medium ${c.className ?? ""}`}
+                  >
+                    {c.header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {pageRows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-3 py-8 text-center text-muted-foreground"
+                  >
+                    {emptyText}
+                  </td>
+                </tr>
+              ) : (
+                pageRows.map((r, i) => (
+                  <tr key={i} className="border-t border-border hover:bg-secondary/40">
+                    {columns.map((c) => (
+                      <td key={c.key} className={`px-3 py-1.5 align-top ${c.className ?? ""}`}>
+                        {c.cell(r)}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {pages > 1 && (
+        <div className="flex items-center justify-between gap-2 text-sm sm:justify-end">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9"
+            disabled={cur === 0}
+            onClick={() => setPage(cur - 1)}
+          >
+            上一页
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            第 {cur + 1} / {pages} 页
           </span>
           <Button
             size="sm"
-            variant="ghost"
+            variant="outline"
+            className="h-9"
             disabled={cur >= pages - 1}
             onClick={() => setPage(cur + 1)}
           >
-            下一页 →
+            下一页
           </Button>
         </div>
       )}

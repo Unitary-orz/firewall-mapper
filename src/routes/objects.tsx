@@ -113,9 +113,9 @@ function ObjectsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">地址对象</h1>
+      <h1 className="text-xl font-semibold sm:text-2xl">地址对象</h1>
       <Tabs defaultValue="addr">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2 sm:inline-flex sm:w-auto">
           <TabsTrigger value="addr">地址对象 ({cfg.addresses.length})</TabsTrigger>
           <TabsTrigger value="grp">地址组 ({cfg.addressGroups.length})</TabsTrigger>
         </TabsList>

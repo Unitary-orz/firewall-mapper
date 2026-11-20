@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/DataTable";
 import { useConfigStore } from "@/lib/store";
 import type { RefUsage } from "@/lib/parser";
@@ -134,9 +136,9 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
   const hasMeta = n.disabled || n.log || n.description || n.id;
   return (
     <div className="space-y-0.5">
-      <div className="flex items-baseline gap-2">
-        <div className="flex items-baseline gap-x-2 font-mono text-xs min-w-0 flex-1 truncate">
-          <span className="flex items-baseline gap-1 min-w-0">
+      <div className="flex items-baseline gap-2 max-sm:flex-col max-sm:gap-1">
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-xs sm:flex-nowrap sm:truncate">
+          <span className="flex min-w-0 max-w-full items-baseline gap-1 break-all">
             <L>原始</L>
             <H hit={hit} value={n.srcAddr} />
             <span className="text-muted-foreground">→</span>
@@ -152,7 +154,7 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
               </span>
             )}
           </span>
-          <span className="flex items-baseline gap-1 min-w-0">
+          <span className="flex min-w-0 max-w-full items-baseline gap-1 break-all">
             <L>转换为</L>
             <H hit={hit} value={n.translatedPool} />
             {n.servicePort && (
@@ -234,6 +236,7 @@ interface IndirectSection {
 
 export function RefsPreview({ name, kind }: { name: string; kind: "address" | "service" }) {
   const { cfg, xr } = useConfigStore();
+  const isMobile = useIsMobile();
   const [showDisabled] = useShowDisabled();
   const refs = useMemo(
     () =>
@@ -372,37 +375,70 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
     .join(" · ");
   const indirectTotal = indirectSections.reduce((n, s) => n + s.items.length, 0);
 
+  const summaryContent = (
+    <>
+      {visibleRefs.length} 处 · {summary}
+      {indirectTotal > 0 && <span className="text-muted-foreground"> · 间接 {indirectTotal}</span>}
+    </>
+  );
+  const details = (
+    <div className="space-y-3">
+      <div className="text-sm">
+        <div className="break-all font-semibold">{name}</div>
+        <div className="mt-1 text-xs font-normal text-muted-foreground">
+          共 {visibleRefs.length} 处直接引用 · {summary}
+          {indirectTotal > 0 && ` · 间接 ${indirectTotal}（${indirectSummary}）`}
+        </div>
+      </div>
+      {sections.map((s) => (
+        <SectionBlock key={s.by} section={s} hit={name} cfg={cfg!} />
+      ))}
+      {indirectSections.length > 0 && (
+        <div className="space-y-2 border-t border-border/40 pt-1">
+          <div className="text-xs font-medium text-muted-foreground">通过组的间接引用</div>
+          {indirectSections.map((s) => (
+            <IndirectSectionBlock key={s.by} section={s} hit={name} cfg={cfg!} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={`查看 ${name} 的引用详情`}
+            className="text-left text-xs text-primary"
+          >
+            {summaryContent}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          collisionPadding={8}
+          className="max-h-[72dvh] w-[calc(100vw-1.5rem)] overflow-y-auto p-3"
+        >
+          {details}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
   return (
     <HoverCard openDelay={120} closeDelay={80}>
       <HoverCardTrigger asChild>
-        <span className="text-xs cursor-help underline decoration-dotted underline-offset-2 text-primary">
-          {visibleRefs.length} 处 · {summary}
-          {indirectTotal > 0 && (
-            <span className="text-muted-foreground"> · 间接 {indirectTotal}</span>
-          )}
+        <span className="cursor-help text-xs text-primary underline decoration-dotted underline-offset-2">
+          {summaryContent}
         </span>
       </HoverCardTrigger>
-      <HoverCardContent className="w-[40rem] max-h-[28rem] overflow-auto" align="start">
-        <div className="space-y-3">
-          <div className="text-sm">
-            <span className="font-semibold">{name}</span>
-            <span className="ml-2 text-xs font-normal text-muted-foreground">
-              共 {visibleRefs.length} 处直接引用 · {summary}
-              {indirectTotal > 0 && ` · 间接 ${indirectTotal}（${indirectSummary}）`}
-            </span>
-          </div>
-          {sections.map((s) => (
-            <SectionBlock key={s.by} section={s} hit={name} cfg={cfg!} />
-          ))}
-          {indirectSections.length > 0 && (
-            <div className="space-y-2 pt-1 border-t border-border/40">
-              <div className="text-xs font-medium text-muted-foreground">通过组的间接引用</div>
-              {indirectSections.map((s) => (
-                <IndirectSectionBlock key={s.by} section={s} hit={name} cfg={cfg!} />
-              ))}
-            </div>
-          )}
-        </div>
+      <HoverCardContent
+        className="max-h-[28rem] w-[40rem] max-w-[calc(100vw-1.5rem)] overflow-auto"
+        align="start"
+      >
+        {details}
       </HoverCardContent>
     </HoverCard>
   );

@@ -33,6 +33,7 @@ import {
 } from "@/lib/access";
 import { ObjectName } from "@/components/ObjectPreview";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function groupBy<T, K>(arr: T[], key: (t: T) => K): Map<K, T[]> {
   const m = new Map<K, T[]>();
@@ -60,6 +61,7 @@ export function FocusLineRow({
   hideSvc?: boolean;
   mutedDst?: boolean;
 }) {
+  const isMobile = useIsMobile();
   const hasNat = line.nat.length > 0;
   const accent =
     line.action === "unassociated"
@@ -71,6 +73,58 @@ export function FocusLineRow({
           : hasNat
             ? "border-l-blue-500/70"
             : "border-l-emerald-500/60";
+
+  if (isMobile) {
+    return (
+      <div
+        className={cn(
+          "rounded-lg border border-border border-l-4 bg-background/40 p-2.5 text-xs",
+          accent,
+        )}
+      >
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+          <div className="min-w-0">
+            <div className="mb-1 text-[10px] text-muted-foreground">来源</div>
+            <div className="min-w-0 truncate" title={hideSrc ? undefined : line.src}>
+              {!hideSrc ? <NodePlain name={line.src} /> : <Placeholder />}
+            </div>
+          </div>
+          <ArrowRight className="mb-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <div className="min-w-0 text-right">
+            <div className="mb-1 text-[10px] text-muted-foreground">目的</div>
+            <div className="min-w-0 truncate" title={hideDst ? undefined : line.dst}>
+              {hideDst ? (
+                <Placeholder />
+              ) : (
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  <ObjectName name={line.dst} />
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-2 border-t border-border/60 pt-2">
+          <div className="mb-1 text-[10px] text-muted-foreground">NAT / 直连</div>
+          <div className="min-w-0 max-w-full">
+            <NatToken nat={line.nat} />
+          </div>
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="shrink-0 text-[10px] text-muted-foreground">服务</span>
+            {!hideSvc ? <SvcChip svc={line.service} names={line.serviceNames} /> : <Placeholder />}
+          </div>
+          <div className="flex shrink-0 items-center justify-end gap-1.5">
+            <ActionBadge action={line.action} />
+            {line.policies.length > 0 && <PolicyCountBadge policies={line.policies} />}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -234,7 +288,7 @@ export function PolicyCountBadge({ policies }: { policies: FocusLine["policies"]
           <ChevronDown className="h-3 w-3 opacity-60" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-96 p-2">
+      <PopoverContent align="start" className="w-[calc(100vw-1.5rem)] max-w-96 p-2">
         <div className="mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
           命中策略
         </div>
@@ -305,7 +359,7 @@ export function NatToken({ nat }: { nat: FlowDnatEntry[] }) {
           <ChevronDown className="h-3 w-3 opacity-70" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="center" className="w-[28rem] p-2">
+      <PopoverContent align="center" className="w-[calc(100vw-1.5rem)] max-w-[28rem] p-2">
         <div className="mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
           NAT 规则链
         </div>
@@ -406,7 +460,7 @@ export function DnatLabel({
   const trigger = (
     <span
       className={cn(
-        "inline-flex min-w-0 max-w-[22rem] items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] hover:bg-amber-500/15",
+        "inline-flex min-w-0 max-w-full items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] hover:bg-amber-500/15 sm:max-w-[22rem]",
         block && "w-full max-w-none",
       )}
     >
