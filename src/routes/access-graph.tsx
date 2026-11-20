@@ -94,9 +94,9 @@ const FOCUS_LABEL: Record<FocusType, string> = {
 };
 
 const FOCUS_PLACEHOLDER: Record<FocusType, string> = {
-  src: "选择 / 搜索来源对象 / 输入 IP",
-  dst: "选择 / 搜索目的对象 / 输入 IP",
-  svc: "选择 / 搜索服务端口 (tcp/443)",
+  src: "搜索源对象或输入 IP",
+  dst: "搜索目的对象或输入 IP",
+  svc: "搜索服务端口，如 tcp/443",
 };
 
 function AccessGraphPage() {
@@ -169,8 +169,7 @@ function AccessGraphPage() {
       <div>
         <h1 className="text-2xl font-semibold">访问路径分析</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          先选一个上下文（源 / 目的 / 服务），下方展示局部横向 Focus Graph： 来源 → NAT/直连 → 目的
-          → 服务端口/动作，按 FlowGroup 聚合。
+          选择一个源、目的或服务，查看其访问路径与关联策略。
         </p>
       </div>
 
@@ -457,13 +456,11 @@ function FocusEmpty({
   return (
     <div className="rounded-lg border border-dashed border-border bg-card p-8">
       <p className="text-center text-sm text-muted-foreground">
-        请在上方选择一个 <b>{FOCUS_LABEL[focus]}</b> 对象以查看 Focus Graph
+        选择一个 <b>{FOCUS_LABEL[focus]}</b>
       </p>
       {top.length > 0 && (
         <div className="mt-4">
-          <div className="mb-2 text-center text-xs text-muted-foreground">
-            {showCounts ? "常用候选（按命中数）" : "常用候选"}
-          </div>
+          <div className="mb-2 text-center text-xs text-muted-foreground">常用候选</div>
           <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-1.5">
             {top.map((c) => (
               <button
