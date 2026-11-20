@@ -852,6 +852,46 @@ export function portCovers(outer: string, inner: string): boolean {
   return ro[0] <= rn[1] && rn[0] <= ro[1];
 }
 
+/** Full containment used only when collapsing a duplicate Direct row. Unlike
+ * policy association, overlap is not enough: a broader direct path must stay
+ * visible for the sources, destinations or ports not covered by NAT. */
+function addrFullyCovers(outer: string, inner: string, cfg: ParsedConfig): boolean {
+  if (outer === "any") return true;
+  if (inner === "any") return false;
+  if (outer === inner) return true;
+  const outerEndpoints = addrEndpoints(outer, cfg);
+  const innerEndpoints = addrEndpoints(inner, cfg);
+  if (outerEndpoints.length === 0 || innerEndpoints.length === 0) return false;
+  return innerEndpoints.every((innerEndpoint) => {
+    if (innerEndpoint.kind === "domain" || innerEndpoint.kind === "mac") {
+      return outerEndpoints.some(
+        (outerEndpoint) =>
+          outerEndpoint.kind === innerEndpoint.kind && outerEndpoint.value === innerEndpoint.value,
+      );
+    }
+    const innerRange = endpointIpRange(innerEndpoint);
+    if (!innerRange) return false;
+    return outerEndpoints.some((outerEndpoint) => {
+      const outerRange = endpointIpRange(outerEndpoint);
+      return (
+        outerRange !== null && outerRange[0] <= innerRange[0] && outerRange[1] >= innerRange[1]
+      );
+    });
+  });
+}
+
+function portFullyCovers(outer: string, inner: string): boolean {
+  if (outer === inner || outer === "any" || outer === "ip") return true;
+  if (inner === "any" || inner === "ip") return false;
+  const o = parsePortStr(outer);
+  const n = parsePortStr(inner);
+  if (o.proto !== n.proto && o.proto !== "any" && o.proto !== "ip") return false;
+  const ro = portRange(o.port);
+  const rn = portRange(n.port);
+  if (!ro || !rn) return o.port === n.port;
+  return ro[0] <= rn[0] && ro[1] >= rn[1];
+}
+
 /** Find permit policies whose src+dst+service cover this DNAT under the given flow source. */
 export function findCoveringPolicies(
   entry: FlowDnatEntry,
@@ -874,6 +914,7 @@ export function findCoveringPolicies(
 
 export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
   const out: FocusLine[] = [];
+  const directOut: FocusLine[] = [];
   flows.forEach((f) => {
     // DNAT-bearing flows: emit one row per exposed (proto/port) by cross-policy coverage.
     if (f.dnat.length > 0) {
@@ -963,7 +1004,7 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
     });
     groups.forEach((g) => {
       const svc = g.port === "any" ? "any" : `${g.proto}/${g.port}`;
-      out.push({
+      directOut.push({
         key: `${f.key}\t${svc}\t${g.action}`,
         src: f.src,
         dst: f.dst,
@@ -979,6 +1020,37 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
         coverageKind: f.coverage.kind,
       });
     });
+  });
+
+  // A policy is first-class evidence for a Direct path, but the very same
+  // policy may already be attached to an equivalent DNAT path above. Remove
+  // only that exact duplicate; broader any/group paths remain because they
+  // also describe real direct access outside the NAT rule's coverage.
+  directOut.forEach((line) => {
+    const policies = line.policies.filter(
+      (policy) =>
+        !out.some(
+          (natLine) =>
+            natLine.policies.some((p) => p.id === policy.id && p.lineNo === policy.lineNo) &&
+            addrFullyCovers(natLine.src, line.src, cfg) &&
+            addrFullyCovers(natLine.dst, line.dst, cfg) &&
+            portFullyCovers(natLine.service, line.service),
+        ),
+    );
+    if (policies.length === 0) return;
+    out.push(
+      policies.length === line.policies.length
+        ? line
+        : {
+            ...line,
+            policies,
+            serviceNames: [
+              ...new Set(
+                policies.flatMap((p) => serviceNamesForPort(p.service, line.service, cfg)),
+              ),
+            ],
+          },
+    );
   });
   return out;
 }

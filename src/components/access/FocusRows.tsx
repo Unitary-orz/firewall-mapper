@@ -279,10 +279,13 @@ export function NatToken({ nat }: { nat: FlowDnatEntry[] }) {
   const [showFull] = useShowFullPortRange();
   if (nat.length === 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-muted-foreground/80">
+      <span
+        className="inline-flex items-center gap-1 text-muted-foreground/80"
+        title="这条策略路径没有被等价的 DNAT 链路覆盖；不表示对实际路由的额外判断"
+      >
         <span className="h-px w-6 bg-foreground/40" />
         <ArrowRight className="h-3.5 w-3.5 text-foreground/70" strokeWidth={2.5} />
-        <span className="text-[10px] uppercase tracking-wide">direct</span>
+        <span className="whitespace-nowrap text-[10px] tracking-wide">无 DNAT</span>
         <ArrowRight className="h-3.5 w-3.5 text-foreground/70" strokeWidth={2.5} />
         <span className="h-px w-6 bg-foreground/40" />
       </span>
