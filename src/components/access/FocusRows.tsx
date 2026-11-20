@@ -308,9 +308,9 @@ export function PolicyCountBadge({ policies }: { policies: FocusLine["policies"]
                     {p.srcZone || "any"}→{p.dstZone || "any"}
                   </span>
                 )}
-              <span>{p.srcAddr}</span>
+              <ObjectName name={p.srcAddr} />
               <ArrowRight className="h-3 w-3 text-muted-foreground" />
-              <span>{p.dstAddr}</span>
+              <ObjectName name={p.dstAddr} />
               <span className="text-muted-foreground">
                 [<ObjectName name={p.service} prefer="service" />]
               </span>
