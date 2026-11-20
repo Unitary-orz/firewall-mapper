@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { FocusLine } from "./access";
+import { focusCandidates, type FocusLine } from "./access";
 import { parseConfig } from "./parser/index";
 import {
   countUnassociatedLines,
@@ -105,5 +105,29 @@ test("隐藏未关联策略与对象筛选叠加时，条数只统计两者交�
   assert.deepEqual(
     filterAccessLinesByAssociation(objectFiltered, true).map((item) => item.key),
     ["office-permit"],
+  );
+});
+
+test("隐藏未关联策略后，候选数量和命中数只统计剩余路径", () => {
+  const rows = [
+    line("office-permit", "办公网", "API网关", "permit"),
+    line("office-orphan", "办公网", "API网关", "unassociated"),
+    line("branch-deny", "分支网", "API网关", "deny"),
+    line("orphan-only", "仅未关联网", "API网关", "unassociated"),
+  ];
+  const visibleRows = filterAccessLinesByAssociation(rows, true);
+  assert.equal(visibleRows.length, 2);
+  const visibleCandidates = focusCandidates(visibleRows, "src");
+  assert.equal(visibleCandidates.length, 2);
+  assert.deepEqual(
+    Object.fromEntries(visibleCandidates.map((candidate) => [candidate.id, candidate.count])),
+    { 办公网: 1, 分支网: 1 },
+  );
+  assert.equal(visibleCandidates.some((candidate) => candidate.id === "仅未关联网"), false);
+  assert.deepEqual(
+    Object.fromEntries(
+      focusCandidates(rows, "src").map((candidate) => [candidate.id, candidate.count]),
+    ),
+    { 办公网: 2, 分支网: 1, 仅未关联网: 1 },
   );
 });

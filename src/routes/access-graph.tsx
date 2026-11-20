@@ -143,7 +143,11 @@ function AccessGraphPage() {
     () => (cfg ? getFocusLines(cfg, showDisabled) : []),
     [cfg, showDisabled],
   );
-  const candidates = useMemo(() => focusCandidates(allLines, focus), [allLines, focus]);
+  const statsLines = useMemo(
+    () => filterAccessLinesByAssociation(allLines, hideUnassociated),
+    [allLines, hideUnassociated],
+  );
+  const candidates = useMemo(() => focusCandidates(statsLines, focus), [statsLines, focus]);
   const focusedLines = useMemo(
     () => (cfg ? filterLinesByFocus(allLines, focus, id, cfg) : []),
     [allLines, focus, id, cfg],
@@ -189,8 +193,12 @@ function AccessGraphPage() {
             </span>
           )}
           {showFocusStats && (
-            <span className="ml-auto text-xs text-muted-foreground">
-              候选 {candidates.length} · 全量 FlowGroup {allLines.length}
+            <span
+              className="ml-auto text-xs text-muted-foreground"
+              title={hideUnassociated ? "候选统计已排除未关联策略的访问路径" : undefined}
+            >
+              候选 {candidates.length} · {hideUnassociated ? "当前" : "全量"} FlowGroup{" "}
+              {statsLines.length}
             </span>
           )}
         </div>
