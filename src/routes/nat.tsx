@@ -5,8 +5,7 @@ import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, DataTable, LineLink, type Column } from "@/components/DataTable";
 import { ObjectName } from "@/components/ObjectPreview";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { useShowDisabled, setShowDisabled } from "@/lib/uiPrefs";
+import { useShowDisabled } from "@/lib/uiPrefs";
 import type { NatRule } from "@/lib/parser/types";
 
 export const Route = createFileRoute("/nat")({
@@ -216,16 +215,8 @@ function NatPage() {
         或把内部源改写为对外可路由地址，是「源地址不一致」的根源。
       </p>
       {hiddenCount > 0 && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>已隐藏 {hiddenCount} 条已禁用规则</span>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 px-2 text-xs"
-            onClick={() => setShowDisabled(true)}
-          >
-            显示
-          </Button>
+        <div className="text-xs text-muted-foreground">
+          已隐藏 {hiddenCount} 条已禁用规则，可在顶部“显示选项”中调整
         </div>
       )}
       <Tabs defaultValue="dnat">
@@ -240,6 +231,7 @@ function NatPage() {
             columns={dnatCols}
             filename="nat-destination.csv"
             isDisabledRow={(r) => !!r.disabled}
+            showDisabledToggle={false}
           />
         </TabsContent>
         <TabsContent value="snat" className="mt-4">
@@ -248,6 +240,7 @@ function NatPage() {
             columns={snatCols}
             filename="nat-source.csv"
             isDisabledRow={(r) => !!r.disabled}
+            showDisabledToggle={false}
           />
         </TabsContent>
         <TabsContent value="pools" className="mt-4">

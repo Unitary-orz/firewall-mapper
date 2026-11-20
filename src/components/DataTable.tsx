@@ -50,6 +50,9 @@ export function DataTable<T>({
   pageSize = 50,
   isDisabledRow,
   searchPlaceholder = "筛选（任意列）",
+  hideDisabled: controlledHideDisabled,
+  onHideDisabledChange,
+  showDisabledToggle = true,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -58,11 +61,16 @@ export function DataTable<T>({
   pageSize?: number;
   isDisabledRow?: (row: T) => boolean;
   searchPlaceholder?: string;
+  hideDisabled?: boolean;
+  onHideDisabledChange?: (hide: boolean) => void;
+  showDisabledToggle?: boolean;
 }) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [showLineNo] = useShowLineNumbers();
-  const [hideDisabled, setHideDisabled] = useHideDisabledRows();
+  const [globalHideDisabled, setGlobalHideDisabled] = useHideDisabledRows();
+  const hideDisabled = controlledHideDisabled ?? globalHideDisabled;
+  const setHideDisabled = onHideDisabledChange ?? setGlobalHideDisabled;
   const columns = useMemo(
     () => allColumns.filter((c) => showLineNo || !c.hiddenWhenNoLineNo),
     [allColumns, showLineNo],
@@ -129,7 +137,7 @@ export function DataTable<T>({
           {hiddenCount > 0 ? ` · 已禁用 ${hiddenCount}` : ""}
         </span>
         <div className="flex-1" />
-        {isDisabledRow && hiddenCount > 0 && (
+        {isDisabledRow && showDisabledToggle && hiddenCount > 0 && (
           <label
             className="flex cursor-pointer select-none items-center gap-2 px-1 text-sm"
             title={

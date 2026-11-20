@@ -5,6 +5,7 @@ type PrefKey =
   | "cfg.showFullPortRange"
   | "cfg.showPolicyZone"
   | "cfg.showDisabled"
+  | "cfg.showPolicyDisabled"
   | "cfg.hideDisabledRows"
   | "cfg.hideUnassociated"
   | "cfg.showFocusStats";
@@ -14,6 +15,7 @@ const defaults: Record<PrefKey, boolean> = {
   "cfg.showFullPortRange": false,
   "cfg.showPolicyZone": false,
   "cfg.showDisabled": false,
+  "cfg.showPolicyDisabled": true,
   "cfg.hideDisabledRows": true,
   "cfg.hideUnassociated": false,
   "cfg.showFocusStats": true,
@@ -103,7 +105,10 @@ export const useShowPolicyZone = () => useBoolPref("cfg.showPolicyZone");
 export const setShowDisabled = (v: boolean) => setPref("cfg.showDisabled", v);
 export const useShowDisabled = () => useBoolPref("cfg.showDisabled");
 
-// 兼容策略表格的“隐藏”语义，底层与 NAT、搜索和关系图共用同一偏好。
+// 策略列表独立设置，默认显示已禁用策略，不跟随全局“显示选项”。
+export const useShowPolicyDisabled = () => useBoolPref("cfg.showPolicyDisabled");
+
+// 通用表格的“隐藏”语义，底层与 NAT、搜索和关系图共用同一偏好。
 export const setHideDisabledRows = (v: boolean) => setPref("cfg.showDisabled", !v);
 export const useHideDisabledRows = (): [boolean, (v: boolean) => void] => {
   const [showDisabled, setShowDisabled] = useShowDisabled();

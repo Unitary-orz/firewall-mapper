@@ -84,9 +84,9 @@ function DisplaySettings() {
           </label>
           <label className="flex cursor-pointer select-none items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-sm">显示已禁用的策略和 NAT</div>
+              <div className="text-sm">显示其他已禁用项</div>
               <div className="text-xs text-muted-foreground">
-                默认隐藏；列表、搜索、对象引用、访问关系和中间节点同步生效
+                默认隐藏；策略列表以外的相关视图同步生效
               </div>
             </div>
             <Switch checked={showDisabled} onCheckedChange={setShowDisabled} className="mt-0.5" />

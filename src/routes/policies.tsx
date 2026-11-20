@@ -4,7 +4,7 @@ import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, DataTable, LineLink, type Column } from "@/components/DataTable";
 import { ObjectName } from "@/components/ObjectPreview";
 import { serviceToPorts } from "@/lib/access";
-import { useShowPolicyZone } from "@/lib/uiPrefs";
+import { useShowPolicyDisabled, useShowPolicyZone } from "@/lib/uiPrefs";
 import { PolicyStatusBadges } from "@/components/PolicyStatus";
 import { getPolicyExpiry, isPolicyExpired, policyStatusText } from "@/lib/policyStatus";
 import { policyIdSearchText } from "@/lib/policySearch";
@@ -29,6 +29,7 @@ export const Route = createFileRoute("/policies")({
 function PoliciesPage() {
   const { cfg, xr } = useConfigStore();
   const [showZone] = useShowPolicyZone();
+  const [showDisabledPolicies, setShowDisabledPolicies] = useShowPolicyDisabled();
   if (!cfg) return <EmptyConfig />;
 
   const expiredCount = cfg.policies.filter((p) => isPolicyExpired(p, cfg)).length;
@@ -133,6 +134,8 @@ function PoliciesPage() {
         filename="policies.csv"
         searchPlaceholder="搜索策略 ID（如 #274）、源、目的或服务"
         isDisabledRow={(p) => !!p.disabled}
+        hideDisabled={!showDisabledPolicies}
+        onHideDisabledChange={(hide) => setShowDisabledPolicies(!hide)}
       />
     </div>
   );
