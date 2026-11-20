@@ -36,6 +36,7 @@ interface AccessIndex {
   svcGrpByName: Map<string, ServiceGroup>;
   endpoints: Map<string, AddrEndpoint[]>;
   service: Map<string, string[]>;
+  serviceNames: Map<string, string[]>;
   members: Map<string, Set<string>>;
   expandAddr: Map<string, Set<string>>;
   expandSvc: Map<string, Set<string>>;
@@ -60,6 +61,7 @@ function idx(cfg: ParsedConfig): AccessIndex {
     svcGrpByName: new Map(cfg.serviceGroups.map((g) => [g.name, g])),
     endpoints: new Map(),
     service: new Map(),
+    serviceNames: new Map(),
     members: new Map(),
     expandAddr: new Map(),
     expandSvc: new Map(),
@@ -471,6 +473,31 @@ export function serviceToPorts(name: string, cfg: ParsedConfig, seen?: Set<strin
   return [name]; // literal "tcp/443" or unknown
 }
 
+/** Service object names behind a token that resolve to one concrete port.
+ * Groups contribute their matching leaf object names, not just the group name. */
+export function serviceNamesForPort(name: string, port: string, cfg: ParsedConfig): string[] {
+  if (!name || name === "any") return [];
+  const cache = idx(cfg).serviceNames;
+  const key = `${name}\0${port}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+
+  const out = new Set<string>();
+  const addIfMatches = (candidate: string) => {
+    const ports = serviceToPorts(candidate, cfg);
+    if (port === "any" || ports.includes(port) || ports.includes("any")) out.add(candidate);
+  };
+  const i = idx(cfg);
+  if (i.svcByName.has(name)) addIfMatches(name);
+  else if (i.svcGrpByName.has(name)) {
+    serviceGroupMembers(name, cfg).forEach((member) => addIfMatches(member.name));
+  }
+
+  const result = [...out];
+  cache.set(key, result);
+  return result;
+}
+
 export function buildFlows(cfg: ParsedConfig, showDisabled = false): Flow[] {
   const map = new Map<string, Flow>();
   const ensure = (src: string, dst: string): Flow => {
@@ -591,6 +618,7 @@ export interface FocusLine {
   proto: string; // "tcp" | "udp" | "ip" | "any"
   port: string; // "8443" | "any"
   service: string; // "tcp/8443" or "any"
+  serviceNames: string[]; // service object names resolving to this port
   action: string; // "permit" | "deny" | "none" | ...
   policies: PolicyRule[];
   nat: FlowDnatEntry[];
@@ -893,6 +921,12 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
         const sorted = g.policies.sort(
           (a, b) => Number(a.id) - Number(b.id) || a.lineNo - b.lineNo,
         );
+        const natServiceNames = [
+          ...new Set(g.dnats.flatMap((d) => serviceNamesForPort(d.backendPort, g.service, cfg))),
+        ];
+        const policyServiceNames = [
+          ...new Set(sorted.flatMap((p) => serviceNamesForPort(p.service, g.service, cfg))),
+        ];
         out.push({
           key: `${f.key}\t${g.service}\t${associated ? "associated" : "unassociated"}`,
           src: f.src,
@@ -900,6 +934,7 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
           proto: g.proto,
           port: g.port,
           service: g.service,
+          serviceNames: natServiceNames.length > 0 ? natServiceNames : policyServiceNames,
           action: associated ? "associated" : "unassociated",
           policies: sorted,
           nat: g.dnats,
@@ -935,6 +970,9 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
         proto: g.proto,
         port: g.port,
         service: svc,
+        serviceNames: [
+          ...new Set(g.policies.flatMap((p) => serviceNamesForPort(p.service, svc, cfg))),
+        ],
         action: g.action,
         policies: g.policies.sort((a, b) => Number(a.id) - Number(b.id) || a.lineNo - b.lineNo),
         nat: [],

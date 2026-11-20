@@ -97,7 +97,7 @@ export function FocusLineRow({
         )}
       </div>
       <div className="flex min-w-0 items-center pl-1">
-        {!hideSvc ? <SvcChip svc={line.service} /> : <Placeholder />}
+        {!hideSvc ? <SvcChip svc={line.service} names={line.serviceNames} /> : <Placeholder />}
       </div>
       <div className="flex items-center justify-end gap-1.5 pl-1">
         <ActionBadge action={line.action} />
@@ -157,10 +157,25 @@ export function NodePlain({ name }: { name: string }) {
   );
 }
 
-export function SvcChip({ svc }: { svc: string }) {
+export function SvcChip({ svc, names = [] }: { svc: string; names?: string[] }) {
+  const serviceNames = names.filter((name) => name && name !== svc);
+  const primaryName = serviceNames[0];
+  const extraCount = serviceNames.length - 1;
   return (
-    <span className="inline-flex items-center rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 font-mono text-xs">
-      {svc}
+    <span
+      className="inline-flex min-w-0 max-w-[20rem] items-center gap-1.5 rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-xs"
+      title={serviceNames.length > 0 ? `${serviceNames.join("、")} · ${svc}` : svc}
+    >
+      {primaryName && (
+        <>
+          <span className="min-w-0 truncate text-foreground/90">
+            {primaryName}
+            {extraCount > 0 && <span className="text-muted-foreground"> +{extraCount}</span>}
+          </span>
+          <span className="shrink-0 text-muted-foreground/50">·</span>
+        </>
+      )}
+      <span className="shrink-0 font-mono text-muted-foreground">{svc}</span>
     </span>
   );
 }

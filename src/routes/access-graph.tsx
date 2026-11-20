@@ -622,9 +622,17 @@ function DstFocusView({ dst, lines }: { dst: string; lines: FocusLine[] }) {
 
 function SvcFocusView({ svc, lines }: { svc: string; lines: FocusLine[] }) {
   const byDst = useMemo(() => groupBy(lines, (l) => l.dst), [lines]);
+  const serviceNames = useMemo(
+    () => [...new Set(lines.flatMap((line) => line.serviceNames))],
+    [lines],
+  );
   return (
     <div className="space-y-3">
-      <FocusHeader anchor={{ name: svc, role: "svc" }} count={lines.length} />
+      <FocusHeader
+        anchor={{ name: svc, role: "svc" }}
+        count={lines.length}
+        serviceNames={serviceNames}
+      />
       {[...byDst.entries()].map(([dst, rows]) => (
         <FocusCard key={dst}>
           <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -634,7 +642,7 @@ function SvcFocusView({ svc, lines }: { svc: string; lines: FocusLine[] }) {
           </div>
           <div className="space-y-1.5">
             {sortRows(rows).map((l) => (
-              <FocusLineRow key={l.key} line={l} hideSrc={false} hideSvc mutedDst />
+              <FocusLineRow key={l.key} line={l} hideSrc={false} mutedDst />
             ))}
           </div>
         </FocusCard>
@@ -648,15 +656,17 @@ function SvcFocusView({ svc, lines }: { svc: string; lines: FocusLine[] }) {
 function FocusHeader({
   anchor,
   count,
+  serviceNames = [],
 }: {
   anchor: { name: string; role: "src" | "dst" | "svc" };
   count: number;
+  serviceNames?: string[];
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className="text-muted-foreground">当前焦点</span>
       {anchor.role === "svc" ? (
-        <SvcChip svc={anchor.name} />
+        <SvcChip svc={anchor.name} names={serviceNames} />
       ) : (
         <NodeChip name={anchor.name} role={anchor.role} />
       )}

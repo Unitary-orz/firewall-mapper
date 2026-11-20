@@ -16,6 +16,7 @@ function line(key: string, src: string, dst: string, action = "associated"): Foc
     proto: "tcp",
     port: "443",
     service: "tcp/443",
+    serviceNames: [],
     action,
     policies: [],
     nat: [],
@@ -123,7 +124,10 @@ test("隐藏未关联策略后，候选数量和命中数只统计剩余路径",
     Object.fromEntries(visibleCandidates.map((candidate) => [candidate.id, candidate.count])),
     { 办公网: 1, 分支网: 1 },
   );
-  assert.equal(visibleCandidates.some((candidate) => candidate.id === "仅未关联网"), false);
+  assert.equal(
+    visibleCandidates.some((candidate) => candidate.id === "仅未关联网"),
+    false,
+  );
   assert.deepEqual(
     Object.fromEntries(
       focusCandidates(rows, "src").map((candidate) => [candidate.id, candidate.count]),
