@@ -228,40 +228,36 @@ function AccessGraphPage() {
             </Button>
           )}
         </div>
-        {(unassociatedCount > 0 || hideUnassociated) && (
-          <label
-            className={cn(
-              "ml-auto flex cursor-pointer select-none items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
-              hideUnassociated
-                ? "border-primary/40 bg-primary/5 text-foreground"
-                : "border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground",
-            )}
-            title={
-              hideUnassociated
-                ? `取消勾选后恢复显示 ${unassociatedCount} 条未关联策略的访问路径`
-                : `勾选后隐藏 ${unassociatedCount} 条未关联策略的访问路径`
-            }
-          >
-            <Checkbox
-              aria-label="隐藏未关联策略"
-              checked={hideUnassociated}
-              onCheckedChange={(checked) => setHideUnassociated(checked === true)}
-            />
-            <span className="font-medium">隐藏未关联策略</span>
-            {unassociatedCount > 0 && (
-              <span
-                className={cn(
-                  "rounded px-1.5 py-0.5 text-[10px] tabular-nums",
-                  hideUnassociated
-                    ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {unassociatedCount}
-              </span>
-            )}
-          </label>
-        )}
+        <label
+          className={cn(
+            "ml-auto flex cursor-pointer select-none items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
+            hideUnassociated
+              ? "border-primary/40 bg-primary/5 text-foreground"
+              : "border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground",
+          )}
+          title={
+            hideUnassociated
+              ? `取消勾选后恢复显示 ${unassociatedCount} 条未关联策略的访问路径`
+              : `勾选后隐藏 ${unassociatedCount} 条未关联策略的访问路径`
+          }
+        >
+          <Checkbox
+            aria-label="隐藏未关联策略"
+            checked={hideUnassociated}
+            onCheckedChange={(checked) => setHideUnassociated(checked === true)}
+          />
+          <span className="font-medium">隐藏未关联策略</span>
+          {unassociatedCount > 0 && (
+            <span
+              className={cn(
+                "rounded px-1.5 py-0.5 text-[10px] tabular-nums",
+                hideUnassociated ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+              )}
+            >
+              {unassociatedCount}
+            </span>
+          )}
+        </label>
       </div>
 
       {!id ? (
