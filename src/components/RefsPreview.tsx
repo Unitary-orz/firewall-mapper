@@ -7,6 +7,8 @@ import { L, DescQuote } from "@/components/previewAtoms";
 import type { NatRule, PolicyRule } from "@/lib/parser/types";
 import { useShowPolicyZone, useShowDisabled } from "@/lib/uiPrefs";
 import { serviceRefKind } from "@/lib/access";
+import { PolicyStatusBadges } from "@/components/PolicyStatus";
+import { getPolicyExpiry } from "@/lib/policyStatus";
 
 const byLabel: Record<RefUsage["by"], string> = {
   policy: "策略",
@@ -64,9 +66,11 @@ function H({ hit, value }: { hit: string; value: string }) {
 }
 
 function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
+  const { cfg } = useConfigStore();
   const action = actionLabel[p.action] ?? p.action;
   const actionTone = p.action === "permit" ? "ok" : p.action === "deny" ? "danger" : "muted";
   const showSchedule = p.schedule && p.schedule !== "always" && p.schedule !== "-";
+  const expiry = cfg ? getPolicyExpiry(p, cfg) : undefined;
   const [showZonePref] = useShowPolicyZone();
   const showZone =
     showZonePref && (p.srcZone || p.dstZone) && !(p.srcZone === "any" && p.dstZone === "any");
@@ -90,12 +94,17 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
           {showSchedule && (
             <span className="flex items-baseline gap-1 min-w-0">
               <L>期限</L>
-              <span className="text-violet-600 dark:text-violet-400">仅 {p.schedule}</span>
+              <span
+                className="text-violet-600 dark:text-violet-400"
+                title={expiry?.expiresAtText ? `到期时间：${expiry.expiresAtText}` : undefined}
+              >
+                仅 {p.schedule}
+              </span>
             </span>
           )}
         </div>
         <span className="flex shrink-0 items-center gap-1">
-          <Badge tone={p.disabled ? "muted" : "ok"}>{p.disabled ? "已禁用" : "已启用"}</Badge>
+          {cfg && <PolicyStatusBadges policy={p} cfg={cfg} />}
           <Badge tone={actionTone}>{action}</Badge>
         </span>
       </div>

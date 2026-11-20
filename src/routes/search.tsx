@@ -20,6 +20,8 @@ import type {
   NatRule,
   NatPool,
 } from "@/lib/parser/types";
+import { PolicyStatusBadges } from "@/components/PolicyStatus";
+import { getPolicyExpiry, policyStatusText } from "@/lib/policyStatus";
 
 /* ---------- route ---------- */
 
@@ -163,7 +165,7 @@ function SearchPage() {
     // policies
     const policies = cfg.policies.filter((p) => {
       if (matchesText(p.id) || matchesText(p.action)) return true;
-      if (matchesText(p.disabled ? "disabled 已禁用" : "enabled 已启用")) return true;
+      if (matchesText(policyStatusText(p, cfg))) return true;
       if (matchesText(p.srcZone) || matchesText(p.dstZone) || matchesText(p.schedule)) return true;
       return (
         matchesAddressName(p.srcAddr) ||
@@ -430,10 +432,9 @@ function SearchPage() {
     {
       key: "status",
       header: "状态",
-      cell: (p) =>
-        p.disabled ? <Badge tone="muted">已禁用</Badge> : <Badge tone="ok">已启用</Badge>,
-      search: (p) => (p.disabled ? "disabled 已禁用" : "enabled 已启用"),
-      className: "w-20",
+      cell: (p) => <PolicyStatusBadges policy={p} cfg={cfg!} />,
+      search: (p) => policyStatusText(p, cfg!),
+      className: "w-32",
     },
     {
       key: "action",
@@ -473,8 +474,18 @@ function SearchPage() {
     {
       key: "schedule",
       header: "期限",
-      cell: (p) => <span className="text-xs">{p.schedule}</span>,
-      search: (p) => p.schedule,
+      cell: (p) => {
+        const expiry = getPolicyExpiry(p, cfg!);
+        return (
+          <div className="text-xs">
+            <div>{p.schedule}</div>
+            {expiry.expiresAtText && (
+              <div className="text-muted-foreground">至 {expiry.expiresAtText}</div>
+            )}
+          </div>
+        );
+      },
+      search: (p) => `${p.schedule} ${getPolicyExpiry(p, cfg!).expiresAtText ?? ""}`,
     },
     {
       key: "line",

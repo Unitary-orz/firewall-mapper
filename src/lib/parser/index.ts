@@ -11,6 +11,7 @@ import type {
   ServiceGroup,
   ServiceObject,
 } from "./types";
+import { isPolicyExpired } from "../policyStatus";
 
 // 分词：把每行拆成 tokens，尊重连续空白
 function tokens(line: string): string[] {
@@ -655,7 +656,7 @@ export function runAudit(cfg: ParsedConfig, xr: CrossRef): AuditFinding[] {
   // 宽松策略
   cfg.policies.forEach((p) => {
     const anyCount = [p.srcAddr, p.dstAddr, p.service].filter((x) => x === "any").length;
-    if (!p.disabled && p.action === "permit" && anyCount >= 2) {
+    if (!p.disabled && !isPolicyExpired(p, cfg) && p.action === "permit" && anyCount >= 2) {
       out.push({
         id: id(),
         severity: anyCount === 3 ? "high" : "warn",

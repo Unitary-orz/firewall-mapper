@@ -5,6 +5,8 @@ import { Badge, DataTable, LineLink, type Column } from "@/components/DataTable"
 import { ObjectName } from "@/components/ObjectPreview";
 import { serviceToPorts } from "@/lib/access";
 import { useShowPolicyZone } from "@/lib/uiPrefs";
+import { PolicyStatusBadges } from "@/components/PolicyStatus";
+import { getPolicyExpiry, isPolicyExpired, policyStatusText } from "@/lib/policyStatus";
 
 export const Route = createFileRoute("/policies")({
   head: () => ({
@@ -28,6 +30,7 @@ function PoliciesPage() {
   const [showZone] = useShowPolicyZone();
   if (!cfg) return <EmptyConfig />;
 
+  const expiredCount = cfg.policies.filter((p) => isPolicyExpired(p, cfg)).length;
   const enabledCount = cfg.policies.filter((p) => !p.disabled).length;
   const disabledCount = cfg.policies.length - enabledCount;
   const cols: Column<(typeof cfg.policies)[number]>[] = [
@@ -41,10 +44,9 @@ function PoliciesPage() {
     {
       key: "status",
       header: "状态",
-      cell: (p) =>
-        p.disabled ? <Badge tone="muted">已禁用</Badge> : <Badge tone="ok">已启用</Badge>,
-      search: (p) => (p.disabled ? "disabled 已禁用" : "enabled 已启用"),
-      className: "w-20",
+      cell: (p) => <PolicyStatusBadges policy={p} cfg={cfg} />,
+      search: (p) => policyStatusText(p, cfg),
+      className: "w-32",
     },
     {
       key: "action",
@@ -95,8 +97,18 @@ function PoliciesPage() {
     {
       key: "schedule",
       header: "期限",
-      cell: (p) => <span className="text-xs">{p.schedule}</span>,
-      search: (p) => p.schedule,
+      cell: (p) => {
+        const expiry = getPolicyExpiry(p, cfg);
+        return (
+          <div className="text-xs">
+            <div>{p.schedule}</div>
+            {expiry.expiresAtText && (
+              <div className="text-muted-foreground">至 {expiry.expiresAtText}</div>
+            )}
+          </div>
+        );
+      },
+      search: (p) => `${p.schedule} ${getPolicyExpiry(p, cfg).expiresAtText ?? ""}`,
     },
     {
       key: "line",
@@ -111,8 +123,8 @@ function PoliciesPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">策略</h1>
       <p className="text-sm text-muted-foreground">
-        共 {cfg.policies.length} 条：已启用 {enabledCount}，已禁用 {disabledCount}。 permit/deny
-        是处理动作，不代表启停状态；表内按导出顺序排列。
+        共 {cfg.policies.length} 条：已启用 {enabledCount}，已禁用 {disabledCount}，已过期{" "}
+        {expiredCount}。过期策略不参与有效访问关联；permit/deny 是处理动作，不代表启停状态。
       </p>
       <DataTable
         rows={cfg.policies}

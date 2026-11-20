@@ -8,6 +8,7 @@ import type {
   ServiceObject,
   ServiceGroup,
 } from "./parser/types";
+import { isPolicyExpired } from "./policyStatus";
 
 export type IntermediaryCat = "waf" | "gateway" | "proxy" | "bastion" | "lb";
 
@@ -513,9 +514,9 @@ export function buildFlows(cfg: ParsedConfig, showDisabled = false): Flow[] {
     backendPorts.forEach((p) => f.allPorts.add(p));
   });
 
-  // 禁用策略仍保留在策略列表和对象引用中，但不能形成有效访问路径。
+  // 禁用或已过期的策略仍保留在策略列表和对象引用中，但不能形成有效访问路径。
   cfg.policies
-    .filter((p) => !p.disabled)
+    .filter((p) => !p.disabled && !isPolicyExpired(p, cfg))
     .forEach((p) => {
       const f = ensure(p.srcAddr, p.dstAddr);
       const ports = serviceToPorts(p.service, cfg);
@@ -835,6 +836,7 @@ export function findCoveringPolicies(
   return cfg.policies.filter(
     (p) =>
       !p.disabled &&
+      !isPolicyExpired(p, cfg) &&
       p.action === "permit" &&
       addrMatches(p.srcAddr, src, cfg) &&
       addrMatches(p.dstAddr, target, cfg) &&

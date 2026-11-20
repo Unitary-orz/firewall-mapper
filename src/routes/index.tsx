@@ -7,6 +7,7 @@ import { getNodeAggregates } from "@/lib/access";
 import { downloadExcel, type ExportTable } from "@/lib/export";
 import { useShowDisabled } from "@/lib/uiPrefs";
 import type { ParsedConfig } from "@/lib/parser/types";
+import { isPolicyExpired, policyStatusText } from "@/lib/policyStatus";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/")({
@@ -109,7 +110,7 @@ function IndexPage() {
         headers: ["ID", "状态", "源", "目的", "服务", "期限", "动作", "行号"],
         rows: cfg.policies.map((p) => [
           p.id,
-          p.disabled ? "已禁用" : "已启用",
+          policyStatusText(p, cfg),
           p.srcAddr,
           p.dstAddr,
           p.service,
@@ -278,13 +279,15 @@ function IndexPage() {
                 label="策略"
                 value={cfg.policies.filter((p) => showDisabled || !p.disabled).length}
                 to="/policies"
-                hint={
-                  !showDisabled && cfg.policies.some((p) => p.disabled)
-                    ? `已禁用 ${cfg.policies.filter((p) => p.disabled).length} 条，默认隐藏`
-                    : cfg.policies.some((p) => p.disabled)
-                      ? `已禁用 ${cfg.policies.filter((p) => p.disabled).length} 条`
-                      : "全部已启用"
-                }
+                hint={(() => {
+                  const disabled = cfg.policies.filter((p) => p.disabled).length;
+                  const expired = cfg.policies.filter((p) => isPolicyExpired(p, cfg)).length;
+                  const states = [
+                    disabled > 0 ? `已禁用 ${disabled} 条${!showDisabled ? "，默认隐藏" : ""}` : "",
+                    expired > 0 ? `已过期 ${expired} 条` : "",
+                  ].filter(Boolean);
+                  return states.length > 0 ? states.join(" · ") : "全部已启用";
+                })()}
               />
               <Stat
                 label="NAT 规则"
