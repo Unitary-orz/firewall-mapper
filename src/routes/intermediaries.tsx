@@ -23,12 +23,12 @@ import {
 import {
   getNodeAggregates,
   CAT_LABEL,
-  serviceToPorts,
   type IntermediaryCat,
   type NodeAggregate,
   isIpLiteral,
 } from "@/lib/access";
-import { fmtPortList } from "@/components/access/FocusRows";
+import { ServiceRefPreview } from "@/components/access/FocusRows";
+import { ObjectName } from "@/components/ObjectPreview";
 import { useShowFullPortRange, useShowDisabled } from "@/lib/uiPrefs";
 
 export const Route = createFileRoute("/intermediaries")({
@@ -343,76 +343,80 @@ function NodeCard({ node }: { node: NodeAggregate }) {
         open && "shadow-md",
       )}
     >
-      <CollapsibleTrigger asChild>
-        <button className="flex min-h-11 w-full items-start gap-2.5 p-3 text-left sm:gap-3 sm:p-4">
-          {/* left: icon */}
-          <div
-            className={cn(
-              "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset",
-              CAT_ICON_TEXT[node.cat],
-              CAT_ICON_BG[node.cat],
-              CAT_RING[node.cat],
-            )}
-          >
-            <Icon className="h-4.5 w-4.5" />
+      <div className="flex min-h-11 w-full items-start gap-2.5 p-3 text-left sm:gap-3 sm:p-4">
+        {/* left: icon */}
+        <div
+          className={cn(
+            "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset",
+            CAT_ICON_TEXT[node.cat],
+            CAT_ICON_BG[node.cat],
+            CAT_RING[node.cat],
+          )}
+        >
+          <Icon className="h-4.5 w-4.5" />
+        </div>
+
+        {/* center: info */}
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="flex flex-wrap items-baseline gap-2">
+            <span className="min-w-0 break-all text-sm font-semibold [overflow-wrap:anywhere]">
+              <ObjectName name={node.name} className="text-inherit" />
+            </span>
+            <Badge tone="muted">{CAT_LABEL[node.cat]}</Badge>
           </div>
 
-          {/* center: info */}
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="min-w-0 break-all text-sm font-semibold [overflow-wrap:anywhere]">
-                {node.name}
+          {node.address && (
+            <p className="truncate font-mono text-xs text-muted-foreground/80">
+              <ObjectName name={node.address} className="text-inherit" />
+            </p>
+          )}
+
+          {/* stats inline */}
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pt-0.5 text-[11px]">
+            {node.inboundDnat.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded bg-foreground/8 px-1.5 py-0.5 font-medium">
+                <ArrowRight className="h-3 w-3" />
+                DNAT {node.inboundDnat.length}
               </span>
-              <Badge tone="muted">{CAT_LABEL[node.cat]}</Badge>
-            </div>
-
-            {node.address && (
-              <p className="truncate font-mono text-xs text-muted-foreground/80">{node.address}</p>
             )}
-
-            {/* stats inline */}
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pt-0.5 text-[11px]">
-              {node.inboundDnat.length > 0 && (
-                <span className="inline-flex items-center gap-1 rounded bg-foreground/8 px-1.5 py-0.5 font-medium">
-                  <ArrowRight className="h-3 w-3" />
-                  DNAT {node.inboundDnat.length}
-                </span>
-              )}
-              {node.inboundPolicies.length > 0 && (
-                <span className="inline-flex items-center gap-1 rounded bg-foreground/8 px-1.5 py-0.5 font-medium">
-                  被访问 {node.inboundPolicies.length}
-                </span>
-              )}
-              {node.outboundPolicies.length > 0 && (
-                <span className="inline-flex items-center gap-1 rounded bg-foreground/8 px-1.5 py-0.5 font-medium">
-                  对外 {node.outboundPolicies.length}
-                </span>
-              )}
-              {ports.map((p) => (
-                <span
-                  key={p}
-                  className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-primary"
-                >
-                  :{p}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* right: actions */}
-          <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <LineLink line={node.lineNo} />
-            {hasDetails && (
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 text-muted-foreground/50 transition-transform",
-                  open && "rotate-180",
-                )}
-              />
+            {node.inboundPolicies.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded bg-foreground/8 px-1.5 py-0.5 font-medium">
+                被访问 {node.inboundPolicies.length}
+              </span>
             )}
+            {node.outboundPolicies.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded bg-foreground/8 px-1.5 py-0.5 font-medium">
+                对外 {node.outboundPolicies.length}
+              </span>
+            )}
+            {ports.map((p) => (
+              <span
+                key={p}
+                className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-primary"
+              >
+                :{p}
+              </span>
+            ))}
           </div>
-        </button>
-      </CollapsibleTrigger>
+        </div>
+
+        {/* right: actions */}
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <LineLink line={node.lineNo} />
+          {hasDetails && (
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                aria-label={open ? `收起 ${node.name} 的关联详情` : `展开 ${node.name} 的关联详情`}
+                aria-expanded={open}
+                className="-mr-1 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+              </button>
+            </CollapsibleTrigger>
+          )}
+        </div>
+      </div>
 
       {hasDetails && (
         <CollapsibleContent className="border-t border-border/30 bg-background/40 px-3 pb-3 pt-3 sm:px-4 sm:pb-4">
@@ -426,17 +430,6 @@ function NodeCard({ node }: { node: NodeAggregate }) {
 // ---------- NodeDetail ----------
 
 function NodeDetail({ node }: { node: NodeAggregate }) {
-  const { cfg } = useConfigStore();
-  const [showFull] = useShowFullPortRange();
-  // Service tokens (object or group names) render as the real ports they stand
-  // for, so a service-group name never reads as a port.
-  const portsOf = (name?: string) =>
-    !name || name === "any" || !cfg
-      ? ""
-      : cfg.serviceGroups.some((g) => g.name === name)
-        ? `组 ${name}`
-        : fmtPortList(serviceToPorts(name, cfg), showFull);
-
   return (
     <div className="space-y-3 text-xs">
       {/* inbound DNAT */}
@@ -453,14 +446,18 @@ function NodeDetail({ node }: { node: NodeAggregate }) {
                 className="flex flex-wrap items-center gap-1.5 rounded-md bg-secondary/50 px-2.5 py-1.5 font-mono"
               >
                 <Badge tone="muted">#{r.id}</Badge>
-                <span>{r.origDstAddr}</span>
-                {portsOf(r.origDstService) && (
-                  <span className="text-muted-foreground">:{portsOf(r.origDstService)}</span>
+                <ObjectName name={r.origDstAddr} />
+                {r.origDstService && (
+                  <span className="text-muted-foreground">
+                    :<ServiceRefPreview name={r.origDstService} />
+                  </span>
                 )}
                 <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                <span className="font-medium">{r.translatedPool}</span>
-                {portsOf(r.servicePort) && (
-                  <span className="text-muted-foreground">:{portsOf(r.servicePort)}</span>
+                <ObjectName name={r.translatedPool} prefer="nat-pool" className="font-medium" />
+                {r.servicePort && (
+                  <span className="text-muted-foreground">
+                    :<ServiceRefPreview name={r.servicePort} />
+                  </span>
                 )}
                 <span className="ml-auto">
                   <LineLink line={r.lineNo} />
@@ -523,16 +520,6 @@ function PolicyMiniList({
   rows: import("@/lib/parser/types").PolicyRule[];
   sideLabel: "src" | "dst";
 }) {
-  const { cfg } = useConfigStore();
-  const [showFull] = useShowFullPortRange();
-  // Show what the service token actually opens: a service group's name reads
-  // like an address, its ports do not.
-  const portsOf = (name?: string) =>
-    !name || name === "any" || !cfg
-      ? ""
-      : cfg.serviceGroups.some((g) => g.name === name)
-        ? `组 ${name}`
-        : fmtPortList(serviceToPorts(name, cfg), showFull);
   const max = 6;
   const shown = rows.slice(0, max);
   return (
@@ -545,12 +532,13 @@ function PolicyMiniList({
           <Badge tone={p.action === "permit" ? "ok" : "danger"}>
             #{p.id} {p.action === "permit" ? "放行" : "拒绝"}
           </Badge>
-          <span className="text-muted-foreground">
-            {sideLabel === "src" ? p.srcAddr : p.dstAddr}
-          </span>
+          <ObjectName
+            name={sideLabel === "src" ? p.srcAddr : p.dstAddr}
+            className="text-muted-foreground"
+          />
           <ArrowRight className="h-3 w-3 text-muted-foreground/60" />
-          <span>{sideLabel === "src" ? p.dstAddr : p.srcAddr}</span>
-          <span className="text-muted-foreground/60">· {portsOf(p.service) || p.service}</span>
+          <ObjectName name={sideLabel === "src" ? p.dstAddr : p.srcAddr} />
+          <ServiceRefPreview name={p.service} className="text-muted-foreground/60" />
           <span className="ml-auto">
             <LineLink line={p.lineNo} />
           </span>

@@ -4,6 +4,7 @@ import { useConfigStore } from "@/lib/store";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, DataTable, LineLink, type Column } from "@/components/DataTable";
 import { ObjectName } from "@/components/ObjectPreview";
+import { ServiceRefPreview } from "@/components/access/FocusRows";
 import { RefsPreview } from "@/components/RefsPreview";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -391,7 +392,7 @@ function SearchPage() {
         <div className="space-y-0.5">
           {g.members.map((m, i) => (
             <div key={i}>
-              <ObjectName name={m} />
+              <ObjectName name={m} prefer="service" />
             </div>
           ))}
         </div>
@@ -565,9 +566,12 @@ function SearchPage() {
       header: "转换为目的",
       cell: (r) => (
         <div className="space-y-0.5">
-          <ObjectName name={r.translatedPool} />
+          <ObjectName name={r.translatedPool} prefer="nat-pool" />
           {r.servicePort && (
-            <div className="font-mono text-xs text-muted-foreground">service {r.servicePort}</div>
+            <div className="flex flex-wrap items-baseline gap-1 font-mono text-xs text-muted-foreground">
+              <span>service</span>
+              <ServiceRefPreview name={r.servicePort} />
+            </div>
           )}
         </div>
       ),

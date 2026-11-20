@@ -8,7 +8,8 @@ import type { RefUsage } from "@/lib/parser";
 import { L, DescQuote } from "@/components/previewAtoms";
 import type { NatRule, PolicyRule } from "@/lib/parser/types";
 import { useShowPolicyZone, useShowDisabled } from "@/lib/uiPrefs";
-import { serviceRefKind } from "@/lib/access";
+import { ObjectName, type ResolvePrefer } from "@/components/ObjectPreview";
+import { ServiceRefPreview } from "@/components/access/FocusRows";
 import { PolicyStatusBadges } from "@/components/PolicyStatus";
 import { getPolicyExpiry } from "@/lib/policyStatus";
 
@@ -58,13 +59,24 @@ function cmpId(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
-/** Highlight: bold/primary if value equals the previewed object name */
-function H({ hit, value }: { hit: string; value: string }) {
-  const v = value || "—";
-  if (v === hit) {
-    return <span className="text-primary font-medium">{v}</span>;
-  }
-  return <span className="text-foreground">{v}</span>;
+/** Highlight and preview a referenced value in its actual configuration context. */
+function H({
+  hit,
+  value,
+  prefer = "address",
+}: {
+  hit: string;
+  value: string;
+  prefer?: ResolvePrefer;
+}) {
+  if (!value) return <span className="text-foreground">—</span>;
+  return (
+    <ObjectName
+      name={value}
+      prefer={prefer}
+      className={value === hit ? "font-medium" : "text-foreground"}
+    />
+  );
 }
 
 function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
@@ -91,7 +103,10 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
           </span>
           <span className="flex items-baseline gap-1 min-w-0">
             <L>服务</L>
-            <H hit={hit} value={p.service} />
+            <ServiceRefPreview
+              name={p.service}
+              className={p.service === hit ? "font-medium" : "text-foreground"}
+            />
           </span>
           {showSchedule && (
             <span className="flex items-baseline gap-1 min-w-0">
@@ -128,43 +143,37 @@ function PolicyLine({ p, hit }: { p: PolicyRule; hit: string }) {
 }
 
 function NatLine({ n, hit }: { n: NatRule; hit: string }) {
-  const { cfg } = useConfigStore();
   const k = natKindLabel[n.kind] ?? n.kind;
-  // A service token can be a group; say so instead of letting the name sit in
-  // the port position unexplained.
-  const svcIsGroup = cfg ? serviceRefKind(n.origDstService ?? "", cfg) === "service-group" : false;
   const hasMeta = n.disabled || n.log || n.description || n.id;
   return (
     <div className="space-y-0.5">
       <div className="flex items-baseline gap-2 max-sm:flex-col max-sm:gap-1">
         <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-xs sm:flex-nowrap sm:truncate">
-          <span className="flex min-w-0 max-w-full items-baseline gap-1 break-all">
+          <span className="flex min-w-0 max-w-full flex-wrap items-baseline gap-1 break-all">
             <L>原始</L>
             <H hit={hit} value={n.srcAddr} />
             <span className="text-muted-foreground">→</span>
             <H hit={hit} value={n.origDstAddr} />
             {n.origDstService && (
               <span className="text-muted-foreground">
-                :<H hit={hit} value={n.origDstService} />
-                {svcIsGroup && (
-                  <span className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">
-                    服务组
-                  </span>
-                )}
+                :
+                <ServiceRefPreview
+                  name={n.origDstService}
+                  className={n.origDstService === hit ? "font-medium" : undefined}
+                />
               </span>
             )}
           </span>
-          <span className="flex min-w-0 max-w-full items-baseline gap-1 break-all">
+          <span className="flex min-w-0 max-w-full flex-wrap items-baseline gap-1 break-all">
             <L>转换为</L>
-            <H hit={hit} value={n.translatedPool} />
+            <H hit={hit} value={n.translatedPool} prefer="nat-pool" />
             {n.servicePort && (
               <span className="text-muted-foreground">
-                :<H hit={hit} value={n.servicePort} />
-                {cfg && serviceRefKind(n.servicePort, cfg) === "service-group" && (
-                  <span className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">
-                    服务组
-                  </span>
-                )}
+                :
+                <ServiceRefPreview
+                  name={n.servicePort}
+                  className={n.servicePort === hit ? "font-medium" : undefined}
+                />
               </span>
             )}
           </span>
@@ -194,18 +203,20 @@ function GroupLine({
   count,
   description,
   hit,
+  prefer,
 }: {
   name: string;
   count: number;
   description?: string;
   hit: string;
+  prefer: ResolvePrefer;
 }) {
   return (
     <div className="space-y-0.5">
       <div className="flex items-baseline gap-x-3 flex-wrap font-mono text-sm">
         <span className="flex items-baseline gap-1">
           <L>名称</L>
-          <H hit={hit} value={name} />
+          <H hit={hit} value={name} prefer={prefer} />
         </span>
         <span className="ml-auto">
           <Badge tone="muted">成员 {count}</Badge>
@@ -397,7 +408,7 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
         <div className="space-y-2 border-t border-border/40 pt-1">
           <div className="text-xs font-medium text-muted-foreground">通过组的间接引用</div>
           {indirectSections.map((s) => (
-            <IndirectSectionBlock key={s.by} section={s} hit={name} cfg={cfg!} />
+            <IndirectSectionBlock key={s.by} section={s} hit={name} cfg={cfg!} prefer={kind} />
           ))}
         </div>
       )}
@@ -444,9 +455,17 @@ export function RefsPreview({ name, kind }: { name: string; kind: "address" | "s
   );
 }
 
-function ViaBadge({ groups }: { groups: string[] }) {
+function ViaBadge({ groups, prefer }: { groups: string[]; prefer: ResolvePrefer }) {
   return (
-    <span className="text-[10px] text-muted-foreground font-mono">via {groups.join(", ")}</span>
+    <span className="inline-flex flex-wrap items-baseline gap-1 font-mono text-[10px] text-muted-foreground">
+      <span>via</span>
+      {groups.map((group, index) => (
+        <span key={group} className="inline-flex items-baseline gap-1">
+          {index > 0 && <span>,</span>}
+          <ObjectName name={group} prefer={prefer} className="text-inherit" />
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -454,10 +473,12 @@ function IndirectSectionBlock({
   section,
   hit,
   cfg,
+  prefer,
 }: {
   section: IndirectSection;
   hit: string;
   cfg: NonNullable<ReturnType<typeof useConfigStore>["cfg"]>;
+  prefer: ResolvePrefer;
 }) {
   const [showAny, setShowAny] = useState(false);
   const { by, items, anyAnyCount } = section;
@@ -503,7 +524,7 @@ function IndirectSectionBlock({
                   );
                 })()}
               <div className="pl-0.5">
-                <ViaBadge groups={r.viaGroups} />
+                <ViaBadge groups={r.viaGroups} prefer={prefer} />
               </div>
             </li>
           ))}
@@ -591,6 +612,7 @@ function SectionBlock({
                       count={g?.members.length ?? 0}
                       description={g?.description}
                       hit={hit}
+                      prefer="address"
                     />
                   );
                 })()}
@@ -603,6 +625,7 @@ function SectionBlock({
                       count={g?.members.length ?? 0}
                       description={g?.description}
                       hit={hit}
+                      prefer="service"
                     />
                   );
                 })()}

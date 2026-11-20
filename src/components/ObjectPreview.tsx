@@ -41,21 +41,35 @@ interface Resolved {
 const IP_RE = /^\d{1,3}(\.\d{1,3}){3}(\/\d{1,2})?$/;
 const RANGE_RE = /^\d{1,3}(\.\d{1,3}){3}-\d{1,3}(\.\d{1,3}){3}$/;
 const PORT_RE = /^\d{1,5}(-\d{1,5})?$/;
+const PROTO_PORT_RE = /^(tcp|udp)\/\d{1,5}(-\d{1,5})?$/i;
 const ANY_RE = /^any(-(src|dst|ip|service))?$/i;
 
 function classifyLiteral(name: string): Resolved | null {
   if (ANY_RE.test(name)) return { kind: "literal-any", name, literal: "通配（不限制）" };
   if (IP_RE.test(name)) return { kind: "literal-ip", name, literal: "字面 IP / 网段" };
   if (RANGE_RE.test(name)) return { kind: "literal-ip", name, literal: "字面 IP 区间" };
-  if (PORT_RE.test(name)) return { kind: "literal-port", name, literal: "字面端口" };
+  if (PORT_RE.test(name) || PROTO_PORT_RE.test(name))
+    return { kind: "literal-port", name, literal: "字面端口" };
   return null;
 }
 
-export type ResolvePrefer = "address" | "service";
+export type ResolvePrefer = "address" | "service" | "nat-pool";
 
 function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
   const { cfg } = useConfigStore();
   if (!cfg || !name) return { kind: "unknown", name };
+
+  if (prefer === "nat-pool") {
+    const preferredPool = lookupIndex(cfg).poolByName.get(name);
+    if (preferredPool)
+      return {
+        kind: "nat-pool",
+        name,
+        lineNo: preferredPool.lineNo,
+        description: preferredPool.description,
+        pool: preferredPool,
+      };
+  }
 
   // 名称冲突时（地址对象与服务对象同名），按调用方语境优先解析
   if (prefer === "service") {

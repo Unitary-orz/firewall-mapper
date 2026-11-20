@@ -28,8 +28,9 @@ import {
   type FocusType,
   type FocusCandidate,
   type FlowDnatEntry,
-  type SvcRefKind,
   serviceGroupMembers,
+  serviceRefKind,
+  serviceToPorts,
 } from "@/lib/access";
 import { ObjectName } from "@/components/ObjectPreview";
 import { cn } from "@/lib/utils";
@@ -130,16 +131,16 @@ export function FocusLineRow({
       className={cn(
         "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
         accent,
-        "grid-cols-[minmax(0,auto)_minmax(0,1fr)_minmax(0,auto)_minmax(0,auto)_minmax(0,auto)]",
+        "grid-cols-[minmax(0,1.1fr)_minmax(0,1.55fr)_minmax(0,0.85fr)_minmax(0,1.15fr)_auto]",
       )}
     >
-      <div className="flex min-w-0 items-center">
+      <div className="flex min-w-0 items-center overflow-hidden">
         {!hideSrc ? <NodePlain name={line.src} /> : <Placeholder />}
       </div>
-      <div className="flex min-w-0 items-center gap-1.5">
+      <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
         <NatToken nat={line.nat} />
       </div>
-      <div className="flex min-w-0 items-center">
+      <div className="flex min-w-0 items-center overflow-hidden">
         {hideDst ? (
           <Placeholder />
         ) : mutedDst ? (
@@ -150,7 +151,7 @@ export function FocusLineRow({
           <NodePlain name={line.dst} />
         )}
       </div>
-      <div className="flex min-w-0 items-center pl-1">
+      <div className="flex min-w-0 items-center overflow-hidden pl-1">
         {!hideSvc ? <SvcChip svc={line.service} names={line.serviceNames} /> : <Placeholder />}
       </div>
       <div className="flex items-center justify-end gap-1.5 pl-1">
@@ -198,7 +199,7 @@ export function NodeChip({ name, role }: { name: string; role: "src" | "dst" }) 
 export function NodePlain({ name }: { name: string }) {
   const cat = classifyIntermediary(name);
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 font-mono text-xs text-foreground/90">
+    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 overflow-hidden font-mono text-xs text-foreground/90">
       <span className="min-w-0 truncate">
         <ObjectName name={name} />
       </span>
@@ -214,23 +215,111 @@ export function NodePlain({ name }: { name: string }) {
 export function SvcChip({ svc, names = [] }: { svc: string; names?: string[] }) {
   const serviceNames = names.filter((name) => name && name !== svc);
   const primaryName = serviceNames[0];
-  const extraCount = serviceNames.length - 1;
+  const extraCount = Math.max(0, serviceNames.length - 1);
   return (
-    <span
-      className="inline-flex min-w-0 max-w-[20rem] items-center gap-1.5 rounded-md border border-violet-500/30 bg-violet-500/[0.07] px-1.5 py-0.5 text-xs"
-      title={serviceNames.length > 0 ? `${serviceNames.join("、")}（${svc}）` : svc}
-    >
+    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-md border border-violet-500/30 bg-violet-500/[0.07] px-1.5 py-0.5 text-xs 2xl:max-w-[20rem]">
       {primaryName && (
-        <span className="min-w-0 truncate px-0.5 font-medium text-violet-800 dark:text-violet-300">
-          {primaryName}
-          {extraCount > 0 && (
-            <span className="ml-1 font-normal text-muted-foreground">+{extraCount}</span>
-          )}
+        <span className="flex min-w-0 items-center gap-1 truncate px-0.5 font-medium text-violet-800 dark:text-violet-300">
+          <span className="min-w-0 truncate">
+            <ObjectName name={primaryName} prefer="service" className="text-inherit" />
+          </span>
+          {extraCount > 0 && <ExtraServiceNames names={serviceNames} count={extraCount} />}
         </span>
       )}
       <span className="shrink-0 rounded border border-border/60 bg-background/70 px-1.5 py-px font-mono text-[10px] leading-4 text-muted-foreground">
         {svc}
       </span>
+    </span>
+  );
+}
+
+function ExtraServiceNames({ names, count }: { names: string[]; count: number }) {
+  const isMobile = useIsMobile();
+  const details = (
+    <div className="space-y-2">
+      <div className="text-xs font-medium text-muted-foreground">该端口对应的服务名称</div>
+      <ul className="space-y-1.5">
+        {names.map((name) => (
+          <li key={name} className="flex min-w-0 items-center gap-2">
+            <ObjectName name={name} prefer="service" />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+  const label = `+${count}`;
+
+  if (isMobile) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={`查看其余 ${count} 个服务名称`}
+            className="shrink-0 font-normal text-muted-foreground"
+          >
+            {label}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          collisionPadding={8}
+          className="max-h-[70dvh] w-[calc(100vw-1.5rem)] max-w-sm overflow-y-auto p-3"
+        >
+          {details}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  return (
+    <HoverCard openDelay={120} closeDelay={80}>
+      <HoverCardTrigger asChild>
+        <span className="shrink-0 cursor-help font-normal text-muted-foreground">{label}</span>
+      </HoverCardTrigger>
+      <HoverCardContent align="start" className="w-80 max-w-[calc(100vw-1.5rem)] p-3">
+        {details}
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
+/** Service token with its definition preview, kind and resolved real ports. */
+export function ServiceRefPreview({ name, className = "" }: { name?: string; className?: string }) {
+  const { cfg } = useConfigStore();
+  const [showFull] = useShowFullPortRange();
+  if (!name) return <span className={cn("text-muted-foreground", className)}>—</span>;
+
+  const kind = cfg ? serviceRefKind(name, cfg) : "literal";
+  const ports = cfg ? serviceToPorts(name, cfg) : [];
+  const portText = fmtPortList(ports, showFull);
+  const kindLabel =
+    kind === "service-group"
+      ? "服务组"
+      : kind === "service"
+        ? "服务对象"
+        : kind === "any"
+          ? "通配"
+          : "字面端口";
+
+  return (
+    <span
+      className={cn("inline-flex min-w-0 max-w-full flex-wrap items-baseline gap-x-1", className)}
+    >
+      <ObjectName name={name} prefer="service" className="text-inherit" />
+      {kind === "service-group" && (
+        <span className="shrink-0 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+          服务组
+        </span>
+      )}
+      {portText && portText !== name && (
+        <span
+          className="shrink-0 font-mono text-[10px] text-muted-foreground"
+          title={`${kindLabel}${ports.length > 0 ? `：${ports.join("、")}` : ""}`}
+        >
+          {portText}
+        </span>
+      )}
     </span>
   );
 }
@@ -401,16 +490,24 @@ export function DnatLabel({
         : [],
     [cfg, entryGroup, backendGroup],
   );
-  const svcTok = (group: string, ports: string, count: number, preview = false) =>
-    group ? (
+  const svcTok = (group: string, ports: string, count: number, preview = false, token = "") => {
+    if (preview && token) {
+      return (
+        <span className="text-amber-700/70 dark:text-amber-300/70">
+          :<ServiceRefPreview name={token} className="text-inherit" />
+        </span>
+      );
+    }
+    return group ? (
       <span className="text-amber-700/70 dark:text-amber-300/70">
         :<span className="mx-0.5 rounded bg-amber-500/15 px-1 text-[10px]">组</span>
-        {preview ? <ObjectName name={group} prefer="service" className="text-inherit" /> : group}
+        {group}
         {count > 0 && <span className="opacity-70"> ·{count}</span>}
       </span>
     ) : ports ? (
       <span className="text-amber-700/70 dark:text-amber-300/70">:{ports}</span>
     ) : null;
+  };
   const entryCount = entryGroup ? groupMembers.length : 0;
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -460,7 +557,7 @@ export function DnatLabel({
   const trigger = (
     <span
       className={cn(
-        "inline-flex min-w-0 max-w-full items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] hover:bg-amber-500/15 sm:max-w-[22rem]",
+        "inline-flex min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] hover:bg-amber-500/15 2xl:max-w-[22rem]",
         block && "w-full max-w-none",
       )}
     >
@@ -528,8 +625,8 @@ export function DnatLabel({
               原始目的
             </span>
             <span className="break-all text-muted-foreground">
-              {entry.entryAddr}
-              {svcTok(entryGroup, entryPorts, 0, true)}
+              <ObjectName name={entry.entryAddr} className="text-inherit" />
+              {svcTok(entryGroup, entryPorts, 0, true, entry.entryPort)}
             </span>
           </div>
 
@@ -538,11 +635,15 @@ export function DnatLabel({
               转换为
             </span>
             <span className="break-all text-amber-700 dark:text-amber-300">
-              {entry.rule.translatedPool}
+              <ObjectName
+                name={entry.rule.translatedPool}
+                prefer="nat-pool"
+                className="text-inherit"
+              />
               {backendSame ? (
                 <span className="ml-2 text-muted-foreground">（服务不变）</span>
               ) : (
-                svcTok(backendGroup, backendPorts, 0, true)
+                svcTok(backendGroup, backendPorts, 0, true, entry.backendPort)
               )}
             </span>
           </div>
