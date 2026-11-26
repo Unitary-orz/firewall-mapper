@@ -133,7 +133,7 @@ export function FocusLineRow({
       className={cn(
         "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
         accent,
-        "grid-cols-[minmax(0,0.85fr)_minmax(0,1.65fr)_minmax(0,0.65fr)_minmax(0,1.3fr)_max-content]",
+        "grid-cols-[minmax(0,0.85fr)_minmax(0,1.65fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_11rem]",
       )}
     >
       <div className="flex min-w-0 items-center overflow-hidden">
@@ -219,16 +219,26 @@ export function SvcChip({ svc, names = [] }: { svc: string; names?: string[] }) 
   const primaryName = serviceNames[0];
   const extraCount = Math.max(0, serviceNames.length - 1);
   return (
-    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-md border border-violet-500/30 bg-violet-500/[0.07] px-1.5 py-0.5 text-xs 2xl:max-w-[20rem]">
+    <span
+      className={cn(
+        "inline-flex min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-md border px-1.5 py-0.5 text-xs 2xl:max-w-[20rem]",
+        primaryName ? "border-border bg-accent/50" : "border-border bg-muted/40",
+      )}
+    >
       {primaryName && (
-        <span className="flex min-w-0 items-center gap-1 truncate px-0.5 font-medium text-violet-800 dark:text-violet-300">
+        <span className="flex min-w-0 items-center gap-1 truncate px-0.5 font-medium text-accent-foreground">
           <span className="min-w-0 truncate">
             <ObjectName name={primaryName} prefer="service" className="text-inherit" />
           </span>
           {extraCount > 0 && <ExtraServiceNames names={serviceNames} count={extraCount} />}
         </span>
       )}
-      <span className="shrink-0 rounded border border-border/60 bg-background/70 px-1.5 py-px font-mono text-[10px] leading-4 text-muted-foreground">
+      <span
+        className={cn(
+          "shrink-0 font-mono text-[10px] leading-4 text-muted-foreground",
+          primaryName && "rounded border border-border/60 bg-background/70 px-1.5 py-px",
+        )}
+      >
         {svc}
       </span>
     </span>
