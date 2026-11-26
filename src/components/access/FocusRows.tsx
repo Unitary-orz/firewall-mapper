@@ -138,30 +138,46 @@ function FoldedChain({
   const unassoc = chain.length - assoc;
   const ports = rest.map((l) => (l.port === "any" ? l.service : l.port));
   const shown = ports.slice(0, 4).join(" / ") + (ports.length > 4 ? ` +${ports.length - 4}` : "");
+  const toggle = (
+    <button
+      type="button"
+      onClick={() => setOpen((v) => !v)}
+      aria-expanded={open}
+      className={cn(
+        "flex w-full min-w-0 items-center gap-2 rounded-md border px-2 text-left text-[11px] transition-colors",
+        open
+          ? "border-transparent py-0.5 text-muted-foreground hover:bg-muted/40"
+          : "border-border border-l-4 border-l-muted-foreground/30 bg-muted/40 py-1 text-foreground hover:bg-muted/70",
+      )}
+    >
+      <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", !open && "-rotate-90")} />
+      <span className="shrink-0">{open ? "收起" : `另 ${rest.length} 个端口`}</span>
+      {!open && (
+        <span className="min-w-0 truncate font-mono text-muted-foreground">{shown}</span>
+      )}
+      {!open && (
+        <span className="ml-auto shrink-0 space-x-2">
+          {assoc > 0 && (
+            <span className="text-emerald-700 dark:text-emerald-300">已关联 {assoc}</span>
+          )}
+          {unassoc > 0 && (
+            <span className="text-amber-700 dark:text-amber-300">未关联 {unassoc}</span>
+          )}
+        </span>
+      )}
+    </button>
+  );
   return (
     <div className="space-y-1">
       <FocusLineRow line={first} hideSrc={hideSrc} mutedDst={mutedDst} />
       {open && (
-        <div className="space-y-1">
+        <div className="space-y-px">
           {rest.map((l) => (
-            <FocusLineRow key={l.key} line={l} hideSrc={hideSrc} mutedDst />
+            <FocusLineRow key={l.key} line={l} hideSrc={hideSrc} mutedDst sub />
           ))}
         </div>
       )}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="flex w-full min-w-0 items-center gap-2 rounded px-2 py-0.5 text-left text-[11px] text-muted-foreground hover:bg-muted/50"
-      >
-        <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", !open && "-rotate-90")} />
-        <span className="shrink-0">{open ? "收起" : `同链路共 ${chain.length} 个端口`}</span>
-        {!open && <span className="min-w-0 truncate font-mono opacity-70">{shown}</span>}
-        <span className="ml-auto shrink-0 space-x-2">
-          {assoc > 0 && <span className="text-emerald-700 dark:text-emerald-300">已关联 {assoc}</span>}
-          {unassoc > 0 && <span className="text-amber-700 dark:text-amber-300">未关联 {unassoc}</span>}
-        </span>
-      </button>
+      {toggle}
     </div>
   );
 }
@@ -174,12 +190,14 @@ export function FocusLineRow({
   hideDst,
   hideSvc,
   mutedDst,
+  sub,
 }: {
   line: FocusLine;
   hideSrc?: boolean;
   hideDst?: boolean;
   hideSvc?: boolean;
   mutedDst?: boolean;
+  sub?: boolean;
 }) {
   const isMobile = useIsMobile();
   const hasNat = line.nat.length > 0 || line.snat.length > 0;
@@ -248,18 +266,20 @@ export function FocusLineRow({
   return (
     <div
       className={cn(
-        "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
+        sub
+          ? "grid items-center gap-x-2 rounded-sm border-l-2 px-2 py-0.5 text-xs hover:bg-muted/30"
+          : "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
         accent,
         FOCUS_GRID,
       )}
     >
-      <div className="flex min-w-0 items-center overflow-hidden">
+      <div className={cn("flex min-w-0 items-center overflow-hidden", sub && "opacity-45")}>
         {!hideSrc ? <NodePlain name={line.src} /> : <Placeholder />}
       </div>
-      <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+      <div className={cn("flex min-w-0 items-center gap-1.5 overflow-hidden", sub && "opacity-45")}>
         <NatToken nat={line.nat} snat={line.snat} />
       </div>
-      <div className="flex min-w-0 items-center overflow-hidden">
+      <div className={cn("flex min-w-0 items-center overflow-hidden", sub && "opacity-45")}>
         {hideDst ? (
           <Placeholder />
         ) : mutedDst ? (
