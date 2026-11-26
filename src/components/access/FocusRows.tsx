@@ -81,6 +81,91 @@ export function FocusLineHead() {
   );
 }
 
+/** Rows sharing the same source, NAT rules and destination form one chain. */
+export function chainKeyOf(line: FocusLine): string {
+  const nat = line.nat.map((d) => d.rule.id).join(",");
+  const snat = line.snat.map((d) => d.rule.id).join(",");
+  return `${line.src}\t${line.dst}\t${nat}\t${snat}`;
+}
+
+const FOLD_MIN = 3;
+
+/** Splits rows into chains and folds chains with many ports behind a summary row. */
+export function FocusLineStack({
+  rows,
+  hideSrc,
+  mutedDst,
+  noFold,
+}: {
+  rows: FocusLine[];
+  hideSrc?: boolean;
+  mutedDst?: boolean;
+  noFold?: boolean;
+}) {
+  const chains = useMemo(() => [...groupBy(rows, chainKeyOf).entries()], [rows]);
+  return (
+    <div className="space-y-1.5">
+      {chains.map(([key, chain]) =>
+        noFold || chain.length < FOLD_MIN ? (
+          chain.map((l) => (
+            <FocusLineRow key={l.key} line={l} hideSrc={hideSrc} mutedDst={mutedDst} />
+          ))
+        ) : (
+          <FoldedChain key={key} chain={chain} hideSrc={hideSrc} mutedDst={mutedDst} />
+        ),
+      )}
+    </div>
+  );
+}
+
+function FoldedChain({
+  chain,
+  hideSrc,
+  mutedDst,
+}: {
+  chain: FocusLine[];
+  hideSrc?: boolean;
+  mutedDst?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ordered = useMemo(
+    () => [...chain].sort((a, b) => Number(b.policies.length > 0) - Number(a.policies.length > 0)),
+    [chain],
+  );
+  const [first, ...rest] = ordered;
+  if (!first) return null;
+  const assoc = chain.filter((l) => l.policies.length > 0).length;
+  const unassoc = chain.length - assoc;
+  const ports = rest.map((l) => (l.port === "any" ? l.service : l.port));
+  const shown = ports.slice(0, 4).join(" / ") + (ports.length > 4 ? ` +${ports.length - 4}` : "");
+  return (
+    <div className="space-y-1">
+      <FocusLineRow line={first} hideSrc={hideSrc} mutedDst={mutedDst} />
+      {open && (
+        <div className="space-y-1">
+          {rest.map((l) => (
+            <FocusLineRow key={l.key} line={l} hideSrc={hideSrc} mutedDst />
+          ))}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full min-w-0 items-center gap-2 rounded px-2 py-0.5 text-left text-[11px] text-muted-foreground hover:bg-muted/50"
+      >
+        <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform", !open && "-rotate-90")} />
+        <span className="shrink-0">{open ? "收起" : `同链路共 ${chain.length} 个端口`}</span>
+        {!open && <span className="min-w-0 truncate font-mono opacity-70">{shown}</span>}
+        <span className="ml-auto shrink-0 space-x-2">
+          {assoc > 0 && <span className="text-emerald-700 dark:text-emerald-300">已关联 {assoc}</span>}
+          {unassoc > 0 && <span className="text-amber-700 dark:text-amber-300">未关联 {unassoc}</span>}
+        </span>
+      </button>
+    </div>
+  );
+}
+
 // ---------- FocusLineRow ----------
 
 export function FocusLineRow({

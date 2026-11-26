@@ -42,7 +42,7 @@ import {
 import { ObjectName } from "@/components/ObjectPreview";
 import { cn } from "@/lib/utils";
 
-import { groupBy, FocusLineRow, FocusLineHead, NodeChip, SvcChip } from "@/components/access/FocusRows";
+import { groupBy, FocusLineStack, FocusLineHead, NodeChip, SvcChip } from "@/components/access/FocusRows";
 import {
   countUnassociatedLines,
   filterAccessLinesByAssociation,
@@ -538,11 +538,7 @@ function SrcFocusView({ src, lines }: { src: string; lines: FocusLine[] }) {
             <GroupSummary rows={rows} />
           </div>
           <FocusLineHead />
-          <div className="space-y-1.5">
-            {sortRows(rows).map((l) => (
-              <FocusLineRow key={l.key} line={l} hideSrc={false} mutedDst />
-            ))}
-          </div>
+          <FocusLineStack rows={sortRows(rows)} hideSrc={false} mutedDst />
         </FocusCard>
       ))}
     </div>
@@ -605,11 +601,7 @@ function DstFocusView({ dst, lines }: { dst: string; lines: FocusLine[] }) {
             <GroupSummary rows={rows} />
           </div>
           <FocusLineHead />
-          <div className="space-y-1.5">
-            {sortRows(rows).map((l) => (
-              <FocusLineRow key={l.key} line={l} mutedDst />
-            ))}
-          </div>
+          <FocusLineStack rows={sortRows(rows)} mutedDst />
         </FocusCard>
       ))}
     </div>
@@ -639,11 +631,7 @@ function SvcFocusView({ svc, lines }: { svc: string; lines: FocusLine[] }) {
             <GroupSummary rows={rows} />
           </div>
           <FocusLineHead />
-          <div className="space-y-1.5">
-            {sortRows(rows).map((l) => (
-              <FocusLineRow key={l.key} line={l} hideSrc={false} mutedDst />
-            ))}
-          </div>
+          <FocusLineStack rows={sortRows(rows)} hideSrc={false} mutedDst noFold />
         </FocusCard>
       ))}
     </div>

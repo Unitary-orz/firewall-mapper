@@ -1009,7 +1009,8 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
             portMap.set(svc, g);
           }
           if (!g.dnats.includes(d)) g.dnats.push(d);
-          covering.forEach((pol) => {
+          // Each port row keeps only the policies whose service really covers that port.
+          covering.filter((pol) => svcMatches(pol.service, p, cfg)).forEach((pol) => {
             const k = `${pol.id}@${pol.lineNo}`;
             if (!g!.seen.has(k)) {
               g!.seen.add(k);
