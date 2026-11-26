@@ -5,3 +5,4 @@
 - Destination-focused access paths use sibling source groups and retain the source in every five-stage row; this avoids nested frames and empty reserved source columns.
 - Desktop access rows reserve the same policy-column width regardless of association status, so source, NAT, destination and service columns align across groups.
 - Resolve built-in services through the shared fallback catalog after configured services/groups; never inject synthetic definitions into imported configuration lists or counts.
+- Keep per-chain port presentation in a pure helper beside access components, separate from access matching; summarization must not alter policy association or candidate counts.

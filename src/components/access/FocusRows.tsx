@@ -37,6 +37,7 @@ import {
 import { ObjectName } from "@/components/ObjectPreview";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { presentChainPorts } from "./portPresentation";
 
 export function groupBy<T, K>(arr: T[], key: (t: T) => K): Map<K, T[]> {
   const m = new Map<K, T[]>();
@@ -88,9 +89,7 @@ export function chainKeyOf(line: FocusLine): string {
   return `${line.src}\t${line.dst}\t${nat}\t${snat}`;
 }
 
-const FOLD_MIN = 3;
-
-/** Splits rows into chains and folds chains with many ports behind a summary row. */
+/** Keep associated ports visible and summarize unmatched ports per chain. */
 export function FocusLineStack({
   rows,
   hideSrc,
@@ -106,7 +105,7 @@ export function FocusLineStack({
   return (
     <div className="space-y-1.5">
       {chains.map(([key, chain]) =>
-        noFold || chain.length < FOLD_MIN ? (
+        noFold ? (
           chain.map((l) => (
             <FocusLineRow key={l.key} line={l} hideSrc={hideSrc} mutedDst={mutedDst} />
           ))
@@ -127,58 +126,85 @@ function FoldedChain({
   hideSrc?: boolean;
   mutedDst?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const ordered = useMemo(
-    () => [...chain].sort((a, b) => Number(b.policies.length > 0) - Number(a.policies.length > 0)),
-    [chain],
-  );
-  const [first, ...rest] = ordered;
-  if (!first) return null;
-  const assoc = chain.filter((l) => l.policies.length > 0).length;
-  const unassoc = chain.length - assoc;
-  const ports = rest.map((l) => (l.port === "any" ? l.service : l.port));
-  const shown = ports.slice(0, 4).join(" / ") + (ports.length > 4 ? ` +${ports.length - 4}` : "");
-  const toggle = (
-    <button
-      type="button"
-      onClick={() => setOpen((v) => !v)}
-      aria-expanded={open}
-      className={cn(
-        "flex w-full min-w-0 items-center gap-2 rounded-md border px-2 text-left text-[11px] transition-colors",
-        open
-          ? "border-transparent py-0.5 text-muted-foreground hover:bg-muted/40"
-          : "border-border border-l-4 border-l-muted-foreground/30 bg-muted/40 py-1 text-foreground hover:bg-muted/70",
-      )}
-    >
-      <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", !open && "-rotate-90")} />
-      <span className="shrink-0">{open ? "收起" : `另 ${rest.length} 个端口`}</span>
-      {!open && (
-        <span className="min-w-0 truncate font-mono text-muted-foreground">{shown}</span>
-      )}
-      {!open && (
-        <span className="ml-auto shrink-0 space-x-2">
-          {assoc > 0 && (
-            <span className="text-emerald-700 dark:text-emerald-300">已关联 {assoc}</span>
-          )}
-          {unassoc > 0 && (
-            <span className="text-amber-700 dark:text-amber-300">未关联 {unassoc}</span>
-          )}
-        </span>
-      )}
-    </button>
-  );
+  const { visible, hidden } = useMemo(() => presentChainPorts(chain), [chain]);
   return (
     <div className="space-y-1">
-      <FocusLineRow line={first} hideSrc={hideSrc} mutedDst={mutedDst} />
-      {open && (
-        <div className="space-y-px">
-          {rest.map((l) => (
-            <FocusLineRow key={l.key} line={l} hideSrc={hideSrc} mutedDst sub />
-          ))}
-        </div>
-      )}
-      {toggle}
+      {visible.map((line, index) => (
+        <FocusLineRow
+          key={line.key}
+          line={line}
+          hideSrc={hideSrc}
+          mutedDst={mutedDst}
+          svcExtra={
+            index === visible.length - 1 && hidden.length > 0 ? (
+              <UnassocPortsChip rows={hidden} />
+            ) : null
+          }
+        />
+      ))}
     </div>
+  );
+}
+
+function UnassocPortsChip({ rows }: { rows: FocusLine[] }) {
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(false);
+  const trigger = (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      aria-label={`查看 ${rows.length} 个未关联端口`}
+      onClick={() => setOpen((value) => !value)}
+      className="h-6 shrink-0 gap-1 rounded-md border-unassociated/35 bg-unassociated/5 px-1.5 text-[10px] font-normal text-unassociated hover:bg-unassociated/10 hover:text-unassociated"
+    >
+      +{rows.length} 未关联
+    </Button>
+  );
+  const details = (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+        <span className="font-medium">未关联端口</span>
+        <span className="text-muted-foreground">{rows.length} 个</span>
+      </div>
+      <ul className="space-y-1.5">
+        {rows.map((line) => (
+          <li
+            key={line.key}
+            className="flex min-w-0 items-center justify-between gap-2 border-b border-border/60 pb-1.5 last:border-0 last:pb-0"
+          >
+            <SvcChip svc={line.service} names={line.serviceNames} />
+            <span className="shrink-0 text-[10px] text-muted-foreground">未关联策略</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+  if (isMobile) {
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+        <PopoverContent
+          align="end"
+          collisionPadding={8}
+          className="max-h-[65dvh] w-80 max-w-[calc(100vw-1.5rem)] overflow-y-auto p-3"
+        >
+          {details}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+  return (
+    <HoverCard open={open} onOpenChange={setOpen} openDelay={120} closeDelay={180}>
+      <HoverCardTrigger asChild>{trigger}</HoverCardTrigger>
+      <HoverCardContent
+        align="end"
+        collisionPadding={8}
+        className="max-h-[65dvh] w-80 max-w-[calc(100vw-1.5rem)] overflow-y-auto p-3"
+      >
+        {details}
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -190,14 +216,14 @@ export function FocusLineRow({
   hideDst,
   hideSvc,
   mutedDst,
-  sub,
+  svcExtra,
 }: {
   line: FocusLine;
   hideSrc?: boolean;
   hideDst?: boolean;
   hideSvc?: boolean;
   mutedDst?: boolean;
-  sub?: boolean;
+  svcExtra?: React.ReactNode;
 }) {
   const isMobile = useIsMobile();
   const hasNat = line.nat.length > 0 || line.snat.length > 0;
@@ -250,9 +276,10 @@ export function FocusLineRow({
         </div>
 
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="shrink-0 text-[10px] text-muted-foreground">服务</span>
             {!hideSvc ? <SvcChip svc={line.service} names={line.serviceNames} /> : <Placeholder />}
+            {svcExtra}
           </div>
           <div className="flex shrink-0 items-center justify-end gap-1.5">
             <ActionBadge action={line.action} />
@@ -266,20 +293,18 @@ export function FocusLineRow({
   return (
     <div
       className={cn(
-        sub
-          ? "grid items-center gap-x-2 rounded-sm border-l-2 px-2 py-0.5 text-xs hover:bg-muted/30"
-          : "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
+        "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
         accent,
         FOCUS_GRID,
       )}
     >
-      <div className={cn("flex min-w-0 items-center overflow-hidden", sub && "opacity-45")}>
+      <div className="flex min-w-0 items-center overflow-hidden">
         {!hideSrc ? <NodePlain name={line.src} /> : <Placeholder />}
       </div>
-      <div className={cn("flex min-w-0 items-center gap-1.5 overflow-hidden", sub && "opacity-45")}>
+      <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
         <NatToken nat={line.nat} snat={line.snat} />
       </div>
-      <div className={cn("flex min-w-0 items-center overflow-hidden", sub && "opacity-45")}>
+      <div className="flex min-w-0 items-center overflow-hidden">
         {hideDst ? (
           <Placeholder />
         ) : mutedDst ? (
@@ -290,8 +315,9 @@ export function FocusLineRow({
           <NodePlain name={line.dst} />
         )}
       </div>
-      <div className="flex min-w-0 items-center justify-end overflow-hidden pl-1 pr-2">
+      <div className="flex min-w-0 flex-wrap items-center justify-end gap-1 overflow-hidden pl-1 pr-2">
         {!hideSvc ? <SvcChip svc={line.service} names={line.serviceNames} /> : <Placeholder />}
+        {svcExtra}
       </div>
       <div className="flex shrink-0 items-center justify-end gap-1.5 whitespace-nowrap pl-1">
         <ActionBadge action={line.action} />
