@@ -153,7 +153,7 @@ export function FocusLineRow({
           <NodePlain name={line.dst} />
         )}
       </div>
-      <div className="flex min-w-0 items-center overflow-hidden pl-1">
+      <div className="flex min-w-0 items-center justify-end overflow-hidden pl-1 pr-2">
         {!hideSvc ? <SvcChip svc={line.service} names={line.serviceNames} /> : <Placeholder />}
       </div>
       <div className="flex shrink-0 items-center justify-end gap-1.5 whitespace-nowrap pl-1">
