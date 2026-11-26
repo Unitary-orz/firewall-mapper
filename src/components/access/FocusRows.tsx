@@ -49,6 +49,38 @@ export function groupBy<T, K>(arr: T[], key: (t: T) => K): Map<K, T[]> {
   return m;
 }
 
+// The five-column path grid is shared by every row and by the field header, so
+// the header labels always sit exactly above their column.
+export const FOCUS_GRID =
+  "grid-cols-[minmax(0,0.85fr)_minmax(0,1.65fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_11rem]";
+
+const FOCUS_FIELDS = [
+  { label: "来源", cls: "" },
+  { label: "NAT / 直连", cls: "" },
+  { label: "目的", cls: "" },
+  { label: "服务 / 端口", cls: "justify-end pl-1 pr-2" },
+  { label: "策略状态", cls: "justify-end pl-1" },
+];
+
+/** Field header for one group of path rows. Mobile rows carry their own
+ *  inline labels, so the header only shows on desktop widths. */
+export function FocusLineHead() {
+  return (
+    <div
+      className={cn(
+        "mb-1 hidden items-center gap-x-2 border-b border-border/70 px-2 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground/70 sm:grid",
+        FOCUS_GRID,
+      )}
+    >
+      {FOCUS_FIELDS.map((f) => (
+        <div key={f.label} className={cn("min-w-0 truncate", f.cls)}>
+          {f.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ---------- FocusLineRow ----------
 
 export function FocusLineRow({
@@ -133,7 +165,7 @@ export function FocusLineRow({
       className={cn(
         "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
         accent,
-        "grid-cols-[minmax(0,0.85fr)_minmax(0,1.65fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_11rem]",
+        FOCUS_GRID,
       )}
     >
       <div className="flex min-w-0 items-center overflow-hidden">

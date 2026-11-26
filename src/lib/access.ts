@@ -494,7 +494,13 @@ export function serviceNamesForPort(name: string, port: string, cfg: ParsedConfi
   const out = new Set<string>();
   const addIfMatches = (candidate: string) => {
     const ports = serviceToPorts(candidate, cfg);
-    if (port === "any" || ports.includes(port) || ports.includes("any")) out.add(candidate);
+    if (port === "any" || ports.includes("any")) {
+      out.add(candidate);
+      return;
+    }
+    // A port written bare (`443`) carries no protocol, so it has to overlap a
+    // service's own proto/port (https → tcp/443) instead of matching by string.
+    if (ports.some((q) => portCovers(q, port) || portCovers(port, q))) out.add(candidate);
   };
   const i = idx(cfg);
   if (i.svcByName.has(name)) addIfMatches(name);
@@ -644,11 +650,25 @@ export interface FocusLine {
   coverageKind: CoverageKind;
 }
 
+const BARE_PORT = /^\d+(?:-\d+)?$/;
+
 function parsePortStr(p: string): { proto: string; port: string } {
   if (!p || p === "any") return { proto: "any", port: "any" };
   const idx = p.indexOf("/");
-  if (idx < 0) return { proto: p, port: "any" };
+  if (idx < 0) {
+    // A bare number is a port the config wrote without a protocol, not a
+    // protocol name. Reading it as a protocol made `443` never match `tcp/443`.
+    if (BARE_PORT.test(p.trim())) return { proto: "ip", port: p.trim() };
+    return { proto: p, port: "any" };
+  }
   return { proto: p.slice(0, idx), port: p.slice(idx + 1) };
+}
+
+/** Row label for a resolved proto/port pair. A wildcard protocol is dropped so
+ *  a port the config wrote bare (`443`) still reads bare instead of `ip/443`. */
+function svcLabel(proto: string, port: string): string {
+  if (port === "any") return "any";
+  return proto === "ip" || proto === "any" ? port : `${proto}/${port}`;
 }
 
 function pickMatchingDnat(dnats: FlowDnatEntry[], svc: string, cfg: ParsedConfig): FlowDnatEntry[] {
@@ -656,7 +676,7 @@ function pickMatchingDnat(dnats: FlowDnatEntry[], svc: string, cfg: ParsedConfig
   if (svc === "any") return dnats;
   return dnats.filter((d) => {
     const ports = d.backendPort ? serviceToPorts(d.backendPort, cfg) : ["any"];
-    return ports.includes("any") || ports.includes(svc);
+    return ports.some((p) => p === "any" || portCovers(p, svc) || portCovers(svc, p));
   });
 }
 
@@ -865,6 +885,15 @@ export function portCovers(outer: string, inner: string): boolean {
   const wild = (x: string) => x === "any" || x === "ip";
   if (!wild(o.proto) && !wild(n.proto) && o.proto.toLowerCase() !== n.proto.toLowerCase())
     return false;
+  // A protocol written without a port (`icmp`, `ike`) says nothing about port
+  // numbers, so it only covers a concrete port when the protocols agree.
+  if (
+    o.port === "any" &&
+    !wild(o.proto) &&
+    n.port !== "any" &&
+    o.proto.toLowerCase() !== n.proto.toLowerCase()
+  )
+    return false;
   const ro = portRange(o.port);
   const rn = portRange(n.port);
   if (!ro || !rn) return o.port === n.port;
@@ -966,7 +995,7 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
         const covering = findCoveringPolicies(d, f.src, cfg);
         ports.forEach((p) => {
           const { proto, port } = parsePortStr(p);
-          const svc = port === "any" ? "any" : `${proto}/${port}`;
+          const svc = svcLabel(proto, port);
           let g = portMap.get(svc);
           if (!g) {
             g = {
@@ -1035,7 +1064,7 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
         const matching = findMatchingSnatPolicies(entry, cfg);
         entry.ports.forEach((p) => {
           const { proto, port } = parsePortStr(p);
-          const svc = port === "any" ? "any" : `${proto}/${port}`;
+          const svc = svcLabel(proto, port);
           let g = portMap.get(svc);
           if (!g) {
             g = { proto, port, service: svc, snats: [], policies: [], seen: new Set() };
@@ -1104,7 +1133,7 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
       });
     });
     groups.forEach((g) => {
-      const svc = g.port === "any" ? "any" : `${g.proto}/${g.port}`;
+      const svc = svcLabel(g.proto, g.port);
       directOut.push({
         key: `${f.key}\t${svc}\t${g.action}`,
         src: f.src,
