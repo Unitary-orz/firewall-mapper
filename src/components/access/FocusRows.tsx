@@ -1,5 +1,6 @@
 import { useConfigStore } from "@/lib/store";
 import type { CrossRef } from "@/lib/parser";
+import type { NatRule } from "@/lib/parser/types";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, LineLink } from "@/components/DataTable";
 import { useShowFullPortRange, useShowLineNumbers, useShowPolicyZone } from "@/lib/uiPrefs";
@@ -28,6 +29,7 @@ import {
   type FocusType,
   type FocusCandidate,
   type FlowDnatEntry,
+  type FlowSnatEntry,
   serviceGroupMembers,
   serviceRefKind,
   serviceToPorts,
@@ -63,7 +65,7 @@ export function FocusLineRow({
   mutedDst?: boolean;
 }) {
   const isMobile = useIsMobile();
-  const hasNat = line.nat.length > 0;
+  const hasNat = line.nat.length > 0 || line.snat.length > 0;
   const accent =
     line.action === "unassociated"
       ? "border-l-amber-500"
@@ -108,7 +110,7 @@ export function FocusLineRow({
         <div className="mt-2 border-t border-border/60 pt-2">
           <div className="mb-1 text-[10px] text-muted-foreground">NAT / 直连</div>
           <div className="min-w-0 max-w-full">
-            <NatToken nat={line.nat} />
+            <NatToken nat={line.nat} snat={line.snat} />
           </div>
         </div>
 
@@ -138,7 +140,7 @@ export function FocusLineRow({
         {!hideSrc ? <NodePlain name={line.src} /> : <Placeholder />}
       </div>
       <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
-        <NatToken nat={line.nat} />
+        <NatToken nat={line.nat} snat={line.snat} />
       </div>
       <div className="flex min-w-0 items-center overflow-hidden">
         {hideDst ? (
@@ -341,7 +343,7 @@ export function ActionBadge({ action }: { action: string }) {
     return (
       <span
         className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400"
-        title="转化后的目的+后端端口被至少一条 permit 策略覆盖"
+        title="该访问路径被至少一条 permit 策略覆盖"
       >
         已关联策略
       </span>
@@ -350,7 +352,7 @@ export function ActionBadge({ action }: { action: string }) {
     return (
       <span
         className="text-[11px] text-muted-foreground/70"
-        title="转化后的目的+后端端口没有任何 permit 策略覆盖"
+        title="该访问路径没有任何 permit 或 deny 策略覆盖"
       >
         未关联策略
       </span>
@@ -418,24 +420,26 @@ export function PolicyCountBadge({ policies }: { policies: FocusLine["policies"]
 
 // ---------- NatToken: direct / DNAT / SNAT / NAT×N ----------
 
-export function NatToken({ nat }: { nat: FlowDnatEntry[] }) {
+export function NatToken({ nat, snat = [] }: { nat: FlowDnatEntry[]; snat?: FlowSnatEntry[] }) {
   const [showFull] = useShowFullPortRange();
-  if (nat.length === 0) {
+  const count = nat.length + snat.length;
+  if (count === 0) {
     return (
       <span
         className="inline-flex items-center gap-1 text-muted-foreground/80"
-        title="这条策略路径没有被等价的 DNAT 链路覆盖；不表示对实际路由的额外判断"
+        title="这条策略路径没有被等价的 DNAT 或 SNAT 链路覆盖；不表示对实际路由的额外判断"
       >
         <span className="h-px w-6 bg-foreground/40" />
         <ArrowRight className="h-3.5 w-3.5 text-foreground/70" strokeWidth={2.5} />
-        <span className="whitespace-nowrap text-[10px] tracking-wide">无 DNAT</span>
+        <span className="whitespace-nowrap text-[10px] tracking-wide">无 NAT</span>
         <ArrowRight className="h-3.5 w-3.5 text-foreground/70" strokeWidth={2.5} />
         <span className="h-px w-6 bg-foreground/40" />
       </span>
     );
   }
-  if (nat.length === 1) {
-    return <DnatLabel entry={nat[0]} showFull={showFull} />;
+  if (count === 1) {
+    if (nat[0]) return <DnatLabel entry={nat[0]} showFull={showFull} />;
+    if (snat[0]) return <SnatLabel entry={snat[0]} />;
   }
   return (
     <Popover>
@@ -444,21 +448,182 @@ export function NatToken({ nat }: { nat: FlowDnatEntry[] }) {
           type="button"
           className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-transparent px-2 py-0.5 font-mono text-[11px] text-amber-700 hover:bg-amber-500/5 dark:text-amber-300"
         >
-          NAT × {nat.length}
+          NAT × {count}
           <ChevronDown className="h-3 w-3 opacity-70" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="center" className="w-[calc(100vw-1.5rem)] max-w-[28rem] p-2">
         <div className="mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-          NAT 规则链
+          NAT 规则
         </div>
         <div className="space-y-1">
           {nat.map((d) => (
             <DnatLabel key={`${d.rule.id}@${d.rule.lineNo}`} entry={d} showFull={showFull} block />
           ))}
+          {snat.map((s) => (
+            <SnatLabel key={`${s.rule.id}@${s.rule.lineNo}`} entry={s} block />
+          ))}
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** SNAT 的转换后源：地址池 / 对象正常预览；出接口取址显示接口真实 IP。 */
+export function SnatTranslatedSource({
+  rule,
+  showInterface = true,
+  interactive = true,
+  className,
+}: {
+  rule: NatRule;
+  showInterface?: boolean;
+  interactive?: boolean;
+  className?: string;
+}) {
+  const { cfg } = useConfigStore();
+  if (rule.egressInterface) {
+    const iface = cfg?.interfaces.find((item) => item.name === rule.iface);
+    // “ip address dhcp …” 不是地址，只有真实 IP / CIDR 才能作为出接口地址。
+    const ips = (iface?.ips ?? []).filter((ip) => isIpLiteral(ip));
+    const primary = ips[0]?.replace(/\/\d+$/, "");
+    return (
+      <span
+        className={cn("inline-flex min-w-0 flex-wrap items-baseline gap-x-1", className)}
+        title={ips.length > 0 ? `${rule.iface}：${ips.join("、")}` : `${rule.iface} 出接口取址`}
+      >
+        {primary ? (
+          interactive ? (
+            <ObjectName name={primary} className="text-inherit" />
+          ) : (
+            <span>{primary}</span>
+          )
+        ) : (
+          <span>出接口取址</span>
+        )}
+        {ips.length > 1 && <span className="text-muted-foreground">+{ips.length - 1}</span>}
+        {showInterface && (
+          <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+            （{rule.iface} 出接口）
+          </span>
+        )}
+      </span>
+    );
+  }
+  if (rule.translatedSrc) {
+    return interactive ? (
+      <ObjectName
+        name={rule.translatedSrc}
+        prefer="nat-pool"
+        className={cn("text-inherit", className)}
+      />
+    ) : (
+      <span className={className}>{rule.translatedSrc}</span>
+    );
+  }
+  return <span className={cn("text-muted-foreground", className)}>—</span>;
+}
+
+export function SnatLabel({ entry, block }: { entry: FlowSnatEntry; block?: boolean }) {
+  const isMobile = useIsMobile();
+  const [showLineNo] = useShowLineNumbers();
+  const rule = entry.rule;
+  const details = (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+          SNAT #{rule.id}
+        </span>
+        {rule.iface && <span className="text-[11px] text-muted-foreground">接口 {rule.iface}</span>}
+        {rule.disabled && <Badge tone="warn">disabled</Badge>}
+        {showLineNo && (
+          <span className="ml-auto">
+            <LineLink line={rule.lineNo} />
+          </span>
+        )}
+      </div>
+      <div className="space-y-1.5 font-mono text-xs">
+        <div className="flex items-baseline gap-2">
+          <span className="w-16 shrink-0 text-[10px] text-muted-foreground">原始源</span>
+          <ObjectName name={rule.srcAddr} />
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className="w-16 shrink-0 text-[10px] text-muted-foreground">原目的</span>
+          <ObjectName name={rule.origDstAddr} />
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className="w-16 shrink-0 text-[10px] text-muted-foreground">服务</span>
+          <ServiceRefPreview name={rule.origDstService} />
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className="w-16 shrink-0 text-[10px] text-amber-700 dark:text-amber-400">
+            转换为源
+          </span>
+          <SnatTranslatedSource rule={rule} className="text-amber-700 dark:text-amber-300" />
+        </div>
+      </div>
+      <div className="text-[11px] text-muted-foreground">
+        策略按转换前的源、目的和服务匹配{rule.log ? " · log" : ""}
+      </div>
+    </div>
+  );
+  const trigger = (
+    <span
+      className={cn(
+        "inline-flex min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] hover:bg-amber-500/15 2xl:max-w-[22rem]",
+        block && "w-full max-w-none",
+      )}
+    >
+      <span className="shrink-0 font-semibold text-amber-700 dark:text-amber-300">SNAT</span>
+      <span className="shrink-0 text-muted-foreground">源</span>
+      <ArrowRight className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
+      <span className="min-w-0 truncate text-amber-700 dark:text-amber-300">
+        <SnatTranslatedSource rule={rule} showInterface={false} interactive={false} />
+      </span>
+      {rule.egressInterface && (
+        <span className="shrink-0 text-[10px] text-muted-foreground">{rule.iface}</span>
+      )}
+      {rule.disabled && <Badge tone="warn">disabled</Badge>}
+    </span>
+  );
+
+  if (isMobile) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={`SNAT #${rule.id} 详情`}
+            className={cn("min-w-0 max-w-full text-left", block && "w-full")}
+          >
+            {trigger}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-[calc(100vw-1.5rem)] max-w-[26rem] p-3">
+          {details}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  return (
+    <HoverCard openDelay={120} closeDelay={80}>
+      <HoverCardTrigger asChild>
+        <span
+          tabIndex={0}
+          aria-label={`SNAT #${rule.id} 详情`}
+          className={cn("min-w-0 max-w-full cursor-help text-left", block && "w-full")}
+        >
+          {trigger}
+        </span>
+      </HoverCardTrigger>
+      <HoverCardContent
+        align="start"
+        className="max-h-[70vh] w-[26rem] max-w-[calc(100vw-2rem)] overflow-y-auto p-3"
+      >
+        {details}
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 

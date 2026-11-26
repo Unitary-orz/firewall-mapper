@@ -20,6 +20,7 @@ function line(key: string, src: string, dst: string, action = "associated"): Foc
     action,
     policies: [],
     nat: [],
+    snat: [],
     coverageKind: "ok",
   };
 }

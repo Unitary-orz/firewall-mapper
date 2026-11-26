@@ -9,7 +9,7 @@ import { L, DescQuote } from "@/components/previewAtoms";
 import type { NatRule, PolicyRule } from "@/lib/parser/types";
 import { useShowPolicyZone, useShowDisabled } from "@/lib/uiPrefs";
 import { ObjectName, type ResolvePrefer } from "@/components/ObjectPreview";
-import { ServiceRefPreview } from "@/components/access/FocusRows";
+import { ServiceRefPreview, SnatTranslatedSource } from "@/components/access/FocusRows";
 import { PolicyStatusBadges } from "@/components/PolicyStatus";
 import { getPolicyExpiry } from "@/lib/policyStatus";
 
@@ -165,8 +165,12 @@ function NatLine({ n, hit }: { n: NatRule; hit: string }) {
             )}
           </span>
           <span className="flex min-w-0 max-w-full flex-wrap items-baseline gap-1 break-all">
-            <L>转换为</L>
-            <H hit={hit} value={n.translatedPool} prefer="nat-pool" />
+            <L>{n.kind === "source" ? "转换为源" : "转换为"}</L>
+            {n.kind === "source" ? (
+              <SnatTranslatedSource rule={n} />
+            ) : (
+              <H hit={hit} value={n.translatedPool} prefer="nat-pool" />
+            )}
             {n.servicePort && (
               <span className="text-muted-foreground">
                 :

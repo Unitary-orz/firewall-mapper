@@ -4,7 +4,7 @@ import { useConfigStore } from "@/lib/store";
 import { EmptyConfig } from "@/components/EmptyConfig";
 import { Badge, DataTable, LineLink, type Column } from "@/components/DataTable";
 import { ObjectName } from "@/components/ObjectPreview";
-import { ServiceRefPreview } from "@/components/access/FocusRows";
+import { ServiceRefPreview, SnatTranslatedSource } from "@/components/access/FocusRows";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useShowDisabled } from "@/lib/uiPrefs";
 import type { NatRule } from "@/lib/parser/types";
@@ -158,20 +158,21 @@ function NatPage() {
       search: (r) => `${r.origDstAddr} ${(xr?.addressToValues.get(r.origDstAddr) ?? []).join(" ")}`,
     },
     {
+      key: "service",
+      header: "服务",
+      cell: (r) => <ServiceRefPreview name={r.origDstService} />,
+      search: (r) => r.origDstService,
+    },
+    {
       key: "trans",
       header: "转换为源",
-      cell: (r) => (
-        <div className="space-y-0.5">
-          {r.translatedSrc ? (
-            <ObjectName name={r.translatedSrc} />
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          )}
-          {r.egressInterface && <Badge tone="default">出接口取址</Badge>}
-        </div>
-      ),
-      search: (r) =>
-        `${r.translatedSrc ?? ""} ${(xr?.addressToValues.get(r.translatedSrc ?? "") ?? []).join(" ")} ${r.egressInterface ? "interface" : ""}`,
+      cell: (r) => <SnatTranslatedSource rule={r} />,
+      search: (r) => {
+        const ips = (cfg.interfaces.find((item) => item.name === r.iface)?.ips ?? []).filter((ip) =>
+          /^\d{1,3}(\.\d{1,3}){3}(\/\d{1,2})?$/.test(ip),
+        );
+        return `${r.translatedSrc ?? ""} ${(xr?.addressToValues.get(r.translatedSrc ?? "") ?? []).join(" ")} ${r.egressInterface ? `interface 出接口 ${r.iface} ${ips.join(" ")}` : ""}`;
+      },
     },
     logCol,
     descCol,

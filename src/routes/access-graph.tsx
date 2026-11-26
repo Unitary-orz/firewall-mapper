@@ -551,6 +551,7 @@ function SrcFocusView({ src, lines }: { src: string; lines: FocusLine[] }) {
 function GroupSummary({ rows }: { rows: FocusLine[] }) {
   const total = rows.length;
   const natRows = rows.filter((r) => r.nat.length > 0).length;
+  const snatRows = rows.filter((r) => r.snat.length > 0).length;
   const permitRows = rows.filter((r) => r.action === "permit").length;
   const denyRows = rows.filter((r) => r.action === "deny").length;
   const associatedRows = rows.filter((r) => r.action === "associated").length;
@@ -558,6 +559,8 @@ function GroupSummary({ rows }: { rows: FocusLine[] }) {
   const parts: { label: string; cls?: string }[] = [{ label: `${total} 条` }];
   if (natRows > 0)
     parts.push({ label: `DNAT ${natRows}`, cls: "text-amber-700 dark:text-amber-300" });
+  if (snatRows > 0)
+    parts.push({ label: `SNAT ${snatRows}`, cls: "text-amber-700 dark:text-amber-300" });
   if (associatedRows > 0)
     parts.push({
       label: `已关联 ${associatedRows}`,
@@ -574,7 +577,7 @@ function GroupSummary({ rows }: { rows: FocusLine[] }) {
   return (
     <span
       className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground sm:ml-auto"
-      title="DNAT 转化后的目的+后端端口是否被任一 permit 策略覆盖"
+      title="DNAT 按转换后目的与服务关联；SNAT 按转换前源、目的与服务关联"
     >
       {parts.map((p, i) => (
         <React.Fragment key={i}>

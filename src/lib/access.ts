@@ -419,6 +419,12 @@ export interface FlowDnatEntry {
   backendKind: SvcRefKind;
 }
 
+export interface FlowSnatEntry {
+  rule: NatRule;
+  /** SNAT 服务在策略匹配前展开为真实协议 / 端口。 */
+  ports: string[];
+}
+
 export interface FlowPolicySegment {
   policy: PolicyRule;
   ports: string[]; // expanded literal ports (or ["any"])
@@ -437,6 +443,7 @@ export interface Flow {
   src: string;
   dst: string;
   dnat: FlowDnatEntry[];
+  snat: FlowSnatEntry[];
   policies: FlowPolicySegment[];
   permitPorts: Set<string>;
   denyPorts: Set<string>;
@@ -509,6 +516,7 @@ export function buildFlows(cfg: ParsedConfig, showDisabled = false): Flow[] {
         src,
         dst,
         dnat: [],
+        snat: [],
         policies: [],
         permitPorts: new Set(),
         denyPorts: new Set(),
@@ -539,6 +547,14 @@ export function buildFlows(cfg: ParsedConfig, showDisabled = false): Flow[] {
       backendKind: serviceRefKind(backendPort, cfg),
     });
     backendPorts.forEach((p) => f.allPorts.add(p));
+  });
+
+  visibleNatRules(cfg, showDisabled).forEach((n) => {
+    if (n.kind !== "source") return;
+    const ports = serviceToPorts(n.origDstService || "any", cfg);
+    const f = ensure(n.srcAddr || "any", n.origDstAddr || "any");
+    f.snat.push({ rule: n, ports });
+    ports.forEach((p) => f.allPorts.add(p));
   });
 
   // 禁用或已过期的策略仍保留在策略列表和对象引用中，但不能形成有效访问路径。
@@ -622,6 +638,7 @@ export interface FocusLine {
   action: string; // "permit" | "deny" | "none" | ...
   policies: PolicyRule[];
   nat: FlowDnatEntry[];
+  snat: FlowSnatEntry[];
   coverageKind: CoverageKind;
 }
 
@@ -912,6 +929,19 @@ export function findCoveringPolicies(
   );
 }
 
+/** SNAT 与策略按转换前的原始源、原目的和服务关联；转换后源不参与匹配。 */
+export function findMatchingSnatPolicies(entry: FlowSnatEntry, cfg: ParsedConfig): PolicyRule[] {
+  const rule = entry.rule;
+  return cfg.policies.filter(
+    (p) =>
+      !p.disabled &&
+      !isPolicyExpired(p, cfg) &&
+      addrMatches(p.srcAddr, rule.srcAddr || "any", cfg) &&
+      addrMatches(p.dstAddr, rule.origDstAddr || "any", cfg) &&
+      svcMatches(p.service, rule.origDstService || "any", cfg),
+  );
+}
+
 export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
   const out: FocusLine[] = [];
   const directOut: FocusLine[] = [];
@@ -979,13 +1009,82 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
           action: associated ? "associated" : "unassociated",
           policies: sorted,
           nat: g.dnats,
+          snat: [],
+          coverageKind: associated ? "ok" : "orphan",
+        });
+      });
+      if (f.snat.length === 0) return;
+    }
+
+    // SNAT：服务来自原始服务字段，策略按转换前的源、目的和服务匹配。
+    if (f.snat.length > 0) {
+      const portMap = new Map<
+        string,
+        {
+          proto: string;
+          port: string;
+          service: string;
+          snats: FlowSnatEntry[];
+          policies: PolicyRule[];
+          seen: Set<string>;
+        }
+      >();
+      f.snat.forEach((entry) => {
+        const matching = findMatchingSnatPolicies(entry, cfg);
+        entry.ports.forEach((p) => {
+          const { proto, port } = parsePortStr(p);
+          const svc = port === "any" ? "any" : `${proto}/${port}`;
+          let g = portMap.get(svc);
+          if (!g) {
+            g = { proto, port, service: svc, snats: [], policies: [], seen: new Set() };
+            portMap.set(svc, g);
+          }
+          if (!g.snats.includes(entry)) g.snats.push(entry);
+          matching.forEach((policy) => {
+            if (!svcMatches(policy.service, svc, cfg)) return;
+            const key = `${policy.id}@${policy.lineNo}`;
+            if (g!.seen.has(key)) return;
+            g!.seen.add(key);
+            g!.policies.push(policy);
+          });
+        });
+      });
+      portMap.forEach((g) => {
+        const sorted = g.policies.sort(
+          (a, b) => Number(a.id) - Number(b.id) || a.lineNo - b.lineNo,
+        );
+        const associated = sorted.some((p) => p.action === "permit");
+        const denied = sorted.some((p) => p.action === "deny");
+        const action = associated ? "associated" : denied ? "deny" : "unassociated";
+        const natServiceNames = [
+          ...new Set(
+            g.snats.flatMap((entry) =>
+              serviceNamesForPort(entry.rule.origDstService, g.service, cfg),
+            ),
+          ),
+        ];
+        const policyServiceNames = [
+          ...new Set(sorted.flatMap((p) => serviceNamesForPort(p.service, g.service, cfg))),
+        ];
+        out.push({
+          key: `${f.key}\t${g.service}\t${action}\tSNAT`,
+          src: f.src,
+          dst: f.dst,
+          proto: g.proto,
+          port: g.port,
+          service: g.service,
+          serviceNames: natServiceNames.length > 0 ? natServiceNames : policyServiceNames,
+          action,
+          policies: sorted,
+          nat: [],
+          snat: g.snats,
           coverageKind: associated ? "ok" : "orphan",
         });
       });
       return;
     }
 
-    // Pure policy chain (no DNAT) — original permit/deny row emission.
+    // Pure policy chain (no NAT) — original permit/deny row emission.
     const groups = new Map<
       string,
       { proto: string; port: string; action: string; policies: PolicyRule[] }
@@ -1017,6 +1116,7 @@ export function buildFocusLines(flows: Flow[], cfg: ParsedConfig): FocusLine[] {
         action: g.action,
         policies: g.policies.sort((a, b) => Number(a.id) - Number(b.id) || a.lineNo - b.lineNo),
         nat: [],
+        snat: [],
         coverageKind: f.coverage.kind,
       });
     });

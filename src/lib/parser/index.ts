@@ -287,7 +287,7 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
     }
 
     // ---------- ip nat source （单行 SNAT） ----------
-    // 形如：ip nat source <iface> <srcAddr> <origDstAddr> <translatedSrc> {interface | <poolAddr>} [log] <id>
+    // ip nat source <iface> <srcAddr> <origDstAddr> <origDstService> {interface | <translatedSrc>} [log] <id>
     if (head === "ip" && t[1] === "nat" && t[2] === "source") {
       const rest = t.slice(3);
       let id = "";
@@ -302,22 +302,19 @@ export function parseConfig(raw: string, fileName?: string): ParsedConfig {
         log = true;
         trimmed.pop();
       }
-      // 剩余至少 5 项：iface src origDst translatedSrc {interface|poolAddr}
+      // 剩 5 项：接口、原始源、原目的、服务、转换后源（或 interface）。
       if (trimmed.length >= 5 && id) {
-        const iface = trimmed[0];
-        const srcAddr = trimmed[1];
-        const origDstAddr = trimmed[2];
-        const translatedSrc = trimmed[3];
-        const tail = trimmed[4];
-        const egressInterface = tail === "interface";
+        const [iface, srcAddr, origDstAddr, origDstService, translated] = trimmed;
+        const egressInterface = translated === "interface";
+        const translatedSrc = egressInterface ? "" : translated;
         const rule: NatRule = {
           id,
           kind: "source",
           iface,
           srcAddr,
           origDstAddr,
-          origDstService: "any",
-          translatedPool: egressInterface ? "" : tail,
+          origDstService,
+          translatedPool: translatedSrc,
           translatedSrc,
           egressInterface,
           log,
@@ -505,7 +502,8 @@ export function buildCrossRef(cfg: ParsedConfig): CrossRef {
     });
   });
   cfg.natRules.forEach((r) => {
-    [r.srcAddr, r.origDstAddr, r.translatedPool, r.translatedSrc].forEach((a) => {
+    // SNAT 的 translatedPool / translatedSrc 指向同一源转换对象，只记一次引用。
+    [...new Set([r.srcAddr, r.origDstAddr, r.translatedPool, r.translatedSrc])].forEach((a) => {
       if (!a) return;
       add(addressUsedBy, a, {
         by: "nat",
