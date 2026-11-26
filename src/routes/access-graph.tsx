@@ -596,30 +596,20 @@ function DstFocusView({ dst, lines }: { dst: string; lines: FocusLine[] }) {
   return (
     <div className="space-y-3">
       <FocusHeader anchor={{ name: dst, role: "dst" }} count={lines.length} />
-      <FocusCard>
-        <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-          <span>暴露面</span>
-          <NodeChip name={dst} role="dst" />
-        </div>
-        <div className="space-y-3">
-          {[...bySrc.entries()].map(([src, rows]) => (
-            <div key={src} className="rounded-md border border-border/60 p-2">
-              <div className="mb-1.5 flex items-center gap-2">
-                <NodeChip name={src} role="src" />
-                <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {rows.length} 条 → {dst}
-                </span>
-              </div>
-              <div className="space-y-1.5">
-                {sortRows(rows).map((l) => (
-                  <FocusLineRow key={l.key} line={l} hideSrc mutedDst />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </FocusCard>
+      {[...bySrc.entries()].map(([src, rows]) => (
+        <FocusCard key={src}>
+          <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="shrink-0">来源</span>
+            <NodeChip name={src} role="src" />
+            <GroupSummary rows={rows} />
+          </div>
+          <div className="space-y-1.5">
+            {sortRows(rows).map((l) => (
+              <FocusLineRow key={l.key} line={l} mutedDst />
+            ))}
+          </div>
+        </FocusCard>
+      ))}
     </div>
   );
 }

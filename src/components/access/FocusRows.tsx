@@ -133,7 +133,7 @@ export function FocusLineRow({
       className={cn(
         "grid items-center gap-x-2 gap-y-1 rounded-md border border-border border-l-4 bg-background/40 px-2 py-1.5 text-xs",
         accent,
-        "grid-cols-[minmax(0,1.1fr)_minmax(0,1.55fr)_minmax(0,0.85fr)_minmax(0,1.15fr)_auto]",
+        "grid-cols-[minmax(0,0.85fr)_minmax(0,1.65fr)_minmax(0,0.65fr)_minmax(0,1.3fr)_minmax(0,9rem)]",
       )}
     >
       <div className="flex min-w-0 items-center overflow-hidden">
@@ -156,7 +156,7 @@ export function FocusLineRow({
       <div className="flex min-w-0 items-center overflow-hidden pl-1">
         {!hideSvc ? <SvcChip svc={line.service} names={line.serviceNames} /> : <Placeholder />}
       </div>
-      <div className="flex items-center justify-end gap-1.5 pl-1">
+      <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pl-1">
         <ActionBadge action={line.action} />
         {line.policies.length > 0 && <PolicyCountBadge policies={line.policies} />}
       </div>
