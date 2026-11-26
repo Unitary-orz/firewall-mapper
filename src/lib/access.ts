@@ -9,6 +9,7 @@ import type {
   ServiceGroup,
 } from "./parser/types";
 import { isPolicyExpired } from "./policyStatus";
+import { getBuiltinService } from "./builtinServices";
 
 export type IntermediaryCat = "waf" | "gateway" | "proxy" | "bastion" | "lb";
 
@@ -297,13 +298,7 @@ export function resolveEndpoint(
 
 export function summarizeService(name: string, cfg: ParsedConfig): string {
   if (!name || name === "any") return name || "—";
-  const svc = idx(cfg).svcByName.get(name);
-  if (svc) {
-    return svc.entries
-      .map((e) => (e.destPort ? `${e.protocol}/${e.destPort}` : e.protocol))
-      .join(", ");
-  }
-  return name;
+  return serviceToPorts(name, cfg).join(", ");
 }
 
 // ---------- per-node aggregates for intermediaries page ----------
@@ -391,7 +386,7 @@ export function buildNodeAggregates(cfg: ParsedConfig, showDisabled = false): No
   );
 }
 
-export type SvcRefKind = "service" | "service-group" | "literal" | "any";
+export type SvcRefKind = "service" | "service-group" | "builtin" | "literal" | "any";
 
 /** What a service token really refers to: a service object, a service group
  *  (several objects), a literal port/protocol, or the `any` wildcard. The UI
@@ -401,6 +396,7 @@ export function serviceRefKind(name: string, cfg: ParsedConfig): SvcRefKind {
   const i = lookupIndex(cfg);
   if (i.svcByName.has(name)) return "service";
   if (i.svcGrpByName.has(name)) return "service-group";
+  if (getBuiltinService(name)) return "builtin";
   return "literal";
 }
 
@@ -477,6 +473,12 @@ export function serviceToPorts(name: string, cfg: ParsedConfig, seen?: Set<strin
     grp.members.forEach((m) => serviceToPorts(m, cfg, seen).forEach((p) => out.add(p)));
     return [...out];
   }
+  const builtin = getBuiltinService(name);
+  if (builtin) {
+    return builtin.entries.map((entry) =>
+      entry.destPort ? `${entry.protocol}/${entry.destPort}` : entry.protocol,
+    );
+  }
   return [name]; // literal "tcp/443" or unknown
 }
 
@@ -498,7 +500,7 @@ export function serviceNamesForPort(name: string, port: string, cfg: ParsedConfi
   if (i.svcByName.has(name)) addIfMatches(name);
   else if (i.svcGrpByName.has(name)) {
     serviceGroupMembers(name, cfg).forEach((member) => addIfMatches(member.name));
-  }
+  } else if (getBuiltinService(name)) addIfMatches(name);
 
   const result = [...out];
   cache.set(key, result);

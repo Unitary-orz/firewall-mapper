@@ -310,9 +310,11 @@ export function ServiceRefPreview({ name, className = "" }: { name?: string; cla
       ? "服务组"
       : kind === "service"
         ? "服务对象"
-        : kind === "any"
-          ? "通配"
-          : "字面端口";
+        : kind === "builtin"
+          ? "内置服务"
+          : kind === "any"
+            ? "通配"
+            : "字面端口";
 
   return (
     <span

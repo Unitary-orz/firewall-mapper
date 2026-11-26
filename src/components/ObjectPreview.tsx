@@ -4,6 +4,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/DataTable";
 import { useConfigStore } from "@/lib/store";
 import { lookupIndex } from "@/lib/access";
+import { getBuiltinService } from "@/lib/builtinServices";
 import { useShowFullPortRange } from "@/lib/uiPrefs";
 import { L, DescQuote } from "@/components/previewAtoms";
 import type {
@@ -18,6 +19,7 @@ type Kind =
   | "address"
   | "address-group"
   | "service"
+  | "builtin-service"
   | "service-group"
   | "nat-pool"
   | "literal-ip"
@@ -85,6 +87,8 @@ function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
         description: psg.description,
         svcGroup: psg,
       };
+    const builtin = getBuiltinService(name);
+    if (builtin) return { kind: "builtin-service", name, svc: builtin };
   }
 
   const a = lookupIndex(cfg).addrByName.get(name);
@@ -120,6 +124,8 @@ function useResolve(name: string, prefer: ResolvePrefer = "address"): Resolved {
     };
   const lit = classifyLiteral(name);
   if (lit) return lit;
+  const builtin = getBuiltinService(name);
+  if (builtin) return { kind: "builtin-service", name, svc: builtin };
   return { kind: "unknown", name };
 }
 
@@ -127,6 +133,7 @@ const kindLabel: Record<Kind, string> = {
   address: "地址对象",
   "address-group": "地址组",
   service: "服务对象",
+  "builtin-service": "内置服务",
   "service-group": "服务组",
   "nat-pool": "NAT 池",
   "literal-ip": "字面 IP",
@@ -199,9 +206,10 @@ function MemberRow({ m, prefer = "address" }: { m: string; prefer?: ResolvePrefe
   const rawAg = lookupIndex(cfg).grpByName.get(m);
   const s = lookupIndex(cfg).svcByName.get(m);
   const sg = lookupIndex(cfg).svcGrpByName.get(m);
+  const builtin = !s && !sg ? getBuiltinService(m) : undefined;
   // 同名冲突时按语境优先
-  const a = svcFirst && (s || sg) ? undefined : rawA;
-  const ag = svcFirst && (s || sg) ? undefined : rawAg;
+  const a = svcFirst && (s || sg || builtin) ? undefined : rawA;
+  const ag = svcFirst && (s || sg || builtin) ? undefined : rawAg;
 
   let kindTag = "未定义引用";
   let summary = "";
@@ -230,10 +238,15 @@ function MemberRow({ m, prefer = "address" }: { m: string; prefer?: ResolvePrefe
   } else if (sg) {
     kindTag = "服务组";
     summary = `${sg.members.length} 成员`;
+  } else if (builtin) {
+    kindTag = "内置服务";
+    summary = builtin.entries
+      .map((entry) => (entry.destPort ? `${entry.protocol}/${entry.destPort}` : entry.protocol))
+      .join("，");
   }
 
   const desc = a?.description ?? ag?.description ?? s?.description ?? sg?.description;
-  const unresolved = !a && !ag && !s && !sg;
+  const unresolved = !a && !ag && !s && !sg && !builtin;
 
   return (
     <li className="py-1.5 px-2 space-y-0.5">

@@ -4,3 +4,4 @@
 - Disabled NAT rules stay hidden by default across lists, access relationships, node aggregates and reference previews behind the `cfg.showDisabled` display preference (src/lib/uiPrefs.ts); keep the cached access-layer getters keyed on that flag so toggling it does not reuse stale results.
 - Destination-focused access paths use sibling source groups and retain the source in every five-stage row; this avoids nested frames and empty reserved source columns.
 - Desktop access rows reserve the same policy-column width regardless of association status, so source, NAT, destination and service columns align across groups.
+- Resolve built-in services through the shared fallback catalog after configured services/groups; never inject synthetic definitions into imported configuration lists or counts.
